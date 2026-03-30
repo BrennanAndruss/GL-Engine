@@ -12,9 +12,9 @@ file(GLOB_RECURSE ENGINE_HEADERS
 
 add_library(engine ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
-# Define a preprocessor macro for the project root directory
+# Define project root directory (for cross-IDE compatibility)
 target_compile_definitions(engine PUBLIC
-    PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
+    PROJECT_ROOT="${CMAKE_SOURCE_DIR}/"
 )
 
 # Include directories

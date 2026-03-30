@@ -2,11 +2,12 @@
 
 #include <glad/glad.h>
 #include "WindowManager.h"
+#include "resources/AssetManager.h"
 
 class Application : public EventCallbacks
 {
 public:
-    Application(const int width, const int height);
+    Application(int width, int height);
     ~Application();
 
     void run();
@@ -21,6 +22,7 @@ public:
 
 private:
 	WindowManager* _windowManager = nullptr;
+	AssetManager _assetManager;
 
 	int _width, _height;
 };

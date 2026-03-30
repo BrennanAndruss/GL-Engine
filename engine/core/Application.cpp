@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Application::Application(const int width, const int height) : _width(width), _height(height)
+Application::Application(int width, int height) : _width(width), _height(height)
 {
     // Initialize WindowManager
     _windowManager = WindowManager::getInstance();
