@@ -4,25 +4,28 @@
 #include "WindowManager.h"
 #include "resources/AssetManager.h"
 
-class Application : public EventCallbacks
+namespace engine
 {
-public:
-    Application(int width, int height);
-    ~Application();
+	class Application : public EventCallbacks
+	{
+	public:
+		Application(int width, int height);
+		~Application();
 
-    void run();
+		void run();
 
-	void setClearColor(float r, float g, float b, float a);
+		void setClearColor(float r, float g, float b, float a);
 
-	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-	void resizeCallback(GLFWwindow* window, int width, int height);
-	void mouseCallback(GLFWwindow* window, double xPos, double yPos);
-	void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
+		void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+		void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+		void resizeCallback(GLFWwindow* window, int width, int height);
+		void mouseCallback(GLFWwindow* window, double xPos, double yPos);
+		void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
-private:
-	WindowManager* _windowManager = nullptr;
-	AssetManager _assetManager;
+	private:
+		WindowManager* _windowManager = nullptr;
+		AssetManager _assetManager;
 
-	int _width, _height;
-};
+		int _width, _height;
+	};
+}

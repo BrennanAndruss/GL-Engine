@@ -3,22 +3,25 @@
 #include <glad/glad.h>
 #include <string_view>
 
-class Texture
+namespace engine
 {
-public:
-	Texture(int width, int height, GLint format, const unsigned char* textureData);
-	~Texture();
+	class Texture
+	{
+	public:
+		Texture(int width, int height, GLint format, const unsigned char* textureData);
+		~Texture();
 
-	void setUnit(GLint unit) { _unit = unit; }
-	GLint getUnit() const { return _unit; }
+		void setUnit(GLint unit) { _unit = unit; }
+		GLint getUnit() const { return _unit; }
 
-	void bind(GLint handle) const;
-	void unbind() const;
+		void bind(GLint handle) const;
+		void unbind() const;
 
-private:
-	int _width, _height;
-	GLint _internalFormat, _imageFormat;
+	private:
+		int _width, _height;
+		GLint _internalFormat, _imageFormat;
 
-	GLuint _tid;
-	GLuint _unit;
-};
+		GLuint _tid;
+		GLuint _unit;
+	};
+}

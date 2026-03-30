@@ -5,33 +5,36 @@
 #include <tiny_obj_loader/tiny_obj_loader.h>
 #include <vector>
 
-static constexpr size_t VERTEX_SIZE = 8;
-
-enum class Attrib
+namespace engine
 {
-	Position,	// 3
-	Normal,		// 3
-	TexCoord	// 2
-};
+	static constexpr size_t VERTEX_SIZE = 8;
 
-struct BBox
-{
-	glm::vec3 min;
-	glm::vec3 max;
-};
+	enum class Attrib
+	{
+		Position,	// 3
+		Normal,		// 3
+		TexCoord	// 2
+	};
 
-class Mesh
-{
-public:
-	Mesh(const tinyobj::shape_t& shape);
-	~Mesh() = default;
+	struct BBox
+	{
+		glm::vec3 min;
+		glm::vec3 max;
+	};
 
-	BBox getBBox() const { return _bbox; }
-	void draw() const;
+	class Mesh
+	{
+	public:
+		Mesh(const tinyobj::shape_t& shape);
+		~Mesh() = default;
 
-private:
-	std::vector<float> _vertBuf;
-	size_t _numIndices;
-	GLuint _vao, _vbo, _ebo;
-	BBox _bbox;
-};
+		BBox getBBox() const { return _bbox; }
+		void draw() const;
+
+	private:
+		std::vector<float> _vertBuf;
+		size_t _numIndices;
+		GLuint _vao, _vbo, _ebo;
+		BBox _bbox;
+	};
+}
