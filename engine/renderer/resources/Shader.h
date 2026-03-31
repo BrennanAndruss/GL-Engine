@@ -3,7 +3,6 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 namespace engine

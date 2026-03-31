@@ -1,11 +1,11 @@
-#include "AssetManager.h"
+#include "resources/AssetManager.h"
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
 #include <cassert>
-#include "../../external/stb_image/stb_image.h"
+#include "stb_image/stb_image.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
 #include "renderer/resources/Mesh.h"

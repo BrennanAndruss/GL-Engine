@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "RenderPass.h"
+#include "renderer/passes/RenderPass.h"
 
 // Forward declarations
 namespace engine

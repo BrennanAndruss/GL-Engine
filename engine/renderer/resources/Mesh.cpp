@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "renderer/resources/Mesh.h"
 
 namespace engine
 {

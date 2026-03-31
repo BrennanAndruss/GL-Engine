@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <memory>
-#include "passes/RenderPass.h"
-#include "../resources/AssetManager.h"
+#include "renderer/passes/RenderPass.h"
+#include "resources/AssetManager.h"
 
 namespace engine
 {

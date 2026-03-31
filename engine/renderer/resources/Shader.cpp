@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "renderer/resources/Shader.h"
 
 #include <iostream>
 #include <stdexcept>

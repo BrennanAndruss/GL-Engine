@@ -1,8 +1,8 @@
-#include "ForwardRenderPass.h"
+#include "renderer/passes/ForwardRenderPass.h"
 
 #include <glad/glad.h>
-#include "../resources/Shader.h"
-#include "../../resources/AssetManager.h"
+#include "renderer/resources/Shader.h"
+#include "resources/AssetManager.h"
 
 namespace engine
 {

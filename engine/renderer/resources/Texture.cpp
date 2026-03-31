@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include "renderer/resources/Texture.h"
 
 #include <stdexcept>
 

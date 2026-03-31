@@ -1,9 +1,9 @@
-#include "Window.h"
+#include "core/Window.h"
 
 #include <iostream>
 #include <stdexcept>
 #include <cassert>
-#include "EventCallbacks.h"
+#include "core/EventCallbacks.h"
 
 namespace engine
 {

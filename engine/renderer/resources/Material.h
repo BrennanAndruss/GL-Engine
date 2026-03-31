@@ -7,12 +7,9 @@ namespace engine
 {
 	struct Material
 	{
-		Material() = default;
-		~Material() = default;
-
-		size_t shaderId;
-		size_t difTextureId;
-		size_t specTextureId;
+		size_t shaderId = 0;
+		size_t difTextureId = 0;
+		size_t specTextureId = 0;
 
 		float shininess = 0.0f;
 		glm::vec3 ambient = glm::vec3(0.0f);

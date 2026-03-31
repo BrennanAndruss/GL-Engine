@@ -1,8 +1,8 @@
-#include "Application.h"
+#include "core/Application.h"
 
 #include <iostream>
-#include "Game.h"
-#include "Time.h"
+#include "core/Game.h"
+#include "core/Time.h"
 
 namespace engine 
 {

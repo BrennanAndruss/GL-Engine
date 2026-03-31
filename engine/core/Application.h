@@ -1,8 +1,8 @@
 #pragma once
 
 #include <glad/glad.h>
-#include "Window.h"
-#include "EventCallbacks.h"
+#include "core/Window.h"
+#include "core/EventCallbacks.h"
 #include "resources/AssetManager.h"
 #include "renderer/Renderer.h"
 
