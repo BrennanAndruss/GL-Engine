@@ -1,8 +1,13 @@
+#include "MyGame.h"
 #include "core/Application.h"
 
 int main() {
-    engine::Application app(640, 480);
-    app.setClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    app.run();
+    engine::AppConfig config;
+    config.title = "My Game";
+    config.width = 640;
+    config.height = 480;
+
+    engine::Application app(config);
+    app.run(std::make_unique<MyGame>());
     return 0;
 }

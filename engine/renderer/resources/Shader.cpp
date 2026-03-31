@@ -1,6 +1,8 @@
 #include "Shader.h"
 
+#include <iostream>
 #include <stdexcept>
+#include <cassert>
 
 namespace engine
 {
@@ -20,6 +22,8 @@ namespace engine
 			glDeleteShader(shader);
 			throw std::runtime_error(std::string("Shader compilation failed: ") + infoLog);
 		}
+
+		return shader;
 	}
 
 	static GLuint linkProgram(GLuint vertShader, GLuint fragShader)
@@ -30,18 +34,19 @@ namespace engine
 		glLinkProgram(program);
 
 		GLint ok;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &ok);
+		glGetProgramiv(program, GL_LINK_STATUS, &ok);
 		if (!ok)
 		{
 			char infoLog[512];
 			glGetProgramInfoLog(program, 512, nullptr, infoLog);
-			glDeleteProgram(vertShader);
-			glDeleteProgram(fragShader);
+			glDeleteProgram(program);
+			glDeleteShader(vertShader);
+			glDeleteShader(fragShader);
 			throw std::runtime_error(std::string("Program linking failed: ") + infoLog);
 		}
 
-		glDeleteProgram(vertShader);
-		glDeleteProgram(fragShader);
+		glDeleteShader(vertShader);
+		glDeleteShader(fragShader);
 		return program;
 	}
 
@@ -73,7 +78,7 @@ namespace engine
 
 		// Get and cache new uniform location
 		GLint loc = glGetUniformLocation(_pid, name.data());
-		assert(loc != -1, "Uniform not found: " + name);
+		assert(loc != -1 && std::string("Uniform not found: " + name).data());
 		_uniforms.emplace(name, loc);
 		return loc;
 	}

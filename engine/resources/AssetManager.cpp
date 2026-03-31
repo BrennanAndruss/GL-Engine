@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <cassert>
 #include "../../external/stb_image/stb_image.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
@@ -25,7 +26,8 @@ namespace engine
 		return ss.str();
 	}
 
-	AssetManager::AssetManager() = default;
+	AssetManager::AssetManager(const std::string& assetDir) : _assetDir(assetDir) {}
+
 	AssetManager::~AssetManager() = default;
 
 	std::filesystem::path AssetManager::resolvePath(const std::string& rel) const

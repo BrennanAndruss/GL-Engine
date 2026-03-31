@@ -1,42 +1,36 @@
 #include "Application.h"
 
 #include <iostream>
+#include "Game.h"
+#include "Time.h"
 
 namespace engine 
 {
-    Application::Application(int width, int height) : _width(width), _height(height), _renderer(width, height)
+    Application::Application(const AppConfig& config) : 
+        _width(config.width), 
+        _height(config.height),
+        _window(config.width, config.height, config.title),
+        _assets(config.assetsDir),
+        _renderer(config.width, config.height)
     {
-        // Initialize WindowManager
-        _windowManager = WindowManager::getInstance();
-        _windowManager->init(_width, _height);
-	    _windowManager->setEventCallbacks(this);
-
-        // Initialize Renderer
+        if (config.depthTest) glEnable(GL_DEPTH_TEST);
+        if (config.cullFace) glEnable(GL_CULL_FACE);
     }
 
-    Application::~Application()
-    {
-        _windowManager = nullptr;
-    }
+    Application::~Application() = default;
 
-    void Application::run()
+    void Application::run(std::unique_ptr<Game> game)
     {
-        while (!glfwWindowShouldClose(_windowManager->getHandle()))
+        game->init(_assets, _renderer);
+
+        while (!_window.shouldClose())
         {
-            // Set up framebuffer
-            int fbWidth, fbHeight;
-            glfwGetFramebufferSize(_windowManager->getHandle(), &fbWidth, &fbHeight);
-            glViewport(0, 0, fbWidth, fbHeight);
-		    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            Time::update();
+            game->update(Time::deltaTime());
 
-            // Render scene
-            // ...
-
-            // Swap front and back buffers
-            glfwSwapBuffers(_windowManager->getHandle());
-
-            // Poll for and process events
-            glfwPollEvents();
+            _renderer.render(_assets);
+            _window.swapBuffers();
+            _window.pollEvents();
         }
     }
 
