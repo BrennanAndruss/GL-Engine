@@ -94,7 +94,7 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
-!resources/models/*.obj
+!assets/models/*.obj
 *.iobj
 *.pch
 *.pdb
