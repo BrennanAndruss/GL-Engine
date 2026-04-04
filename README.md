@@ -23,8 +23,18 @@ cd build
 cmake ..
 ```
 
-### Run
+4. Build with a native build tool (e.g., Make, Visual Studio)
 
 ```shell
+# For Linux and Mac
+make
+```
+
+### Run
+
+Building the program compiles the engine code into a static library in `build/engine/` and creates the game executable in `build/game`.
+
+```shell
+cd game
 ./game
 ```
