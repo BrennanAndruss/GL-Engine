@@ -2,44 +2,36 @@
 
 #include <glad/glad.h>
 #include "renderer/resources/Shader.h"
+#include "renderer/resources/Mesh.h"
+#include "renderer/resources/Material.h"
 #include "resources/AssetManager.h"
+#include "scene/Component.h"
 
 namespace engine
 {
-	// Test data
-	static std::vector<float> vertices = {
-		// positions		// colors
-		-0.5f, -0.5f, 0.0f,	1.0f, 0.0f, 0.0f,	// bottom left
-		 0.5f, -0.5f, 0.0f,	0.0f, 1.0f, 0.0f,	// bottom right
-		 0.0f,  0.5f, 0.0f,	0.0f, 0.0f, 1.0f	// top
-	};
+	ForwardRenderPass::ForwardRenderPass() = default;
 
-	static GLuint vao, vbo;
-
-	ForwardRenderPass::ForwardRenderPass()
+	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets)
 	{
-		// Initialize test data
-		glGenVertexArrays(1, &vao);
-		glGenBuffers(1, &vbo);
+		for (const auto& object : scene.getObjects())
+		{
+			auto* meshRenderer = object->getComponent<MeshRenderer>();
+			if (!meshRenderer) continue;
 
-		glBindVertexArray(vao);
+			auto* mesh = assets.getMesh(meshRenderer->meshId);
+			auto* mat = assets.getMaterial(meshRenderer->materialId);
+			auto* shader = assets.getShader(mat->shaderId);
+			if (!mesh || !mat || !shader) continue;
 
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+			shader->bind();
+			shader->setMat4("model", object->transform.getMatrix());
+			shader->setVec3("mat.ambient", mat->ambient);
+			shader->setVec3("mat.diffuse", mat->diffuse);
+			shader->setVec3("mat.specular", mat->specular);
+			shader->setFloat("mat.shininess", mat->shininess);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-	}
-
-	void ForwardRenderPass::execute(AssetManager& assets)
-	{
-		auto* shader = assets.getShader("test");
-		shader->bind();
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		shader->unbind();
+			mesh->draw();
+			shader->unbind();
+		}
 	}
 }

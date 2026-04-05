@@ -7,8 +7,7 @@
 namespace engine 
 {
     Application::Application(const AppConfig& config) : 
-        _width(config.width), 
-        _height(config.height),
+        _config(config),
         _window(config.width, config.height, config.title),
         _assets(config.assetsDir),
         _renderer(config.width, config.height)
@@ -21,14 +20,14 @@ namespace engine
 
     void Application::run(std::unique_ptr<Game> game)
     {
-        game->init(_assets, _renderer);
+        game->init(_assets, _renderer, _scene, _config);
 
         while (!_window.shouldClose())
         {
             Time::update();
             game->update(Time::deltaTime());
 
-            _renderer.render(_assets);
+            _renderer.render(_scene, _assets);
             _window.swapBuffers();
             _window.pollEvents();
         }
@@ -57,8 +56,12 @@ namespace engine
     void Application::resizeCallback(GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
-        _width = width;
-        _height = height;
+        _config.width = width;
+        _config.height = height;
+
+        _renderer.resize(width, height);
+        if (auto* camera = _scene.getCamera())
+            camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
     }
 
     void Application::mouseCallback(GLFWwindow* window, double xPos, double yPos)

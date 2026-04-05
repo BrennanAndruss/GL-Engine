@@ -2,10 +2,15 @@
 
 #include <glad/glad.h>
 #include <cassert>
+#include <iostream>
 
 namespace engine
 {
-	Renderer::Renderer(int width, int height) : _width(width), _height(height) {}
+	Renderer::Renderer(int width, int height) : 
+		_width(width), 
+		_height(height), 
+		_cameraUBO(sizeof(CameraData), 0),
+		_lightsUBO(/*MAX_LIGHTS*/ 1 * sizeof(LightData), 1) {}
 
 	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
 	{
@@ -19,15 +24,31 @@ namespace engine
 		_height = height;
 	}
 
-	void Renderer::render(AssetManager& assets)
+	void Renderer::render(const Scene& scene, const AssetManager& assets)
 	{
 		// Clear the previous frame
 		glViewport(0, 0, _width, _height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// Update uniform buffer objects
+		auto* camera = scene.getCamera();
+		assert(camera != nullptr && "Scene has no camera.");
+		_cameraUBO.update(&camera->getCameraData(), sizeof(CameraData));
+
+		const auto& lights = scene.getLights();
+		int numLights = std::min((int)lights.size(), 1 /*MAX_LIGHTS*/);
+		for (int i = 0; i < lights.size(); i++)
+		{
+			LightData data = lights[i]->getLightData();
+			std::cout << "Light dir: " << data.direction_type.x << " "
+				<< data.direction_type.y << " "
+				<< data.direction_type.z << std::endl;
+			_lightsUBO.update(&data, sizeof(LightData), i * sizeof(LightData));
+		}
+
 		for (const auto& pass : _renderPasses)
 		{
-			pass->execute(assets);
+			pass->execute(scene, assets);
 		}
 	}
 }

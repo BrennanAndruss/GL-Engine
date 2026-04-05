@@ -3,6 +3,7 @@
 // Forward declarations
 namespace engine
 {
+	class Scene;
 	class AssetManager;
 }
 
@@ -12,6 +13,6 @@ namespace engine
 	{
 	public:
 		virtual	~RenderPass() = default;
-		virtual void execute(AssetManager& assets) = 0;
+		virtual void execute(const Scene& scene, const AssetManager& assets) = 0;
 	};
 }

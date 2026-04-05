@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "scene/Scene.h"
 #include "renderer/passes/RenderPass.h"
 
 // Forward declarations
@@ -15,6 +16,6 @@ namespace engine
 	{
 	public:
 		ForwardRenderPass();
-		void execute(AssetManager& assets) override;
+		void execute(const Scene& scene, const AssetManager& assets) override;
 	};
 }
