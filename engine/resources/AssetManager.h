@@ -12,7 +12,7 @@ namespace engine
 	class Shader;
 	class Texture;
 	class Mesh;
-	class Material;
+	struct Material;
 }
 
 namespace engine
@@ -35,17 +35,17 @@ namespace engine
 		size_t loadMesh(const std::string& name, const std::string& path);
 		size_t loadMaterial(const std::string& name);
 
-		Shader* getShader(size_t id);
-		Shader* getShader(const std::string& name);
+		Shader* getShader(size_t id) const;
+		Shader* getShader(const std::string& name) const;
 
-		Texture* getTexture(size_t id);
-		Texture* getTexture(const std::string& name);
+		Texture* getTexture(size_t id) const;
+		Texture* getTexture(const std::string& name) const;
 
-		Mesh* getMesh(size_t id);
-		Mesh* getMesh(const std::string& name);
+		Mesh* getMesh(size_t id) const;
+		Mesh* getMesh(const std::string& name) const;
 
-		Material* getMaterial(size_t id);
-		Material* getMaterial(const std::string& name);
+		Material* getMaterial(size_t id) const;
+		Material* getMaterial(const std::string& name) const;
 
 	private:
 		AssetPool<Shader> _shaders;

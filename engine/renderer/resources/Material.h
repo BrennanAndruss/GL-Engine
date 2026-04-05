@@ -11,7 +11,7 @@ namespace engine
 		size_t difTextureId = 0;
 		size_t specTextureId = 0;
 
-		float shininess = 0.0f;
+		float shininess = 1.0f;
 		glm::vec3 ambient = glm::vec3(0.0f);
 		glm::vec3 diffuse = glm::vec3(0.0f);
 		glm::vec3 specular = glm::vec3(0.0f);

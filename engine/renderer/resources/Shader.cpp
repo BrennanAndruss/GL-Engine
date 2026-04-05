@@ -78,7 +78,11 @@ namespace engine
 
 		// Get and cache new uniform location
 		GLint loc = glGetUniformLocation(_pid, name.data());
-		assert(loc != -1 && std::string("Uniform not found: " + name).data());
+		if (loc == -1)
+		{
+			// Uniform either doesn't exist or has been optimized away
+			std::cerr << "Warning: Uniform " << name << " cannot be bound.\n";
+		}
 		_uniforms.emplace(name, loc);
 		return loc;
 	}
