@@ -14,6 +14,7 @@ namespace engine
     {
         if (config.depthTest) glEnable(GL_DEPTH_TEST);
         if (config.cullFace) glEnable(GL_CULL_FACE);
+        _window.setEventCallbacks(this);
     }
 
     Application::~Application() = default;

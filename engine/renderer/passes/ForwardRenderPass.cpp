@@ -23,12 +23,14 @@ namespace engine
 			auto* shader = assets.getShader(mat->shaderId);
 			if (!mesh || !mat || !shader) continue;
 
+			// Set simple shader uniforms
 			shader->bind();
 			shader->setMat4("model", object->transform.getMatrix());
 			shader->setVec3("mat.ambient", mat->ambient);
 			shader->setVec3("mat.diffuse", mat->diffuse);
 			shader->setVec3("mat.specular", mat->specular);
 			shader->setFloat("mat.shininess", mat->shininess);
+			shader->setInt("numLights", scene.getLights().size());
 
 			mesh->draw();
 			shader->unbind();

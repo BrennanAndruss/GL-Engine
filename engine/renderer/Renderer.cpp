@@ -10,7 +10,7 @@ namespace engine
 		_width(width), 
 		_height(height), 
 		_cameraUBO(sizeof(CameraData), 0),
-		_lightsUBO(/*MAX_LIGHTS*/ 1 * sizeof(LightData), 1) {}
+		_lightsUBO(MAX_LIGHTS * sizeof(LightData), 1) {}
 
 	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
 	{
@@ -36,13 +36,10 @@ namespace engine
 		_cameraUBO.update(&camera->getCameraData(), sizeof(CameraData));
 
 		const auto& lights = scene.getLights();
-		int numLights = std::min((int)lights.size(), 1 /*MAX_LIGHTS*/);
+		int numLights = std::min((int)lights.size(), MAX_LIGHTS);
 		for (int i = 0; i < lights.size(); i++)
 		{
 			LightData data = lights[i]->getLightData();
-			std::cout << "Light dir: " << data.direction_type.x << " "
-				<< data.direction_type.y << " "
-				<< data.direction_type.z << std::endl;
 			_lightsUBO.update(&data, sizeof(LightData), i * sizeof(LightData));
 		}
 

@@ -25,18 +25,39 @@ void MyGame::init(engine::AssetManager& assets,
 
 	std::cout << "Loading materials...\n";
 	size_t matId = assets.loadMaterial("redMat");
-	auto* redMat = assets.getMaterial(matId);
-	redMat->shaderId = shaderId;
-	redMat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
-	redMat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
-	redMat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	redMat->shininess = 32.0f;
+	auto* grayMat = assets.getMaterial(matId);
+	grayMat->shaderId = shaderId;
+	grayMat->ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+	grayMat->diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+	grayMat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	grayMat->shininess = 32.0f;
 
 	// Initialize scene
 	float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
 	auto& camera = scene.createCamera(glm::vec3(-5.0f, 0.0f, 0.0f), 45.0f, aspect);
 
-	scene.createLight<engine::DirectionalLight>(glm::vec3(0.8f, -1.0f, 0.6f));
+	auto& dirLight = scene.createLight<engine::DirectionalLight>();
+	dirLight.setDirection(glm::vec3(0.8f, -1.0f, 0.6f));
+	dirLight.setColor(glm::vec3(1.0f));
+	dirLight.setIntensity(1.0f);
+
+	auto& pointLight1 = scene.createLight<engine::PointLight>();
+	pointLight1.setPosition(glm::vec3(-1.0f, -1.0f, 2.0f));
+	pointLight1.setRange(10.0f);
+	pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight1.setIntensity(1.0f);
+
+	auto& pointLight2 = scene.createLight<engine::PointLight>();
+	pointLight2.setPosition(glm::vec3(-1.0f, -1.0f, -2.0f));
+	pointLight2.setRange(10.0f);
+	pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+	pointLight2.setIntensity(1.0f);
+
+	auto& pointLight3 = scene.createLight<engine::PointLight>();
+	pointLight3.setPosition(glm::vec3(-1.0f, 2.0f, 0.0f));
+	pointLight3.setRange(10.0f);
+	pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
+	pointLight3.setIntensity(1.0f);
 	
 	scene.reserveObjects(1);
 	cube = &scene.createObject("cube");
