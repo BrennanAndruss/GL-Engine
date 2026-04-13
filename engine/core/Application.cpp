@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "core/Game.h"
+#include "core/Input.h"
 #include "core/Time.h"
 
 namespace engine 
@@ -13,7 +14,7 @@ namespace engine
         _renderer(config.width, config.height)
     {
         if (config.depthTest) glEnable(GL_DEPTH_TEST);
-        if (config.cullFace) glEnable(GL_CULL_FACE);
+        // if (config.cullFace) glEnable(GL_CULL_FACE);
         _window.setEventCallbacks(this);
     }
 
@@ -22,13 +23,17 @@ namespace engine
     void Application::run(std::unique_ptr<Game> game)
     {
         game->init(_assets, _renderer, _scene, _config);
+        _scene.start();
 
         while (!_window.shouldClose())
         {
             Time::update();
-            game->update(Time::deltaTime());
+            Input::update();
 
+            game->update(Time::deltaTime());
+            _scene.update(Time::deltaTime());
             _renderer.render(_scene, _assets);
+            
             _window.swapBuffers();
             _window.pollEvents();
         }
@@ -43,6 +48,8 @@ namespace engine
 
     void Application::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
+        Input::onKey(key, action);
+
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -51,7 +58,7 @@ namespace engine
 
     void Application::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     {
-        // Handle mouse button events
+        Input::onMouseButton(button, action);
     }
 
     void Application::resizeCallback(GLFWwindow* window, int width, int height)
@@ -67,12 +74,13 @@ namespace engine
 
     void Application::mouseCallback(GLFWwindow* window, double xPos, double yPos)
     {
-        // Handle mouse movement events
+        Input::onMouseMove(xPos, yPos);
     }
 
     void Application::scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
     {
-        // Handle scroll events
+        // wip
+        // Input::onScroll(xOffset, yOffset);
     }
 
     #pragma endregion

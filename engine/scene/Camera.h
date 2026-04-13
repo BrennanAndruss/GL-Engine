@@ -25,6 +25,10 @@ namespace engine
 		void setAspect(float aspect);
 
 		const CameraData& getCameraData() const { return _cameraData; }
+		glm::vec3 getPosition() const { return _position; }
+		glm::vec3 getForward() const { return _forward; }
+		glm::vec3 getRight() const { return _right; }
+		glm::vec3 getUp() const { return _up; }
 
 	private:
 		glm::vec3 _position;

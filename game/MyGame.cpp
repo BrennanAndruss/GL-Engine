@@ -9,7 +9,8 @@
 #include "renderer/resources/Material.h"
 #include "renderer/passes/ForwardRenderPass.h"
 #include "scene/Light.h"
-#include "scene/Component.h"
+#include "scene/components/Components.h"
+#include "systems/PlayerController.h"
 
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
@@ -34,7 +35,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// Initialize scene
 	float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-	auto& camera = scene.createCamera(glm::vec3(-5.0f, 0.0f, 0.0f), 45.0f, aspect);
+	auto& camera = scene.createCamera(glm::vec3(0.0f, 0.0f, 0.0f), 45.0f, aspect);
 
 	auto& dirLight = scene.createLight<engine::DirectionalLight>();
 	dirLight.setDirection(glm::vec3(0.8f, -1.0f, 0.6f));
@@ -42,19 +43,19 @@ void MyGame::init(engine::AssetManager& assets,
 	dirLight.setIntensity(1.0f);
 
 	auto& pointLight1 = scene.createLight<engine::PointLight>();
-	pointLight1.setPosition(glm::vec3(-1.0f, -1.0f, 2.0f));
+	pointLight1.setPosition(glm::vec3(2.0f, -1.0f, 1.0f));
 	pointLight1.setRange(10.0f);
 	pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 	pointLight1.setIntensity(1.0f);
 
 	auto& pointLight2 = scene.createLight<engine::PointLight>();
-	pointLight2.setPosition(glm::vec3(-1.0f, -1.0f, -2.0f));
+	pointLight2.setPosition(glm::vec3(-2.0f, -1.0f, 1.0f));
 	pointLight2.setRange(10.0f);
 	pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
 	pointLight2.setIntensity(1.0f);
 
 	auto& pointLight3 = scene.createLight<engine::PointLight>();
-	pointLight3.setPosition(glm::vec3(-1.0f, 2.0f, 0.0f));
+	pointLight3.setPosition(glm::vec3(0.0f, 2.0f, 1.0f));
 	pointLight3.setRange(10.0f);
 	pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
 	pointLight3.setIntensity(1.0f);
@@ -65,8 +66,22 @@ void MyGame::init(engine::AssetManager& assets,
 	meshRenderer.meshId = cubeMeshId;
 	meshRenderer.materialId = matId;
 
+	// Initialize player
+	auto& player = scene.createObject("player");
+	player.transform.translation = glm::vec3(0.0f, 1.0f, 5.0f);
+
+	auto& charController = player.addComponent<engine::CharacterController>();
+	charController.height = 1.0f;
+
+	auto& playerController = player.addComponent<PlayerController>();
+	playerController.camera = scene.getCamera();
+	playerController.moveSpeed = 5.0f;
+	playerController.eyeHeight = 0.5f;
+
 	// Configure render pipeline
 	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
+
+	std::cout << "Game initialized!\n";
 }
 
 void MyGame::update(float deltaTime)

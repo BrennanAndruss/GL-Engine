@@ -5,7 +5,7 @@
 #include <memory>
 #include <type_traits>
 #include "scene/Transform.h"
-#include "scene/Component.h"
+#include "scene/components/Component.h"
 
 namespace engine
 {
@@ -19,6 +19,7 @@ namespace engine
 		Object(const std::string& name);
 		~Object() = default;
 
+		void start();
 		void update(float deltaTime);
 
 		template<typename T, typename... Args>
@@ -28,6 +29,7 @@ namespace engine
 			auto& ptr = _components.emplace_back(
 				std::make_unique<T>(std::forward<Args>(args)...)
 			);
+			ptr->owner = this;
 			return static_cast<T&>(*ptr);
 		}
 

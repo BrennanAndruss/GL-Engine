@@ -17,6 +17,9 @@ namespace engine
 		Scene() = default;
 		~Scene() = default;
 
+		void start();
+		void update(float deltaTime);
+
 		Camera& createCamera(glm::vec3 position, float fov, float aspect, float near = 0.1f, float far = 100.0f);
 		Camera* getCamera() const { return _camera.get(); }
 

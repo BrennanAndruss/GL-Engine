@@ -2,15 +2,18 @@
 
 namespace engine
 {
-	struct Component
-	{
-		virtual ~Component() = default;
-		virtual void update(float deltaTime) {}
-	};
+	class Object;
+}
 
-	struct MeshRenderer : public Component
+namespace engine
+{
+	class Component
 	{
-		size_t meshId;
-		size_t materialId;
+	public:
+		Object* owner = nullptr;
+
+		virtual ~Component() = default;
+		virtual void start() {}
+		virtual void update(float deltaTime) {}
 	};
 }

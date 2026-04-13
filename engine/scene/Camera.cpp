@@ -24,14 +24,9 @@ namespace engine
 
 	void Camera::setRotation(float pitch, float yaw)
 	{
-		_pitch = pitch;
+		// Clamp pitch to avoid gimbal lock
+		_pitch = glm::clamp(pitch, -89.0f, 89.0f);
 		_yaw = yaw;
-
-		// Constrain pitch to avoid gimbal lock
-		if (_pitch > 89.0f)
-			_pitch = 89.0f;
-		if (_pitch < -89.0f)
-			_pitch = -89.0f;
 
 		updateCameraVectors();
 		updateViewMatrix();
@@ -55,13 +50,14 @@ namespace engine
 		float p = glm::radians(_pitch);
 		float y = glm::radians(_yaw);
 
-		// Calculate new orthonormal basis
-		_forward.x = cos(p) * cos(y);
+		// Calculate new orthonormal basis with forward = -Z at yaw = 0
+		_forward.x = cos(p) * sin(y);
 		_forward.y = sin(p);
-		_forward.z = cos(p) * sin(y);
+		_forward.z = -cos(p) * cos(y);
 		
+		glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 		_forward = glm::normalize(_forward);
-		_right = glm::normalize(glm::cross(_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+		_right = glm::normalize(glm::cross(_forward, worldUp));
 		_up = glm::cross(_right, _forward);
 	}
 

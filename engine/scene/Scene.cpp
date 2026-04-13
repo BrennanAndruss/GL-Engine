@@ -2,6 +2,22 @@
 
 namespace engine
 {
+	void Scene::start()
+	{
+		for (auto& object : _objects)
+		{
+			object->start();
+		}
+	}
+
+	void Scene::update(float deltaTime)
+	{
+		for (auto& object : _objects)
+		{
+			object->update(deltaTime);
+		}
+	}
+
 	Object& Scene::createObject(const std::string& name)
 	{
 		return *_objects.emplace_back(std::make_unique<Object>(name));

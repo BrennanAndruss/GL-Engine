@@ -5,7 +5,8 @@
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "resources/AssetManager.h"
-#include "scene/Component.h"
+#include "scene/components/Component.h"
+#include "scene/components/MeshRenderer.h"
 
 namespace engine
 {
