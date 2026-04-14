@@ -29,7 +29,7 @@ void PlayerController::update(float deltaTime)
 
 	_characterController->move(input);
 
-	// Mouse look
+	// Mouse look and click
 	glm::vec2 mouseDelta = engine::Input::getMouseDelta();
 	if (engine::Input::isMouseDown(GLFW_MOUSE_BUTTON_LEFT))
 	{

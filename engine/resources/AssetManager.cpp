@@ -5,7 +5,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <cassert>
-#include "stb_image/stb_image.h"
+#include <stb_image.h>
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
 #include "renderer/resources/Mesh.h"

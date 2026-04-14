@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <tiny_obj_loader/tiny_obj_loader.h>
+#include <tiny_obj_loader.h>
 #include <vector>
 
 namespace engine
