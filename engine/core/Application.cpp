@@ -10,12 +10,14 @@ namespace engine
     Application::Application(const AppConfig& config) : 
         _config(config),
         _window(config.width, config.height, config.title),
-        _assets(config.assetsDir),
-        _renderer(config.width, config.height)
+        _renderer(config.width, config.height),
+        _assets(config.assetsDir)        
     {
         if (config.depthTest) glEnable(GL_DEPTH_TEST);
-        // if (config.cullFace) glEnable(GL_CULL_FACE);
+        if (config.cullFace) glEnable(GL_CULL_FACE);
+
         _window.setEventCallbacks(this);
+        _scene.setPhysicsSystem(&_physics);
     }
 
     Application::~Application() = default;
@@ -30,8 +32,14 @@ namespace engine
             Time::update();
             Input::update();
 
+            // Update physics
+            _physics.update(Time::deltaTime());
+
+            // Update gameplay logic
             game->update(Time::deltaTime());
             _scene.update(Time::deltaTime());
+
+            // Render
             _renderer.render(_scene, _assets);
             
             _window.swapBuffers();

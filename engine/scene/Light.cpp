@@ -18,7 +18,7 @@ namespace engine
 	void DirectionalLight::setDirection(glm::vec3 direction)
 	{
 		assert(glm::length(direction) > 0.0f && "Direction cannot be zero vector.");
-		_direction = glm::normalize(direction);
+		_walkDirection = glm::normalize(direction);
 	}
 
 	LightData DirectionalLight::getLightData() const
@@ -26,7 +26,7 @@ namespace engine
 		return {
 			glm::vec4(_color, _intensity),
 			glm::vec4(0.0f),
-			glm::vec4(glm::normalize(_direction), static_cast<float>(LightType::Directional))
+			glm::vec4(glm::normalize(_walkDirection), static_cast<float>(LightType::Directional))
 		};
 	}
 

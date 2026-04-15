@@ -4,8 +4,9 @@
 #include "core/AppConfig.h"
 #include "core/Window.h"
 #include "core/EventCallbacks.h"
-#include "resources/AssetManager.h"
+#include "physics/PhysicsSystem.h"
 #include "renderer/Renderer.h"
+#include "resources/AssetManager.h"
 #include "scene/Scene.h"
 
 // Forward declarations
@@ -35,8 +36,9 @@ namespace engine
 	private:
 		AppConfig _config;
 		Window _window;
-		AssetManager _assets;
+		PhysicsSystem _physics;
 		Renderer _renderer;
+		AssetManager _assets;
 		Scene _scene;
 	};
 }

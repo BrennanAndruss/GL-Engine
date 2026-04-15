@@ -9,6 +9,11 @@
 
 namespace engine
 {
+	class Scene;
+}
+
+namespace engine
+{
 	class Object
 	{
 	public:
@@ -45,7 +50,12 @@ namespace engine
 			return nullptr;
 		}
 
+		void setScene(Scene* scene) { _scene = scene; }
+		Scene* getScene() const { return _scene; }
+
 	private:
+		Scene* _scene = nullptr;
+
 		std::vector<std::unique_ptr<Component>> _components;
 	};
 }

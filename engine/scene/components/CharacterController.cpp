@@ -1,23 +1,58 @@
 #include "scene/components/CharacterController.h"
 
+#include "physics/PhysicsSystem.h"
+#include "scene/Scene.h"
 #include "scene/Object.h"
 
 namespace engine
 {
-	void CharacterController::move(glm::vec3 delta)
+	void CharacterController::start()
 	{
-		_velocity.x = delta.x;
-		_velocity.z = delta.z;
+		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
+		
+		_shape = std::make_unique<btCapsuleShape>(radius, height - (2.0f * radius));
+
+		_ghostObject = new btPairCachingGhostObject();
+		_ghostObject->setCollisionShape(_shape.get());
+
+		btTransform t;
+		t.setIdentity();
+		t.setOrigin(PhysicsSystem::toBullet(owner->transform.translation));
+		_ghostObject->setWorldTransform(t);
+
+		// Set user pointer for callbacks
+		_ghostObject->setUserPointer(owner);
+		_ghostObject->setCollisionFlags(_ghostObject->getCollisionFlags() |
+			btCollisionObject::CF_CHARACTER_OBJECT);
+		_ghostObject->setActivationState(DISABLE_DEACTIVATION);
+
+		// Configure controller logic
+		float stepHeight = 0.45f;
+		_controller = new btKinematicCharacterController(_ghostObject, _shape.get(), stepHeight);
+		_controller->setUp(btVector3(0, 1, 0));
+		_controller->setGravity(btVector3(0, -10, 0));
+
+		// Add to world with filters
+		int group = btBroadphaseProxy::CharacterFilter;
+		int mask = btBroadphaseProxy::StaticFilter | btBroadphaseProxy::DefaultFilter;
+
+		physics->addCollisionObject(_ghostObject, group, mask);
+		physics->addAction(_controller);
 	}
 
 	void CharacterController::update(float deltaTime)
 	{
-		// Integrate position
-		owner->transform.translation += _velocity * deltaTime;
+		_controller->setWalkDirection(PhysicsSystem::toBullet(_walkDirection));
+
+		// Sync the engine transform with the physics world transform
+		btTransform t = _ghostObject->getWorldTransform();
+		owner->transform.translation = PhysicsSystem::toGlm(t.getOrigin());
+
+		_walkDirection = glm::vec3(0.0f);
 	}
 
-	void CharacterController::resolveCollisions()
+	void CharacterController::move(glm::vec3 direction)
 	{
-
+		_walkDirection = direction;
 	}
 }

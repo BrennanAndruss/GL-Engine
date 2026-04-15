@@ -44,7 +44,7 @@ namespace engine
 		LightData getLightData() const override;
 
 	private:
-		glm::vec3 _direction;
+		glm::vec3 _walkDirection;
 	};
 
 	class PointLight : public Light

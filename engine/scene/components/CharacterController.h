@@ -1,6 +1,10 @@
 #pragma once
 
+#include <btBulletDynamicsCommon.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
+#include <BulletDynamics/Character/btKinematicCharacterController.h>
 #include <glm/glm.hpp>
+#include <memory>
 #include "scene/components/Component.h"
 
 namespace engine
@@ -10,20 +14,17 @@ namespace engine
 	public:
 		float height = 2.0f;
 		float radius = 0.5f;
-		float slopeLimit = 45.0f;
 
-		void move(glm::vec3 delta);
+		void start() override;
 		void update(float deltaTime) override;
 
-		glm::vec3 getVelocity() const { return _velocity; }
-		// bool getIsGrounded() const { return isGrounded; }
+		void move(glm::vec3 delta);
 
 	private:
-		glm::vec3 _velocity = glm::vec3(0.0f);
-		glm::vec3 _targetVelocity = glm::vec3(0.0f);
-		bool isGrounded = false;
+		btPairCachingGhostObject* _ghostObject = nullptr;
+		btKinematicCharacterController* _controller = nullptr;
+		std::unique_ptr<btCapsuleShape> _shape;
 
-		void resolveCollisions();
-		// bool checkGrounded();
+		glm::vec3 _walkDirection = glm::vec3(0.0f);
 	};
 }

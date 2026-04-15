@@ -27,7 +27,7 @@ void PlayerController::update(float deltaTime)
 		input = input.x * camera->getRight() + input.z * camera->getForward();
 	}
 
-	_characterController->move(input);
+	_characterController->move(input * moveSpeed * deltaTime);
 
 	// Mouse look and click
 	glm::vec2 mouseDelta = engine::Input::getMouseDelta();

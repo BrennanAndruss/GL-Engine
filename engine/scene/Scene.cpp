@@ -20,7 +20,9 @@ namespace engine
 
 	Object& Scene::createObject(const std::string& name)
 	{
-		return *_objects.emplace_back(std::make_unique<Object>(name));
+		auto& object = _objects.emplace_back(std::make_unique<Object>(name));
+		object->setScene(this);
+		return *object;
 	}
 
 	Camera& Scene::createCamera(glm::vec3 position, float fov, float aspect, float near, float far)

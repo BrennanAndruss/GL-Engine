@@ -6,16 +6,16 @@
 
 namespace engine
 {
-	class BoxCollider : public Collider
+	class SphereCollider : public Collider
 	{
 	public:
 		glm::vec3 center = glm::vec3(0.0f);
-		glm::vec3 size = glm::vec3(1.0f);
+		float radius = 0.5f;
 
 		void start() override;
 		btCollisionShape* getShape() const override { return _shape.get(); }
 
 	private:
-		std::unique_ptr<btBoxShape> _shape;
+		std::unique_ptr<btSphereShape> _shape;
 	};
 }
