@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include "resources/Handle.h"
 
 // Forward declarations of resource types
 namespace engine
@@ -21,7 +22,7 @@ namespace engine
 	struct AssetPool
 	{
 		std::vector<std::unique_ptr<T>> assets;
-		std::unordered_map<std::string, size_t> nameToId;
+		std::unordered_map<std::string, Handle<T>> nameToHandle;
 	};
 
 	class AssetManager
@@ -30,21 +31,21 @@ namespace engine
 		AssetManager(const std::string& assetDir);
 		~AssetManager();
 
-		size_t loadShader(const std::string& name, const std::string& vertPath, const std::string& fragPath);
-		size_t loadTexture(const std::string& name, const std::string& path, bool alpha);
-		size_t loadMesh(const std::string& name, const std::string& path);
-		size_t loadMaterial(const std::string& name);
+		Handle<Shader> loadShader(const std::string& name, const std::string& vertPath, const std::string& fragPath);
+		Handle<Texture> loadTexture(const std::string& name, const std::string& path, bool alpha);
+		Handle<Mesh> loadMesh(const std::string& name, const std::string& path);
+		Handle<Material> loadMaterial(const std::string& name);
 
-		Shader* getShader(size_t id) const;
+		Shader* getShader(Handle<Shader> id) const;
 		Shader* getShader(const std::string& name) const;
 
-		Texture* getTexture(size_t id) const;
+		Texture* getTexture(Handle<Texture> id) const;
 		Texture* getTexture(const std::string& name) const;
 
-		Mesh* getMesh(size_t id) const;
+		Mesh* getMesh(Handle<Mesh> id) const;
 		Mesh* getMesh(const std::string& name) const;
 
-		Material* getMaterial(size_t id) const;
+		Material* getMaterial(Handle<Material> id) const;
 		Material* getMaterial(const std::string& name) const;
 
 	private:

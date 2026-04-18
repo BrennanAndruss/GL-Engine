@@ -24,7 +24,7 @@ void Collectable::onCollected()
 	auto* meshRenderer = owner->getComponent<engine::MeshRenderer>();
 	if (meshRenderer)
 	{
-		meshRenderer->materialId = collectedMatId;
+		meshRenderer->material = collectedMat;
 		isCollected = true;
 	}
 }

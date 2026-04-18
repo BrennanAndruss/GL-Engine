@@ -4,10 +4,11 @@
 #include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 #include <vector>
+#include <cstddef>
 
 namespace engine
 {
-	static constexpr size_t VERTEX_SIZE = 8;
+	static constexpr std::size_t VERTEX_SIZE = 8;
 
 	enum class Attrib
 	{
@@ -33,7 +34,7 @@ namespace engine
 
 	private:
 		std::vector<float> _vertBuf;
-		size_t _numIndices;
+		std::size_t _numIndices;
 		GLuint _vao, _vbo, _ebo;
 		BBox _bbox;
 	};

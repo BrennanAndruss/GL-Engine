@@ -20,35 +20,35 @@ void MyGame::init(engine::AssetManager& assets,
 {
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
-	size_t shaderId = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
+	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
 
 	std::cout << "Loading models...\n";
-	size_t cubeMeshId = assets.loadMesh("cube", "models/cube.obj");
+	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 
 	std::cout << "Loading materials...\n";
-	size_t grayMatId = assets.loadMaterial("grayMat");
-	auto* grayMat = assets.getMaterial(grayMatId);
-	grayMat->shaderId = shaderId;
-	grayMat->ambient = glm::vec3(0.2f, 0.2f, 0.2f);
-	grayMat->diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	grayMat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	grayMat->shininess = 32.0f;
+	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
+	auto* mat = assets.getMaterial(grayMat);
+	mat->shader = shader;
+	mat->ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+	mat->diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->shininess = 32.0f;
 
-	size_t redMatId = assets.loadMaterial("redMat");
-	auto* redMat = assets.getMaterial(redMatId);
-	redMat->shaderId = shaderId;
-	redMat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
-	redMat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
-	redMat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	redMat->shininess = 32.0f;
+	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
+	mat = assets.getMaterial(redMat);
+	mat->shader = shader;
+	mat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
+	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
+	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->shininess = 32.0f;
 
-	size_t greenMatId = assets.loadMaterial("greenMat");
-	auto* greenMat = assets.getMaterial(greenMatId);
-	greenMat->shaderId = shaderId;
-	greenMat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
-	greenMat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
-	greenMat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	greenMat->shininess = 32.0f;
+	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
+	mat = assets.getMaterial(greenMat);
+	mat->shader = shader;
+	mat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
+	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
+	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->shininess = 32.0f;
 
 	// Initialize scene
 	{
@@ -92,8 +92,8 @@ void MyGame::init(engine::AssetManager& assets,
 		cube->transform.translation = glm::vec3(0.0f, 2.0f, 0.0f);
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
-		meshRenderer.meshId = cubeMeshId;
-		meshRenderer.materialId = grayMatId;
+		meshRenderer.mesh = cubeMesh;
+		meshRenderer.material = grayMat;
 
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
@@ -108,8 +108,8 @@ void MyGame::init(engine::AssetManager& assets,
 		collider.size = floor.transform.scale;
 
 		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
-		meshRenderer.meshId = cubeMeshId;
-		meshRenderer.materialId = grayMatId;
+		meshRenderer.mesh = cubeMesh;
+		meshRenderer.material = grayMat;
 	}
 
 	// Initialize player
@@ -134,15 +134,16 @@ void MyGame::init(engine::AssetManager& assets,
 		obj.transform.scale = glm::vec3(0.25f);
 
 		auto& mr = obj.addComponent<engine::MeshRenderer>();
-		mr.meshId = cubeMeshId;
-		mr.materialId = redMatId;;
+		mr.mesh = cubeMesh;
+		mr.material = redMat;
 
 		auto& collider = obj.addComponent<engine::BoxCollider>();
 		collider.size = obj.transform.scale;
 		collider.isTrigger = true;
 
 		auto& collectable = obj.addComponent<Collectable>();
-		collectable.collectedMatId = greenMatId;
+		collectable.defaultMat = redMat;
+		collectable.collectedMat = greenMat;
 	}
 
 	// Configure render pipeline

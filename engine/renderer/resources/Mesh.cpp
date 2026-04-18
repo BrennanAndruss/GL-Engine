@@ -11,12 +11,12 @@ namespace engine
 		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 
 		// Allocate space for vertex data in a single buffer
-		size_t numVertices = shape.mesh.positions.size() / 3;
+		std::size_t numVertices = shape.mesh.positions.size() / 3;
 		_vertBuf.resize(numVertices * VERTEX_SIZE);
 
-		for (size_t i = 0; i < numVertices; i++)
+		for (std::size_t i = 0; i < numVertices; i++)
 		{
-			size_t vi = VERTEX_SIZE * i;
+			std::size_t vi = VERTEX_SIZE * i;
 			_vertBuf[vi++] = shape.mesh.positions[3 * i];
 			_vertBuf[vi++] = shape.mesh.positions[3 * i + 1];
 			_vertBuf[vi++] = shape.mesh.positions[3 * i + 2];
@@ -34,8 +34,8 @@ namespace engine
 		glBufferData(GL_ARRAY_BUFFER, _vertBuf.size() * sizeof(float), _vertBuf.data(), GL_STATIC_DRAW);
 
 		// Configure the vertex attributes
-		size_t stride = VERTEX_SIZE * sizeof(float);
-		size_t offset = 0;
+		std::size_t stride = VERTEX_SIZE * sizeof(float);
+		std::size_t offset = 0;
 		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::Position));
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)offset);
 		offset += 3 * sizeof(float);
@@ -63,7 +63,7 @@ namespace engine
 		_bbox.min = glm::vec3(FLT_MAX);
 		_bbox.max = glm::vec3(FLT_MIN);
 
-		for (size_t i = 0; i < positions.size(); i += 3)
+		for (std::size_t i = 0; i < positions.size(); i += 3)
 		{
 			_bbox.min.x = std::min(_bbox.min.x, positions[i]);
 			_bbox.min.y = std::min(_bbox.min.y, positions[i + 1]);

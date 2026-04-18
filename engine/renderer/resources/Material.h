@@ -2,14 +2,21 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include "resources/Handle.h"
+
+namespace engine
+{
+	class Shader;
+	class Texture;
+}
 
 namespace engine
 {
 	struct Material
 	{
-		size_t shaderId = 0;
-		size_t difTextureId = 0;
-		size_t specTextureId = 0;
+		Handle<Shader> shader;
+		Handle<Texture> difTex;
+		Handle<Texture> specTex;
 
 		float shininess = 1.0f;
 		glm::vec3 ambient = glm::vec3(0.0f);

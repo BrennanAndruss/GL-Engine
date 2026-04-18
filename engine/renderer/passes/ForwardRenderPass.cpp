@@ -19,9 +19,9 @@ namespace engine
 			auto* meshRenderer = object->getComponent<MeshRenderer>();
 			if (!meshRenderer) continue;
 
-			auto* mesh = assets.getMesh(meshRenderer->meshId);
-			auto* mat = assets.getMaterial(meshRenderer->materialId);
-			auto* shader = assets.getShader(mat->shaderId);
+			auto* mesh = assets.getMesh(meshRenderer->mesh);
+			auto* mat = assets.getMaterial(meshRenderer->material);
+			auto* shader = assets.getShader(mat->shader);
 			if (!mesh || !mat || !shader) continue;
 
 			// Set simple shader uniforms

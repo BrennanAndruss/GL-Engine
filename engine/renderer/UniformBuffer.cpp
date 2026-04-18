@@ -2,7 +2,7 @@
 
 namespace engine
 {
-	UniformBuffer::UniformBuffer(size_t size, GLuint bindingPoint)
+	UniformBuffer::UniformBuffer(std::size_t size, GLuint bindingPoint)
 	{
 		// Initialize UBO and allocate memory
 		glGenBuffers(1, &_uboId);
@@ -18,7 +18,7 @@ namespace engine
 			glDeleteBuffers(1, &_uboId);
 	}
 
-	void UniformBuffer::update(const void* data, size_t size, size_t offset)
+	void UniformBuffer::update(const void* data, std::size_t size, std::size_t offset)
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, _uboId);
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
