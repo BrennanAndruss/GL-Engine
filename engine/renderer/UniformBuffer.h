@@ -5,6 +5,12 @@
 
 namespace engine
 {
+	enum class UBOBindings
+	{
+		Camera,
+		Light
+	};
+
 	class UniformBuffer
 	{
 	public:

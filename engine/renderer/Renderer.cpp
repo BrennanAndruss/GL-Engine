@@ -9,8 +9,8 @@ namespace engine
 	Renderer::Renderer(int width, int height) : 
 		_width(width), 
 		_height(height), 
-		_cameraUBO(sizeof(CameraData), 0),
-		_lightsUBO(MAX_LIGHTS * sizeof(LightData), 1) {}
+		_cameraUBO(sizeof(CameraData), static_cast<GLuint>(UBOBindings::Camera)),
+		_lightsUBO(MAX_LIGHTS * sizeof(LightData), static_cast<GLuint>(UBOBindings::Light)) {}
 
 	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
 	{

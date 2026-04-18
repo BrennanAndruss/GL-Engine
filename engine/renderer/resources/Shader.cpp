@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cassert>
+#include "renderer/UniformBuffer.h"
 
 namespace engine
 {
@@ -55,6 +56,19 @@ namespace engine
 		GLuint vertShader = compileShader(GL_VERTEX_SHADER, vertSrc);
 		GLuint fragShader = compileShader(GL_FRAGMENT_SHADER, fragSrc);
 		_pid = linkProgram(vertShader, fragShader);
+
+		// Bind uniform blocks
+		GLuint cameraIndex = glGetUniformBlockIndex(_pid, "CameraData");
+		GLuint lightIndex = glGetUniformBlockIndex(_pid, "LightData");
+
+		if (cameraIndex != GL_INVALID_INDEX)
+		{
+			glUniformBlockBinding(_pid, cameraIndex, static_cast<GLuint>(UBOBindings::Camera));
+		}
+		if (lightIndex != GL_INVALID_INDEX)
+		{
+			glUniformBlockBinding(_pid, lightIndex, static_cast<GLuint>(UBOBindings::Light));
+		}
 	}
 
 	void Shader::bind() const

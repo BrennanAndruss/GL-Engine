@@ -1,4 +1,4 @@
-#version 420 core
+#version 410 core
 
 #define MAX_LIGHTS 16
 
@@ -26,14 +26,14 @@ struct Light
 const int LIGHT_DIRECTIONAL = 0;
 const int LIGHT_POINT = 1;
 
-layout (std140, binding = 0) uniform CameraData
+layout (std140) uniform CameraData
 {
 	mat4 view;
 	mat4 projection;
 	vec4 cameraPos;
 };
 
-layout(std140, binding = 1) uniform LightData
+layout(std140) uniform LightData
 {
 	Light lights[MAX_LIGHTS];
 };
