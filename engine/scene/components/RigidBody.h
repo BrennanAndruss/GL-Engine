@@ -8,7 +8,7 @@ namespace engine
 	class RigidBody : public Component
 	{
 	public:
-		float _mass = 1.0f;
+		float mass = 1.0f;
 
 		void start() override;
 		void update(float deltaTime) override;

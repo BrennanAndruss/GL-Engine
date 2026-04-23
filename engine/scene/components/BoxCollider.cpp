@@ -15,7 +15,8 @@ namespace engine
 		// If object doesn't have a RigidBody, register as static collision object
 		if (!owner->getComponent<RigidBody>())
 		{
-			_object = physics->createCollisionObject(_shape.get(), owner->transform.translation, isTrigger);
+			_object = physics->createCollisionObject(
+				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
 
 			// Keep trigger objects active
 			if (isTrigger)

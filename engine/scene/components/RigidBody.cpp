@@ -14,7 +14,8 @@ namespace engine
 
 		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
 		_body = physics->createBody(
-			_collider->getShape(), owner->transform.translation, _mass, _collider->isTrigger
+			_collider->getShape(), owner->transform.getWorldPosition(), 
+			mass, _collider->isTrigger
 		);
 
 		// Set user pointer for callbacks
@@ -27,7 +28,7 @@ namespace engine
 		_body->getMotionState()->getWorldTransform(t);
 
 		// Sync the engine transform with the physics world transform
-		owner->transform.translation = PhysicsSystem::toGlm(t.getOrigin());
-		/*owner->transform.translation = PhysicsSystem::toGlm();*/ // need to handle quats
+		owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
+		owner->transform.setRotation(PhysicsSystem::toGlm(t.getRotation()));
 	}
 }

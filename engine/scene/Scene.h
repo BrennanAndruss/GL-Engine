@@ -24,11 +24,17 @@ namespace engine
 		void setPhysicsSystem(PhysicsSystem* physics) { _physics = physics; }
 		PhysicsSystem* getPhysicsSystem() const { return _physics; }
 
-		Camera& createCamera(glm::vec3 position, float fov, float aspect, float near = 0.1f, float far = 100.0f);
+		Camera& createCamera(glm::vec3 position, float fov, float aspect, 
+			float near = 0.1f, float far = 100.0f);
 		Camera* getCamera() const { return _camera.get(); }
 
 		Object& createObject(const std::string& name);
+
+		// All objects for flat traversal
 		const std::vector<std::unique_ptr<Object>>& getObjects() const { return _objects; }
+
+		// Root objects for hierarchical traversal
+		std::vector<Object*> getRootObjects() const;
 
 		template<typename T, typename... Args>
 		T& createLight(Args&&... args)

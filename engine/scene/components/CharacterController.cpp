@@ -17,7 +17,7 @@ namespace engine
 
 		btTransform t;
 		t.setIdentity();
-		t.setOrigin(PhysicsSystem::toBullet(owner->transform.translation));
+		t.setOrigin(PhysicsSystem::toBullet(owner->transform.getWorldPosition()));
 		_ghostObject->setWorldTransform(t);
 
 		// Set user pointer for callbacks
@@ -46,7 +46,8 @@ namespace engine
 
 		// Sync the engine transform with the physics world transform
 		btTransform t = _ghostObject->getWorldTransform();
-		owner->transform.translation = PhysicsSystem::toGlm(t.getOrigin());
+		owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
+		owner->transform.setRotation(PhysicsSystem::toGlm(t.getRotation()));
 
 		_walkDirection = glm::vec3(0.0f);
 	}
