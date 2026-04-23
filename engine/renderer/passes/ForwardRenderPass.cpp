@@ -26,7 +26,7 @@ namespace engine
 
 			// Set simple shader uniforms
 			shader->bind();
-			shader->setMat4("model", object->transform.getMatrix());
+			shader->setMat4("model", object->transform.getWorldMatrix());
 			shader->setVec3("mat.ambient", mat->ambient);
 			shader->setVec3("mat.diffuse", mat->diffuse);
 			shader->setVec3("mat.specular", mat->specular);

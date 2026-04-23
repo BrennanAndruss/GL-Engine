@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "scene/Transform.h"
 
 namespace engine
 {
@@ -24,21 +25,23 @@ namespace engine
 		void setFov(float fov);
 		void setAspect(float aspect);
 
+		void translate(glm::vec3 translation);
+		void rotate(float pitchDelta, float yawDelta);
+
 		const CameraData& getCameraData() const { return _cameraData; }
-		glm::vec3 getPosition() const { return _position; }
-		glm::vec3 getForward() const { return _forward; }
-		glm::vec3 getRight() const { return _right; }
-		glm::vec3 getUp() const { return _up; }
+		glm::vec3 getPosition() const { return _transform.getWorldPosition(); }
+		glm::vec3 getForward() const { return _transform.forward(); }
+		glm::vec3 getRight() const { return _transform.right(); }
+		glm::vec3 getUp() const { return _transform.up(); }
 
 	private:
-		glm::vec3 _position;
+		Transform _transform;
+
 		float _pitch, _yaw;
 		float _fov, _aspect, _near, _far;
-		glm::vec3 _forward, _up, _right;
 		
 		CameraData _cameraData;
 
-		void updateCameraVectors();
 		void updateViewMatrix();
 		void updateProjectionMatrix();
 	};
