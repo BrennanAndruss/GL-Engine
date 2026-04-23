@@ -4,6 +4,7 @@
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <BulletDynamics/Character/btKinematicCharacterController.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <functional>
 #include <unordered_map>
 #include <set>
@@ -41,6 +42,9 @@ namespace engine
 		// Type conversion helpers
 		static glm::vec3 toGlm(const btVector3& v) { return glm::vec3(v.x(), v.y(), v.z()); }
 		static btVector3 toBullet(glm::vec3 v) { return btVector3(v.x, v.y, v.z); }
+
+		static glm::quat toGlm(const btQuaternion& q) { return glm::quat(q.x(), q.y(), q.z(), q.w()); }
+		static btQuaternion toBullet(glm::quat q) { return btQuaternion(q.x, q.y, q.z, q.w);}
 
 	private:
 		// Bullet world components

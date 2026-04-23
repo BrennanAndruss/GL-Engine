@@ -89,7 +89,7 @@ void MyGame::init(engine::AssetManager& assets,
 	
 	{
 		cube = &scene.createObject("Cube");
-		cube->transform.translation = glm::vec3(0.0f, 2.0f, 0.0f);
+		cube->transform.setPosition(glm::vec3(0.0f, 2.0f, 0.0f));
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
@@ -101,11 +101,11 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		auto& floor = scene.createObject("Floor");
-		floor.transform.translation = glm::vec3(0.0f, -2.0f, 0.0f);
-		floor.transform.scale = glm::vec3(20.0f, 2.0f, 20.0f);
+		floor.transform.setPosition(glm::vec3(0.0f, -2.0f, 0.0f));
+		floor.transform.setScale(glm::vec3(20.0f, 2.0f, 20.0f));
 
 		auto& collider = floor.addComponent<engine::BoxCollider>();
-		collider.size = floor.transform.scale;
+		collider.size = floor.transform.getScale();
 
 		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
@@ -115,7 +115,7 @@ void MyGame::init(engine::AssetManager& assets,
 	// Initialize player
 	{
 		auto& player = scene.createObject("Player");
-		player.transform.translation = glm::vec3(0.0f, 5.0f, 5.0f);
+		player.transform.setPosition(glm::vec3(0.0f, 5.0f, 5.0f));
 
 		auto& charController = player.addComponent<engine::CharacterController>();
 		charController.height = 1.0f;
@@ -130,15 +130,15 @@ void MyGame::init(engine::AssetManager& assets,
 	for (int i = 0; i < 20; i++)
 	{
 		auto& obj = scene.createObject("Collectable" + i);
-		obj.transform.translation = glm::vec3(i * 2.0f - 20.0f, 1.0f, -5.0f);
-		obj.transform.scale = glm::vec3(0.25f);
+		obj.transform.setPosition(glm::vec3(i * 2.0f - 20.0f, 1.0f, -5.0f));
+		obj.transform.setScale(glm::vec3(0.25f));
 
 		auto& mr = obj.addComponent<engine::MeshRenderer>();
 		mr.mesh = cubeMesh;
 		mr.material = redMat;
 
 		auto& collider = obj.addComponent<engine::BoxCollider>();
-		collider.size = obj.transform.scale;
+		collider.size = obj.transform.getScale();
 		collider.isTrigger = true;
 
 		auto& collectable = obj.addComponent<Collectable>();
@@ -154,5 +154,5 @@ void MyGame::init(engine::AssetManager& assets,
 
 void MyGame::update(float deltaTime)
 {
-	cube->transform.rotation += glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5);
+	cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (5 * deltaTime));
 }

@@ -20,6 +20,4 @@ public:
 
 private:
 	engine::CharacterController* _characterController = nullptr;
-	float _yaw = 0.0f;
-	float _pitch = 0.0f;
 };

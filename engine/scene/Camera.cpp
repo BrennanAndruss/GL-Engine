@@ -3,7 +3,6 @@
 namespace engine
 {
 	Camera::Camera(glm::vec3 position, float fov, float aspect, float near, float far) :
-		_position(position),
 		_pitch(0.0f),
 		_yaw(0.0f),
 		_fov(fov),
@@ -11,14 +10,14 @@ namespace engine
 		_near(near),
 		_far(far)
 	{
-		updateCameraVectors();
+		_transform.setPosition(position);
 		updateViewMatrix();
 		updateProjectionMatrix();
 	}
 
 	void Camera::setPosition(glm::vec3 position)
 	{
-		_position = position;
+		_transform.setPosition(position);
 		updateViewMatrix();
 	}
 
@@ -28,7 +27,11 @@ namespace engine
 		_pitch = glm::clamp(pitch, -89.0f, 89.0f);
 		_yaw = yaw;
 
-		updateCameraVectors();
+		// Construct rotation quaternion from Euler angles
+		glm::quat qPitch = glm::angleAxis(glm::radians(_pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::quat qYaw = glm::angleAxis(glm::radians(_yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+		_transform.setRotation(qYaw * qPitch);
+
 		updateViewMatrix();
 	}
 
@@ -44,27 +47,21 @@ namespace engine
 		updateProjectionMatrix();
 	}
 
-	void Camera::updateCameraVectors()
+	void Camera::translate(glm::vec3 translation)
 	{
-		// Convert from degrees to radians
-		float p = glm::radians(_pitch);
-		float y = glm::radians(_yaw);
+		_transform.translate(translation);
+		updateViewMatrix();
+	}
 
-		// Calculate new orthonormal basis with forward = -Z at yaw = 0
-		_forward.x = cos(p) * sin(y);
-		_forward.y = sin(p);
-		_forward.z = -cos(p) * cos(y);
-		
-		glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
-		_forward = glm::normalize(_forward);
-		_right = glm::normalize(glm::cross(_forward, worldUp));
-		_up = glm::cross(_right, _forward);
+	void Camera::rotate(float pitchDelta, float yawDelta)
+	{
+		setRotation(_pitch + pitchDelta, _yaw + yawDelta);
 	}
 
 	void Camera::updateViewMatrix()
 	{
-		_cameraData.view = glm::lookAt(_position, _position + _forward, _up);
-		_cameraData.position = glm::vec4(_position, 0.0f);
+		_cameraData.view = glm::inverse(_transform.getWorldMatrix());
+		_cameraData.position = glm::vec4(_transform.getWorldPosition(), 1.0f);
 	}
 
 	void Camera::updateProjectionMatrix()

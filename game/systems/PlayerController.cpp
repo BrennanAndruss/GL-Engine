@@ -31,15 +31,17 @@ void PlayerController::update(float deltaTime)
 
 	// Mouse look and click
 	glm::vec2 mouseDelta = engine::Input::getMouseDelta();
+	float yawDelta = 0.0f, pitchDelta = 0.0f;
 	if (engine::Input::isMouseDown(GLFW_MOUSE_BUTTON_LEFT))
 	{
-		_yaw += mouseDelta.x * sensitivity;
-		_pitch -= mouseDelta.y * sensitivity;
+		yawDelta = mouseDelta.x * sensitivity;
+		pitchDelta = mouseDelta.y * sensitivity;
 	}
 
 	if (camera)
 	{
-		camera->setRotation(_pitch, _yaw);
-		camera->setPosition(owner->transform.translation + glm::vec3(0.0f, eyeHeight, 0.0f));
+		camera->rotate(pitchDelta, yawDelta);
+		camera->setPosition(
+			owner->transform.getWorldPosition() + glm::vec3(0.0f, eyeHeight, 0.0f));
 	}
 }

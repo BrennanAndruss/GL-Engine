@@ -25,6 +25,19 @@ namespace engine
 		return *object;
 	}
 
+	std::vector<Object*> Scene::getRootObjects() const
+	{
+		std::vector<Object*> roots;
+		for (const auto& object : _objects)
+		{
+			if (!object->transform.getParent())
+			{
+				roots.push_back(object.get());
+			}
+		}
+		return roots;
+	}
+
 	Camera& Scene::createCamera(glm::vec3 position, float fov, float aspect, float near, float far)
 	{
 		_camera = std::make_unique<Camera>(position, fov, aspect, near, far);
