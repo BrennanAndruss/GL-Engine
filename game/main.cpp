@@ -8,6 +8,8 @@ int main() {
     config.height = 480;
 
     engine::Application app(config);
+    // Blue background (132, 217, 224)
+    app.setClearColor(132.0f / 255.0f, 217.0f / 255.0f, 224.0f / 255.0f, 1.0f);
     app.run(std::make_unique<MyGame>());
     return 0;
 }
