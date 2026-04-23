@@ -4,6 +4,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "resources/AssetManager.h"
+#include "resources/Heightmap.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
@@ -22,10 +23,17 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
 
+	std::cout << "Loading textures...\n";
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
+	auto* heightmap = assets.getHeightmap(terrainHeightmap);
+
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
-	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 50, 2.0f);
-	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", "textures/heightmaps/HM_Unity02.png", 511, 10.0f, 25.0f);
+
+	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
+	float planeLen = 100.0f;
+	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
+	
 	std::cout << "Loading materials...\n";
 	//make plane
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
@@ -102,18 +110,13 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-		auto& floor = scene.createObject("Floor");
-		floor.transform.setPosition(glm::vec3(0.0f, -4.0f, 0.0f));
-		floor.transform.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
+		auto& terrain = scene.createObject("Floor");
 
-		auto& collider = floor.addComponent<engine::BoxCollider>();
-		collider.size = floor.transform.getScale();
-		collider.size.x *= 10.0f;
-		collider.size.y *= 1.0f; //adjusting the collider a bit so we can walk on terrain
-		collider.size.z *= 10.0f;
+		auto& collider = terrain.addComponent<engine::HeightmapCollider>();
+		collider.heightmap = heightmap;
+		collider.planeLen = planeLen;
 
-
-		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
+		auto& meshRenderer = terrain.addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = terrainMesh;
 		meshRenderer.material = grassMat;
 	}
@@ -121,7 +124,7 @@ void MyGame::init(engine::AssetManager& assets,
 	// Initialize player
 	{
 		auto& player = scene.createObject("Player");
-		player.transform.setPosition(glm::vec3(0.0f, 5.0f, 5.0f));
+		player.transform.setPosition(glm::vec3(5.0f, 10.0f, 0.0f));
 
 		auto& charController = player.addComponent<engine::CharacterController>();
 		charController.height = 1.0f;
