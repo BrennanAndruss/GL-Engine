@@ -5,3 +5,4 @@
 #include "scene/components/RigidBody.h"
 #include "scene/components/BoxCollider.h"
 #include "scene/components/SphereCollider.h"
+#include "scene/components/HeightmapCollider.h"

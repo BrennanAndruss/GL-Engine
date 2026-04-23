@@ -4,6 +4,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "resources/AssetManager.h"
+#include "resources/Heightmap.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
@@ -22,16 +23,25 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
 
+	std::cout << "Loading textures...\n";
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
+	auto* heightmap = assets.getHeightmap(terrainHeightmap);
+
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 
+	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
+	float planeLen = 100.0f;
+	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
+	
 	std::cout << "Loading materials...\n";
-	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
-	auto* mat = assets.getMaterial(grayMat);
+	//make plane
+	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
+	auto* mat = assets.getMaterial(grassMat);
 	mat->shader = shader;
-	mat->ambient = glm::vec3(0.2f, 0.2f, 0.2f);
-	mat->diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
+	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
+	mat->specular = glm::vec3(0.5, 0.5, 0.5);
 	mat->shininess = 32.0f;
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
@@ -93,29 +103,28 @@ void MyGame::init(engine::AssetManager& assets,
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = grayMat;
+		meshRenderer.material = grassMat;
 
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
 	}
 
 	{
-		auto& floor = scene.createObject("Floor");
-		floor.transform.setPosition(glm::vec3(0.0f, -2.0f, 0.0f));
-		floor.transform.setScale(glm::vec3(20.0f, 2.0f, 20.0f));
+		auto& terrain = scene.createObject("Floor");
 
-		auto& collider = floor.addComponent<engine::BoxCollider>();
-		collider.size = floor.transform.getScale();
+		auto& collider = terrain.addComponent<engine::HeightmapCollider>();
+		collider.heightmap = heightmap;
+		collider.planeLen = planeLen;
 
-		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = grayMat;
+		auto& meshRenderer = terrain.addComponent<engine::MeshRenderer>();
+		meshRenderer.mesh = terrainMesh;
+		meshRenderer.material = grassMat;
 	}
 
 	// Initialize player
 	{
 		auto& player = scene.createObject("Player");
-		player.transform.setPosition(glm::vec3(0.0f, 5.0f, 5.0f));
+		player.transform.setPosition(glm::vec3(5.0f, 10.0f, 0.0f));
 
 		auto& charController = player.addComponent<engine::CharacterController>();
 		charController.height = 1.0f;
