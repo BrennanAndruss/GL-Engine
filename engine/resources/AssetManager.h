@@ -30,12 +30,20 @@ namespace engine
 	public:
 		AssetManager(const std::string& assetDir);
 		~AssetManager();
-
+		// Loading
 		Handle<Shader> loadShader(const std::string& name, const std::string& vertPath, const std::string& fragPath);
 		Handle<Texture> loadTexture(const std::string& name, const std::string& path, bool alpha);
 		Handle<Mesh> loadMesh(const std::string& name, const std::string& path);
 		Handle<Material> loadMaterial(const std::string& name);
 
+		// Generation 
+		Handle<Mesh> createPlaneMesh(const std::string& name, int planeRes, float planeLen);
+		Handle<Mesh> createHeightmapMesh(const std::string& name,
+								 const std::string& heightmapPath,
+								 int planeRes,
+								 float planeLen,
+								 float heightScale);
+		
 		Shader* getShader(Handle<Shader> id) const;
 		Shader* getShader(const std::string& name) const;
 

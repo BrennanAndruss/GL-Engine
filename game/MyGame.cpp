@@ -24,14 +24,16 @@ void MyGame::init(engine::AssetManager& assets,
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
-
+	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 50, 2.0f);
+	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", "textures/heightmaps/HM_Unity02.png", 511, 10.0f, 25.0f);
 	std::cout << "Loading materials...\n";
-	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
-	auto* mat = assets.getMaterial(grayMat);
+	//make plane
+	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
+	auto* mat = assets.getMaterial(grassMat);
 	mat->shader = shader;
-	mat->ambient = glm::vec3(0.2f, 0.2f, 0.2f);
-	mat->diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
+	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
+	mat->specular = glm::vec3(0.5, 0.5, 0.5);
 	mat->shininess = 32.0f;
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
@@ -93,7 +95,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = grayMat;
+		meshRenderer.material = grassMat;
 
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
@@ -101,15 +103,19 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		auto& floor = scene.createObject("Floor");
-		floor.transform.setPosition(glm::vec3(0.0f, -2.0f, 0.0f));
-		floor.transform.setScale(glm::vec3(20.0f, 2.0f, 20.0f));
+		floor.transform.setPosition(glm::vec3(0.0f, -4.0f, 0.0f));
+		floor.transform.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
 
 		auto& collider = floor.addComponent<engine::BoxCollider>();
 		collider.size = floor.transform.getScale();
+		collider.size.x *= 10.0f;
+		collider.size.y *= 1.0f; //adjusting the collider a bit so we can walk on terrain
+		collider.size.z *= 10.0f;
+
 
 		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = grayMat;
+		meshRenderer.mesh = terrainMesh;
+		meshRenderer.material = grassMat;
 	}
 
 	// Initialize player
