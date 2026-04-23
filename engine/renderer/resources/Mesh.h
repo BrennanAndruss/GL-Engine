@@ -27,15 +27,29 @@ namespace engine
 	{
 	public:
 		Mesh(const tinyobj::shape_t& shape);
+
+		Mesh(const std::vector<glm::vec3>& positions,
+			 const std::vector<glm::vec3>& normals,
+			 const std::vector<glm::vec2>& texcoords,
+			 const std::vector<unsigned int>& indices);
+
 		~Mesh() = default;
 
 		BBox getBBox() const { return _bbox; }
 		void draw() const;
 
 	private:
+		void setupMesh(const std::vector<glm::vec3>& positions,
+					   const std::vector<glm::vec3>& normals,
+					   const std::vector<glm::vec2>& texcoords,
+					   const std::vector<unsigned int>& indices);
+
+		void computeBBox(const std::vector<glm::vec3>& positions);
+
+	private:
 		std::vector<float> _vertBuf;
-		std::size_t _numIndices;
-		GLuint _vao, _vbo, _ebo;
+		std::size_t _numIndices = 0;
+		GLuint _vao = 0, _vbo = 0, _ebo = 0;
 		BBox _bbox;
 	};
 }
