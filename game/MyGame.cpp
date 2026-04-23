@@ -25,6 +25,7 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 50, 2.0f);
+	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", "textures/heightmaps/HM_Unity02.png", 511, 25.0f, 25.0f);
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
 	auto* mat = assets.getMaterial(grayMat);
@@ -101,14 +102,14 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		auto& floor = scene.createObject("Floor");
-		floor.transform.setPosition(glm::vec3(0.0f, -2.0f, 0.0f));
-		floor.transform.setScale(glm::vec3(20.0f, 2.0f, 20.0f));
+		floor.transform.setPosition(glm::vec3(0.0f, -4.0f, 0.0f));
+		floor.transform.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
 
 		auto& collider = floor.addComponent<engine::BoxCollider>();
 		collider.size = floor.transform.getScale();
 
 		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = planeMesh;
+		meshRenderer.mesh = terrainMesh;
 		meshRenderer.material = grayMat;
 	}
 
