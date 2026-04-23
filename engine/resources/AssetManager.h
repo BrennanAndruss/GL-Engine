@@ -38,15 +38,19 @@ namespace engine
 
 		Shader* getShader(Handle<Shader> id) const;
 		Shader* getShader(const std::string& name) const;
+		Handle<Shader> getShaderHandle(const std::string& name) const;
 
 		Texture* getTexture(Handle<Texture> id) const;
 		Texture* getTexture(const std::string& name) const;
+		Handle<Texture> getTextureHandle(const std::string& name) const;
 
 		Mesh* getMesh(Handle<Mesh> id) const;
 		Mesh* getMesh(const std::string& name) const;
+		Handle<Mesh> getMeshHandle(const std::string& name) const;
 
 		Material* getMaterial(Handle<Material> id) const;
 		Material* getMaterial(const std::string& name) const;
+		Handle<Material> getMaterialHandle(const std::string& name) const;
 
 	private:
 		AssetPool<Shader> _shaders;

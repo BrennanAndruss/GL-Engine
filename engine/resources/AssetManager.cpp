@@ -131,6 +131,11 @@ namespace engine
 		return getShader(_shaders.nameToHandle.at(name));
 	}
 
+	Handle<Shader> AssetManager::getShaderHandle(const std::string& name) const
+	{
+		return _shaders.nameToHandle.at(name);
+	}
+
 	Texture* AssetManager::getTexture(Handle<Texture> handle) const
 	{
 		assert(handle.index < _textures.assets.size() && "Texture index out of range: " + handle.index);
@@ -140,6 +145,11 @@ namespace engine
 	Texture* AssetManager::getTexture(const std::string& name) const
 	{
 		return getTexture(_textures.nameToHandle.at(name));
+	}
+
+	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
+	{
+		return _textures.nameToHandle.at(name);
 	}
 
 	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
@@ -153,6 +163,11 @@ namespace engine
 		return getMesh(_meshes.nameToHandle.at(name));
 	}
 
+	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
+	{
+		return _meshes.nameToHandle.at(name);
+	}
+
 	Material* AssetManager::getMaterial(Handle<Material> handle) const
 	{
 		assert(handle.index < _materials.assets.size() && "Material index out of range: " + handle.index);
@@ -162,5 +177,10 @@ namespace engine
 	Material* AssetManager::getMaterial(const std::string& name) const
 	{
 		return getMaterial(_materials.nameToHandle.at(name));
+	}
+
+	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
+	{
+		return _materials.nameToHandle.at(name);
 	}
 }

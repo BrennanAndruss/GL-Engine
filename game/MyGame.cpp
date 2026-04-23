@@ -127,9 +127,9 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Initialize collectables
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 0; i++)
 	{
-		auto& obj = scene.createObject("Collectable" + i);
+		auto& obj = scene.createObject("Collectable" + std::to_string(i));
 		obj.transform.setPosition(glm::vec3(i * 2.0f - 20.0f, 1.0f, -5.0f));
 		obj.transform.setScale(glm::vec3(0.25f));
 
@@ -154,5 +154,5 @@ void MyGame::init(engine::AssetManager& assets,
 
 void MyGame::update(float deltaTime)
 {
-	cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (5 * deltaTime));
+	cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
 }

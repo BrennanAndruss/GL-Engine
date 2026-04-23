@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include "core/AppConfig.h"
+#include "editor/Editor.h"
 #include "core/Window.h"
 #include "core/EventCallbacks.h"
 #include "physics/PhysicsSystem.h"
@@ -36,6 +37,7 @@ namespace engine
 	private:
 		AppConfig _config;
 		Window _window;
+		Editor _editor;
 		PhysicsSystem _physics;
 		Renderer _renderer;
 		AssetManager _assets;
