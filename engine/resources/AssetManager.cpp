@@ -112,39 +112,47 @@ namespace engine
 		return handle;
 	}
 
-	Handle<Mesh> AssetManager::createPlaneMesh(const std::string& name, float size)
+	Handle<Mesh> AssetManager::createPlaneMesh(const std::string& name, int planeRes, float planeLen)
 	{
-		float halfSize = size * 0.5f;
+		float halfLen = planeLen * 0.5f;
+		float stepLen = planeLen / static_cast<float>(planeRes);
 
-		std::vector<glm::vec3> positions =
-		{
-			glm::vec3(-halfSize, 0.0f, -halfSize),
-			glm::vec3( halfSize, 0.0f, -halfSize),
-			glm::vec3( halfSize, 0.0f,  halfSize),
-			glm::vec3(-halfSize, 0.0f,  halfSize)
-		};
+		std::vector<glm::vec3> positions((planeRes + 1) * (planeRes + 1));
+		std::vector<glm::vec3> normals((planeRes + 1) * (planeRes + 1), glm::vec3(0.0f, 1.0f, 0.0f));
+		std::vector<glm::vec2> texcoords((planeRes + 1) * (planeRes + 1));
 
-		std::vector<glm::vec3> normals =
+		for (int i = 0, x = 0; x <= planeRes; ++x)
 		{
-			glm::vec3(0.0f, 1.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f)
-		};
+			for (int z = 0; z <= planeRes; ++z, ++i)
+			{
+				positions[i] = glm::vec3(
+					x * stepLen - halfLen,
+					0.0f,
+					z * stepLen - halfLen
+				);
 
-		std::vector<glm::vec2> texcoords =
-		{
-			glm::vec2(0.0f, 0.0f),
-			glm::vec2(1.0f, 0.0f),
-			glm::vec2(1.0f, 1.0f),
-			glm::vec2(0.0f, 1.0f)
-		};
+				texcoords[i] = glm::vec2(
+					static_cast<float>(x) / planeRes,
+					static_cast<float>(z) / planeRes
+				);
+			}
+		}
 
-		std::vector<unsigned int> indices =
+		std::vector<unsigned int> indices(planeRes * planeRes * 6);
+
+		for (int ti = 0, vi = 0, x = 0; x < planeRes; ++x, ++vi)
 		{
-			0, 2, 1,
-			0, 3, 2
-		};
+			for (int z = 0; z < planeRes; ++z, ti += 6, ++vi)
+			{
+				indices[ti + 0] = vi;
+				indices[ti + 1] = vi + 1;
+				indices[ti + 2] = vi + planeRes + 1;
+
+				indices[ti + 3] = vi + planeRes + 1;
+				indices[ti + 4] = vi + 1;
+				indices[ti + 5] = vi + planeRes + 2;
+			}
+		}
 
 		_meshes.assets.emplace_back(std::make_unique<Mesh>(positions, normals, texcoords, indices));
 		Handle<Mesh> handle = { _meshes.assets.size() - 1 };

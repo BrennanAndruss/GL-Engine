@@ -24,8 +24,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
-	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 2.0f);
-
+	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 50, 2.0f);
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
 	auto* mat = assets.getMaterial(grayMat);
