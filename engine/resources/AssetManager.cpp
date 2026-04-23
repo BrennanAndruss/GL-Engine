@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cassert>
 #include <stb_image.h>
+#include <glm/glm.hpp>
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
 #include "renderer/resources/Mesh.h"
@@ -105,6 +106,47 @@ namespace engine
 		}
 
 		_meshes.assets.emplace_back(std::make_unique<Mesh>(shapes[0]));
+		Handle<Mesh> handle = { _meshes.assets.size() - 1 };
+		_meshes.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
+	Handle<Mesh> AssetManager::createPlaneMesh(const std::string& name, float size)
+	{
+		float halfSize = size * 0.5f;
+
+		std::vector<glm::vec3> positions =
+		{
+			glm::vec3(-halfSize, 0.0f, -halfSize),
+			glm::vec3( halfSize, 0.0f, -halfSize),
+			glm::vec3( halfSize, 0.0f,  halfSize),
+			glm::vec3(-halfSize, 0.0f,  halfSize)
+		};
+
+		std::vector<glm::vec3> normals =
+		{
+			glm::vec3(0.0f, 1.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+		};
+
+		std::vector<glm::vec2> texcoords =
+		{
+			glm::vec2(0.0f, 0.0f),
+			glm::vec2(1.0f, 0.0f),
+			glm::vec2(1.0f, 1.0f),
+			glm::vec2(0.0f, 1.0f)
+		};
+
+		std::vector<unsigned int> indices =
+		{
+			0, 2, 1,
+			0, 3, 2
+		};
+
+		_meshes.assets.emplace_back(std::make_unique<Mesh>(positions, normals, texcoords, indices));
 		Handle<Mesh> handle = { _meshes.assets.size() - 1 };
 		_meshes.nameToHandle[name] = handle;
 

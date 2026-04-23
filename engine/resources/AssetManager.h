@@ -34,6 +34,7 @@ namespace engine
 		Handle<Shader> loadShader(const std::string& name, const std::string& vertPath, const std::string& fragPath);
 		Handle<Texture> loadTexture(const std::string& name, const std::string& path, bool alpha);
 		Handle<Mesh> loadMesh(const std::string& name, const std::string& path);
+		Handle<Mesh> createPlaneMesh(const std::string& name, float size = 1.0f);
 		Handle<Material> loadMaterial(const std::string& name);
 
 		Shader* getShader(Handle<Shader> id) const;

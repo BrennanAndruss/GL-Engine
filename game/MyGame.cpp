@@ -24,6 +24,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	Handle<engine::Mesh> planeMesh = assets.createPlaneMesh("generatedPlane", 2.0f);
 
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> grayMat = assets.loadMaterial("grayMat");
@@ -108,7 +109,7 @@ void MyGame::init(engine::AssetManager& assets,
 		collider.size = floor.transform.getScale();
 
 		auto& meshRenderer = floor.addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = cubeMesh;
+		meshRenderer.mesh = planeMesh;
 		meshRenderer.material = grayMat;
 	}
 
