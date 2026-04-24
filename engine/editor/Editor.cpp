@@ -84,7 +84,7 @@ namespace engine
             auto& cube = scene.createObject("Cube" + std::to_string(nextCubeIndex));
             auto& meshRenderer = cube.addComponent<MeshRenderer>();
             meshRenderer.mesh = assets.getMeshHandle("cube");
-            meshRenderer.material = assets.getMaterialHandle("grayMat");
+            meshRenderer.material = assets.getMaterialHandle("grassMat");
 
             _selectedObject = &cube;
 

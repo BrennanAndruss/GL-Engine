@@ -42,5 +42,7 @@ namespace engine
 		Renderer _renderer;
 		AssetManager _assets;
 		Scene _scene;
+
+		bool _toggleEditor = false;
 	};
 }
