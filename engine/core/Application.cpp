@@ -1,6 +1,5 @@
 #include "core/Application.h"
 
-#include <iostream>
 #include "core/Game.h"
 #include "core/Input.h"
 #include "core/Time.h"
@@ -18,9 +17,20 @@ namespace engine
 
         _window.setEventCallbacks(this);
         _scene.setPhysicsSystem(&_physics);
+
+        int framebufferWidth = 0;
+        int framebufferHeight = 0;
+        glfwGetFramebufferSize(_window.getHandle(), &framebufferWidth, &framebufferHeight);
+        _renderer.resize(framebufferWidth, framebufferHeight);
+        glViewport(0, 0, framebufferWidth, framebufferHeight);
+
+        _editor.initialize(_window.getHandle());
     }
 
-    Application::~Application() = default;
+    Application::~Application()
+    {
+        _editor.shutdown();
+    }
 
     void Application::run(std::unique_ptr<Game> game)
     {
@@ -32,6 +42,12 @@ namespace engine
             Time::update();
             Input::update();
 
+            const bool editorEnabledThisFrame = _toggleEditor;
+            if (editorEnabledThisFrame)
+            {
+                _editor.beginFrame();
+            }
+
             // Update physics
             _physics.update(Time::deltaTime());
 
@@ -41,6 +57,13 @@ namespace engine
 
             // Render
             _renderer.render(_scene, _assets);
+
+            if (editorEnabledThisFrame)
+            {
+                _editor.draw(_scene, _assets);
+                _editor.endFrame();
+            }
+            
             
             _window.swapBuffers();
             _window.pollEvents();
@@ -61,6 +84,11 @@ namespace engine
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, GL_TRUE);
+        }
+
+        if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
+        {
+            _toggleEditor = !_toggleEditor;
         }
     }
 

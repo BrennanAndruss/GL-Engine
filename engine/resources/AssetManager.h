@@ -60,15 +60,19 @@ namespace engine
 		
 		Shader* getShader(Handle<Shader> handle) const;
 		Shader* getShader(const std::string& name) const;
+		Handle<Shader> getShaderHandle(const std::string& name) const;
 
 		Texture* getTexture(Handle<Texture> handle) const;
 		Texture* getTexture(const std::string& name) const;
+		Handle<Texture> getTextureHandle(const std::string& name) const;
 
 		Mesh* getMesh(Handle<Mesh> handle) const;
 		Mesh* getMesh(const std::string& name) const;
+		Handle<Mesh> getMeshHandle(const std::string& name) const;
 
 		Material* getMaterial(Handle<Material> handle) const;
 		Material* getMaterial(const std::string& name) const;
+		Handle<Material> getMaterialHandle(const std::string& name) const;
 
 		Heightmap* getHeightmap(Handle<Heightmap> handle) const;
 		Heightmap* getHeightmap(const std::string& name) const;
