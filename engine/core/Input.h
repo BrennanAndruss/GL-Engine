@@ -13,6 +13,7 @@ namespace engine
 		static bool isKeyPressed(int key);
 		static bool isKeyReleased(int key);
 		static bool isMouseDown(int button);
+		static bool isMouseTrapped() { return _mouseTrapped; }
 		static glm::vec2 getMousePos();
 		static glm::vec2 getMouseDelta();
 		static glm::vec2 getScrollDelta();
@@ -23,6 +24,7 @@ namespace engine
 		static void onMouseMove(double x, double y);
 		static void onMouseButton(int button, int action);
 		static void onScroll(double x, double y);
+		static void setMouseTrapped(bool trapped);
 
 	private:
 		static inline std::unordered_map<int, bool> _keys;
@@ -34,5 +36,6 @@ namespace engine
 		static inline glm::vec2 _scroll = glm::vec2(0.0f);
 		static inline glm::vec2 _prevScroll = glm::vec2(0.0f);
 		static inline glm::vec2 _scrollDelta = glm::vec2(0.0f);
+		static inline bool _mouseTrapped = false;
 	};
 }

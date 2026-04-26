@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
+#include "core/Input.h"
 #include "resources/AssetManager.h"
 #include "resources/Heightmap.h"
 #include "renderer/resources/Shader.h"
@@ -157,6 +158,8 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// Configure render pipeline
 	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
+
+	engine::Input::setMouseTrapped(true);
 
 	std::cout << "Game initialized!\n";
 }

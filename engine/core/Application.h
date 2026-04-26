@@ -43,6 +43,6 @@ namespace engine
 		AssetManager _assets;
 		Scene _scene;
 
-		bool _toggleEditor = false;
+		bool _editorActive = false;
 	};
 }

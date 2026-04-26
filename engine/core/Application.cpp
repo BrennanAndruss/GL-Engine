@@ -42,7 +42,7 @@ namespace engine
             Time::update();
             Input::update();
 
-            const bool editorEnabledThisFrame = _toggleEditor;
+            const bool editorEnabledThisFrame = _editorActive;
             if (editorEnabledThisFrame)
             {
                 _editor.beginFrame();
@@ -88,7 +88,8 @@ namespace engine
 
         if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
         {
-            _toggleEditor = !_toggleEditor;
+            _editorActive = !_editorActive;
+            Input::setMouseTrapped(!_editorActive);
         }
     }
 
