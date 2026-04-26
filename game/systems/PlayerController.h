@@ -12,6 +12,7 @@ public:
 	float rotationSpeed = 1.0f;
 	float eyeHeight = 1.0f;
 	float sensitivity = 0.1f;
+	bool invertMouseMove = true;
 
 	engine::Camera* camera = nullptr;
 	

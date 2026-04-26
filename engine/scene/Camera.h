@@ -30,9 +30,9 @@ namespace engine
 
 		const CameraData& getCameraData() const { return _cameraData; }
 		glm::vec3 getPosition() const { return _transform.getWorldPosition(); }
-		glm::vec3 getForward() const { return _transform.forward(); }
-		glm::vec3 getRight() const { return _transform.right(); }
-		glm::vec3 getUp() const { return _transform.up(); }
+		glm::vec3 getForward() const { return _transform.getForward(); }
+		glm::vec3 getRight() const { return _transform.getRight(); }
+		glm::vec3 getUp() const { return _transform.getUp(); }
 
 	private:
 		Transform _transform;

@@ -21,6 +21,7 @@ namespace engine
 		void rotate(float x, float y, float z) { rotate(glm::vec3(x, y, z)); }
 		void rotate(float angleDegrees, glm::vec3 axis);
 		void rotateAround(glm::vec3 point, glm::vec3 axis, float angleDegrees);
+		void lookAt(glm::vec3 target, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f));
 
 		void setRotation(glm::quat q);
 		glm::quat getRotation() const { return _rotation; }
@@ -28,9 +29,9 @@ namespace engine
 		void setScale(glm::vec3 scale);
 		glm::vec3 getScale() const { return _scale; }
 
-		glm::vec3 forward() const { return _rotation * glm::vec3(0.0f, 0.0f, -1.0f); }
-		glm::vec3 right() const { return _rotation * glm::vec3(1.0f, 0.0f, 0.0f); }
-		glm::vec3 up() const { return _rotation * glm::vec3(0.0f, 1.0f, 0.0f); }
+		glm::vec3 getForward() const { return getWorldRotation() * glm::vec3(0.0f, 0.0f, -1.0f); }
+		glm::vec3 getRight() const { return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f); }
+		glm::vec3 getUp() const { return getWorldRotation() * glm::vec3(0.0f, 1.0f, 0.0f); }
 
 		glm::mat4 getLocalMatrix() const;
 

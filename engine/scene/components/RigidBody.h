@@ -1,7 +1,7 @@
 #pragma once
 
-#include <scene/components/Component.h>
-#include <scene/components/Collider.h>
+#include "scene/components/Component.h"
+#include "scene/components/Collider.h"
 
 namespace engine
 {

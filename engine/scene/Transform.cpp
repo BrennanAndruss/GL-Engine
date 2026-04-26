@@ -60,6 +60,12 @@ namespace engine
 		markDirty();
 	}
 
+	void Transform::lookAt(glm::vec3 target, glm::vec3 up)
+	{
+		_rotation = glm::quatLookAt(glm::normalize(target - _position), up);
+		markDirty();
+	}
+
 	void Transform::setRotation(glm::quat q)
 	{
 		_rotation = q;

@@ -8,7 +8,7 @@
 #include "physics/PhysicsSystem.h"
 #include "scene/Camera.h"
 #include "scene/Object.h"
-#include "scene/Light.h"
+#include "scene/components/Light.h"
 
 namespace engine
 {
@@ -36,22 +36,15 @@ namespace engine
 		// Root objects for hierarchical traversal
 		std::vector<Object*> getRootObjects() const;
 
-		template<typename T, typename... Args>
-		T& createLight(Args&&... args)
-		{
-			static_assert(std::is_base_of_v<Light, T>, "T must derive from Light.");
-			auto& ptr = _lights.emplace_back(
-				std::make_unique<T>(std::forward<Args>(args)...)
-			);
-			return static_cast<T&>(*ptr);
-		}
-		const std::vector<std::unique_ptr<Light>>& getLights() const { return _lights; }
+		void addLight(Light* light) { _lights.push_back(light); }
+		const std::vector<Light*>& getLights() const { return _lights; }
 
 	private:
 		PhysicsSystem* _physics = nullptr;
 
-		std::unique_ptr<Camera> _camera;
 		std::vector<std::unique_ptr<Object>> _objects;
-		std::vector<std::unique_ptr<Light>> _lights;
+
+		std::unique_ptr<Camera> _camera;
+		std::vector<Light*> _lights;
 	};
 }

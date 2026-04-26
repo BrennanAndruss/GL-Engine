@@ -2,7 +2,7 @@
 
 #include <btBulletDynamicsCommon.h>
 #include <functional>
-#include <scene/components/Component.h>
+#include "scene/components/Component.h"
 
 namespace engine
 {
