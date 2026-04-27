@@ -31,7 +31,7 @@ namespace engine
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Update uniform buffer objects
-		auto* camera = scene.getCamera();
+		auto* camera = scene.getMainCamera();
 		assert(camera != nullptr && "Scene has no camera.");
 		_cameraUBO.update(&camera->getCameraData(), sizeof(CameraData));
 

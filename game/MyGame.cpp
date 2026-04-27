@@ -71,11 +71,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// Initialize scene
 	{
-		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-		auto& camera = scene.createCamera(glm::vec3(0.0f, 1.0f, 5.0f), 45.0f, aspect);
-	}
-
-	{
 		auto& obj = scene.createObject("DirLight");
 		auto& dirLight = obj.addComponent<engine::DirectionalLight>();
 		obj.transform.lookAt(glm::vec3(0.8f, -1.0f, 0.6f));
@@ -140,7 +135,7 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.material = grassMat;
 	}
 
-	// Initialize player
+	// Initialize player and main camera
 	{
 		auto& player = scene.createObject("Player");
 		player.transform.setPosition(glm::vec3(5.0f, 10.0f, 0.0f));
@@ -149,9 +144,17 @@ void MyGame::init(engine::AssetManager& assets,
 		charController.height = 1.0f;
 
 		auto& playerController = player.addComponent<PlayerController>();
-		playerController.camera = scene.getCamera();
 		playerController.moveSpeed = 10.0f;
 		playerController.eyeHeight = 0.5f;
+
+		auto& camObj = scene.createObject("MainCamera");
+		camObj.transform.setParent(&player.transform);
+
+		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
+		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 100.0f);
+		scene.setMainCamera(&camera);
+		
+		playerController.cameraTransform = &camObj.transform;
 	}
 
 	// Initialize collectables

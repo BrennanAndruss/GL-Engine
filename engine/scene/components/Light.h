@@ -14,9 +14,9 @@ namespace engine
 	// Light data struct for the Light UBO
 	struct LightData
 	{
-		glm::vec4 color_intensity;
-		glm::vec4 position_range;
-		glm::vec4 direction_type;
+		glm::vec4 color_intensity = glm::vec4(0.0f);
+		glm::vec4 position_range = glm::vec4(0.0f);
+		glm::vec4 direction_type = glm::vec4(0.0f);
 	};
 
 	class Light : public Component

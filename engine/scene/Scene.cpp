@@ -12,10 +12,21 @@ namespace engine
 
 	void Scene::update(float deltaTime)
 	{
+		// Run all component logic updates
 		for (auto& object : _objects)
 		{
 			object->update(deltaTime);
 		}
+
+		// Step physics
+		_physics->update(deltaTime);
+
+		// todo: Resolve all dirty transforms recursively
+		// (currently handled in transform class as needed)
+		// ...
+
+		// Sync camera with clean transforms
+		if (_mainCamera) _mainCamera->updateViewMatrix();
 	}
 
 	Object& Scene::createObject(const std::string& name)
@@ -36,11 +47,5 @@ namespace engine
 			}
 		}
 		return roots;
-	}
-
-	Camera& Scene::createCamera(glm::vec3 position, float fov, float aspect, float near, float far)
-	{
-		_camera = std::make_unique<Camera>(position, fov, aspect, near, far);
-		return *_camera;
 	}
 }

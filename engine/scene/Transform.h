@@ -10,12 +10,14 @@ namespace engine
 	{
 	public:
 		void setPosition(glm::vec3 position);
+		void setPosition(float x, float y, float z) { setPosition(glm::vec3(x, y, z)); }
 		glm::vec3 getPosition() const { return _position; }
 		void translate(glm::vec3 translation);
 		void translate(float x, float y, float z) { translate(glm::vec3(x, y, z)); }
 
 		// Euler angles interface in degrees
 		void setEulerAngles(glm::vec3 eulerAngles);
+		void setEulerAngles(float x, float y, float z) { setEulerAngles(glm::vec3(x, y, z)); }
 		glm::vec3 getEulerAngles() const;
 		void rotate(glm::vec3 eulerAngles);
 		void rotate(float x, float y, float z) { rotate(glm::vec3(x, y, z)); }
@@ -27,11 +29,12 @@ namespace engine
 		glm::quat getRotation() const { return _rotation; }
 
 		void setScale(glm::vec3 scale);
+		void setScale(float x, float y, float z) { setScale(glm::vec3(x, y, z)); }
 		glm::vec3 getScale() const { return _scale; }
 
-		glm::vec3 getForward() const { return getWorldRotation() * glm::vec3(0.0f, 0.0f, -1.0f); }
-		glm::vec3 getRight() const { return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f); }
-		glm::vec3 getUp() const { return getWorldRotation() * glm::vec3(0.0f, 1.0f, 0.0f); }
+		glm::vec3 getForward() const;
+		glm::vec3 getRight() const;
+		glm::vec3 getUp() const;
 
 		glm::mat4 getLocalMatrix() const;
 

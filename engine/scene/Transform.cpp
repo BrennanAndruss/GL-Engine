@@ -72,6 +72,24 @@ namespace engine
 		markDirty();
 	}
 
+	glm::vec3 Transform::getForward() const 
+	{
+		if (_dirty) updateWorldMatrix();
+		return getWorldRotation() * glm::vec3(0.0f, 0.0f, -1.0f); 
+	}
+
+	glm::vec3 Transform::getRight() const
+	{
+		if (_dirty) updateWorldMatrix();
+		return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+
+	glm::vec3 Transform::getUp() const
+	{
+		if (_dirty) updateWorldMatrix();
+		return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+
 	glm::mat4 Transform::getLocalMatrix() const
 	{
 		glm::mat4 model(1.0f);
