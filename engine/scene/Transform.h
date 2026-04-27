@@ -38,6 +38,8 @@ namespace engine
 
 		glm::mat4 getLocalMatrix() const;
 
+		void cleanWorldMatrix(const glm::mat4& parentWorld);
+
 		const glm::mat4& getWorldMatrix() const;
 		glm::vec3 getWorldPosition() const;
 		glm::quat getWorldRotation() const;
@@ -65,6 +67,5 @@ namespace engine
 
 		void addChild(Transform* child);
 		void removeChild(Transform* child);
-		void updateWorldMatrix() const;
 	};
 }

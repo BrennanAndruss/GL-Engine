@@ -4,6 +4,13 @@ namespace engine
 {
 	void Scene::start()
 	{
+		// Resolve hierarchical transforms from scene initialization
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
+		// Start components
 		for (auto& object : _objects)
 		{
 			object->start();
@@ -21,12 +28,28 @@ namespace engine
 		// Step physics
 		_physics->update(deltaTime);
 
-		// todo: Resolve all dirty transforms recursively
-		// (currently handled in transform class as needed)
-		// ...
+		// Resolve all dirty transforms recursively once per frame
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
 
 		// Sync camera with clean transforms
 		if (_mainCamera) _mainCamera->updateViewMatrix();
+	}
+
+	void Scene::resolveTransforms(Transform& t, const glm::mat4& parentWorld)
+	{
+		if (t.isDirty())
+		{
+			t.cleanWorldMatrix(parentWorld);
+		}
+
+		// Pass the clean world matrix down to children
+		for (auto* child : t.getChildren())
+		{
+			resolveTransforms(*child, t.getWorldMatrix());
+		}
 	}
 
 	Object& Scene::createObject(const std::string& name)

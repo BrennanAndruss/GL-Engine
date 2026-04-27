@@ -74,20 +74,25 @@ namespace engine
 
 	glm::vec3 Transform::getForward() const 
 	{
-		if (_dirty) updateWorldMatrix();
-		return getWorldRotation() * glm::vec3(0.0f, 0.0f, -1.0f); 
+		/* Extract normalized direction vectors from world matrix columns
+		* 
+		* (Right vector, Up vector, Back vector, Translation)
+		* [Rx, Ux, Bx, Tx
+		*  Ry, Uy, By, Ty
+		*  Rz, Uz, Bz, Tz
+		*  0,  0,  0,  1 ]
+		*/
+		return -glm::normalize(glm::vec3(_worldMatrix[2]));
 	}
 
 	glm::vec3 Transform::getRight() const
 	{
-		if (_dirty) updateWorldMatrix();
-		return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f);
+		return glm::normalize(glm::vec3(_worldMatrix[0]));
 	}
 
 	glm::vec3 Transform::getUp() const
 	{
-		if (_dirty) updateWorldMatrix();
-		return getWorldRotation() * glm::vec3(1.0f, 0.0f, 0.0f);
+		return glm::normalize(glm::vec3(_worldMatrix[1]));
 	}
 
 	glm::mat4 Transform::getLocalMatrix() const
@@ -99,30 +104,28 @@ namespace engine
 		return model;
 	}
 
-	const glm::mat4& Transform::getWorldMatrix() const
+	void Transform::cleanWorldMatrix(const glm::mat4& parentWorld)
 	{
-		if (_dirty)
-		{
-			updateWorldMatrix();
-		}
-		return _worldMatrix;
-	}
-
-	void Transform::updateWorldMatrix() const
-	{
-		if (_parent)
-		{
-			_worldMatrix = _parent->getWorldMatrix() * getLocalMatrix();
-		}
-		else
-		{
-			_worldMatrix = getLocalMatrix();
-		}
+		_worldMatrix = parentWorld * getLocalMatrix();
 		_dirty = false;
 	}
 
+
+	const glm::mat4& Transform::getWorldMatrix() const
+	{
+		return _worldMatrix;
+	}
+	
 	glm::vec3 Transform::getWorldPosition() const
 	{
+		/* Extract position from world matrix columns
+		* 
+		* (Right vector, Up vector, Back vector, Translation)
+		* [Rx, Ux, Bx, Tx
+		*  Ry, Uy, By, Ty
+		*  Rz, Uz, Bz, Tz
+		*  0,  0,  0,  1 ]
+		*/
 		return glm::vec3(getWorldMatrix()[3]);
 	}
 

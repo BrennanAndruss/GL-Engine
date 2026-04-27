@@ -44,5 +44,7 @@ namespace engine
 		PhysicsSystem* _physics = nullptr;
 		Camera* _mainCamera = nullptr;
 		std::vector<Light*> _lights;
+
+		void resolveTransforms(Transform& t, const glm::mat4& parentWorld);
 	};
 }
