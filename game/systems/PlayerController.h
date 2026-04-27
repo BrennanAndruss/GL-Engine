@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "scene/Camera.h"
+#include "scene/Transform.h"
 #include "scene/components/Component.h"
 #include "scene/components/CharacterController.h"
 
@@ -12,12 +12,15 @@ public:
 	float rotationSpeed = 1.0f;
 	float eyeHeight = 1.0f;
 	float sensitivity = 0.1f;
+	bool invertMouseMove = true;
 
-	engine::Camera* camera = nullptr;
+	engine::Transform* cameraTransform = nullptr;
 	
 	void start() override;
 	void update(float deltaTime) override;
 
 private:
 	engine::CharacterController* _characterController = nullptr;
+
+	float _yaw, _pitch;
 };

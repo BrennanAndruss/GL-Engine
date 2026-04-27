@@ -23,5 +23,6 @@ public:
 
 private:
 	engine::Object* cube;
+	engine::Object* pointLightCenter;
 	std::vector<engine::Object*> objects;
 };
