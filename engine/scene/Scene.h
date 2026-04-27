@@ -6,8 +6,8 @@
 #include <type_traits>
 #include <glm/glm.hpp>
 #include "physics/PhysicsSystem.h"
-#include "scene/Camera.h"
 #include "scene/Object.h"
+#include "scene/components/Camera.h"
 #include "scene/components/Light.h"
 
 namespace engine

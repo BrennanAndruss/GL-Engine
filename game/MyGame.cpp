@@ -80,11 +80,15 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		cube = &scene.createObject("Cube");
-		cube->transform.setPosition(glm::vec3(0.0f, 3.0f, -5.0f));
+		cube->transform.setPosition(glm::vec3(0.0f, 2.0f, -5.0f));
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
 		meshRenderer.material = defaultMat;
+
+		auto& collider = cube->addComponent<engine::BoxCollider>();
+		auto& rb = cube->addComponent<engine::RigidBody>();
+		rb.mass = 0.0f;
 	}
 
 	pointLightCenter = &scene.createObject("PointLightCenter");
@@ -187,6 +191,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 void MyGame::update(float deltaTime)
 {
-	cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+	// cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
 	pointLightCenter->transform.rotate(glm::vec3(-1.0f, 1.0f, -1.0f) * (deltaTime * 15.0f));
 }

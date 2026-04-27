@@ -14,7 +14,7 @@ namespace engine
     class HeightmapCollider : public Collider
     {
     public:
-        // Explicit constructors to handle forward declarations
+        // Constructors declared in header to handle forward declarations
         HeightmapCollider();
         ~HeightmapCollider() override;
 

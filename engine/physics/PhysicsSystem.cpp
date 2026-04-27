@@ -12,7 +12,8 @@ namespace engine
         // Processes collision pairs from the broadphase and runs the narrow phase
         _dispatcher = std::make_unique<btCollisionDispatcher>(_collisionConfig.get());
 
-        // Using a dynamic bounding volume tree for broad phase
+        // Using two dynamic AABB bounding volume trees for broad phase
+        // One tree for static/non-moving objects, another for dynamic objects
         _broadphase = std::make_unique<btDbvtBroadphase>();
 
         // Resolves collisions and joinst using Sequential Impulse

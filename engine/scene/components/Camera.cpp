@@ -1,4 +1,4 @@
-#include "scene/Camera.h"
+#include "scene/components/Camera.h"
 
 namespace engine
 {
