@@ -16,12 +16,14 @@ public:
 	~MyGame() = default;
 
 	void init(engine::AssetManager& assets, 
-			  engine::Renderer& rendererj, 
+			  engine::Renderer& renderer, 
 			  engine::Scene& scene, 
 			  const engine::AppConfig& config) override;
 	void update(float deltaTime) override;
 
 private:
-	engine::Object* gem;
+	engine::Object* cube = nullptr;
+	engine::Object* gem = nullptr;
+	engine::Object* pointLightCenter = nullptr;
 	std::vector<engine::Object*> objects;
 };
