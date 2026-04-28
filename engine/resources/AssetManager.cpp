@@ -54,7 +54,8 @@ namespace engine
 		return handle;
 	}
 
-	Handle<Texture> AssetManager::loadTexture(const std::string& name, const std::string& path, bool alpha)
+	Handle<Texture> AssetManager::loadTexture(const std::string& name, 
+		const std::string& path, bool alpha)
 	{
 		std::string absPath = resolvePath(path).string();
 
@@ -113,6 +114,30 @@ namespace engine
 		return handle;
 	}
 
+	Handle<Heightmap> AssetManager::loadHeightmap(const std::string& name,
+		const std::string& path, float heightScale)
+	{
+		std::string absPath = resolvePath(path).string();
+
+		// Load image data
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(absPath.c_str(), &width, &height, &nrChannels, 0);
+		if (!data)
+		{
+			throw std::runtime_error("Failed to load texture: " + absPath);
+		}
+
+		_heightmaps.assets.emplace_back(std::make_unique<Heightmap>(
+			width, height, nrChannels, data, heightScale
+		));
+		stbi_image_free(data);
+
+		Handle<Heightmap> handle = { _heightmaps.assets.size() - 1 };
+		_heightmaps.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
 	Handle<Mesh> AssetManager::createPlaneMesh(const std::string& name, int planeRes, float planeLen)
 	{
 		float halfLen = planeLen * 0.5f;
@@ -163,18 +188,11 @@ namespace engine
 	}
 
 	Handle<Mesh> AssetManager::createHeightmapMesh(const std::string& name,
-												   const std::string& heightmapPath,
+												   Handle<Heightmap> heightmapHandle,
 												   int planeRes,
-												   float planeLen,
-												   float heightScale)
+												   float planeLen)
 	{
-		std::string absPath = resolvePath(heightmapPath).string();
-
-		Heightmap heightmap;
-		if (!heightmap.loadFromFile(absPath))
-		{
-			throw std::runtime_error("Failed to load heightmap: " + absPath);
-		}
+		Heightmap heightmap = *_heightmaps.assets[heightmapHandle.index].get();
 
 		float halfLen = planeLen * 0.5f;
 		float stepLen = planeLen / static_cast<float>(planeRes);
@@ -190,7 +208,7 @@ namespace engine
 				float u = static_cast<float>(x) / planeRes;
 				float v = static_cast<float>(z) / planeRes;
 				// === MAIN DIFFERENCE BETWEEN PLANE & TERRAINPLANE ===
-				float height = heightmap.sample(u, v) * heightScale;
+				float height = heightmap.sample(u, v) * heightmap.getHeightScale();
 
 				positions[i] = glm::vec3(
 					x * stepLen - halfLen,
@@ -275,6 +293,11 @@ namespace engine
 		return getShader(_shaders.nameToHandle.at(name));
 	}
 
+	Handle<Shader> AssetManager::getShaderHandle(const std::string& name) const
+	{
+		return _shaders.nameToHandle.at(name);
+	}
+
 	Texture* AssetManager::getTexture(Handle<Texture> handle) const
 	{
 		assert(handle.index < _textures.assets.size() && "Texture index out of range: " + handle.index);
@@ -284,6 +307,11 @@ namespace engine
 	Texture* AssetManager::getTexture(const std::string& name) const
 	{
 		return getTexture(_textures.nameToHandle.at(name));
+	}
+
+	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
+	{
+		return _textures.nameToHandle.at(name);
 	}
 
 	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
@@ -297,6 +325,11 @@ namespace engine
 		return getMesh(_meshes.nameToHandle.at(name));
 	}
 
+	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
+	{
+		return _meshes.nameToHandle.at(name);
+	}
+
 	Material* AssetManager::getMaterial(Handle<Material> handle) const
 	{
 		assert(handle.index < _materials.assets.size() && "Material index out of range: " + handle.index);
@@ -306,5 +339,21 @@ namespace engine
 	Material* AssetManager::getMaterial(const std::string& name) const
 	{
 		return getMaterial(_materials.nameToHandle.at(name));
+	}
+
+	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
+	{
+		return _materials.nameToHandle.at(name);
+	}
+	
+	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const
+	{
+		assert(handle.index < _heightmaps.assets.size() && "Heightmap index out of range: " + handle.index);
+		return _heightmaps.assets[handle.index].get();
+	}
+
+	Heightmap* AssetManager::getHeightmap(const std::string& name) const
+	{
+		return getHeightmap(_heightmaps.nameToHandle.at(name));
 	}
 }

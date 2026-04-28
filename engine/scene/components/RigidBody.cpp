@@ -1,5 +1,6 @@
 #include "scene/components/RigidBody.h"
 
+#include <btBulletDynamicsCommon.h>
 #include <cassert>
 #include "physics/PhysicsSystem.h"
 #include "scene/Scene.h"

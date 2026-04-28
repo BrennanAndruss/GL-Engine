@@ -31,6 +31,7 @@ target_link_libraries(engine PUBLIC
     glfw
     glm
     OpenGL::GL
+    imgui_static
     BulletDynamics
     BulletCollision
     LinearMath

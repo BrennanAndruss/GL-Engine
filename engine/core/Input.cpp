@@ -42,4 +42,17 @@ namespace engine
 		// wip
 		// _scrollDelta = glm::vec2(x, y);
 	}
+
+	void Input::setMouseTrapped(bool trapped)
+	{
+		_mouseTrapped = trapped;
+		if (trapped)
+		{
+			glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else
+		{
+			glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+	}
 }

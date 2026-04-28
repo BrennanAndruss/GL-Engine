@@ -3,46 +3,48 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
-#include <stb_image.h>
 
 namespace engine
 {
-	bool Heightmap::loadFromFile(const std::string& path)
+	Heightmap::Heightmap(int width, int length, int channels, const unsigned char* heights, float heightScale)
+		: _width(width), _length(length), _channels(channels), _heightScale(heightScale)
 	{
-		int width = 0;
-		int height = 0;
-		int channels = 0;
+		std::size_t pixelCount = static_cast<std::size_t>(_width) * static_cast<std::size_t>(_length) * static_cast<std::size_t>(_channels);
+		_pixels.assign(heights, heights + pixelCount);
 
-		unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-		if (!data)
+		// Generate height data from pixel data
+		if (_pixels.empty()) return;
+
+		_heightData.clear();
+		_heightData.reserve(_width * _length);
+
+		for (int y = 0; y < _length; y++)
 		{
-			return false;
+			for (int x = 0; x < _width; x++)
+			{
+				// Use first channel as height
+				std::size_t index = (y * _width + x) * _channels;
+				float normalizedHeight = static_cast<float>(_pixels[index]) / 255.0f;
+				_heightData.emplace_back(normalizedHeight * _heightScale);
+			}
 		}
-
-		_width = width;
-		_height = height;
-		_channels = channels;
-
-		std::size_t pixelCount = static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height) * static_cast<std::size_t>(_channels);
-		_pixels.assign(data, data + pixelCount);
-
-		stbi_image_free(data);
-		return true;
 	}
+
+	Heightmap::~Heightmap() = default;
 
 	float Heightmap::sample(int x, int y) const
 	{
-		if (_pixels.empty() || _width <= 0 || _height <= 0 || _channels <= 0)
+		if (_pixels.empty() || _width <= 0 || _length <= 0 || _channels <= 0)
 		{
 			return 0.0f;
 		}
 
 		x = std::clamp(x, 0, _width - 1);
-		y = std::clamp(y, 0, _height - 1);
-
-		std::size_t index = (static_cast<std::size_t>(y) * _width + static_cast<std::size_t>(x)) * _channels;
+		y = std::clamp(y, 0, _length - 1);
 
 		// Use first channel as height
+		std::size_t index = (static_cast<std::size_t>(y) * _width + static_cast<std::size_t>(x)) * _channels;
+
 		unsigned char value = _pixels[index];
 		return static_cast<float>(value) / 255.0f;
 	}
@@ -58,7 +60,7 @@ namespace engine
 		v = std::clamp(v, 0.0f, 1.0f);
 
 		int x = static_cast<int>(std::round(u * (_width - 1)));
-		int y = static_cast<int>(std::round(v * (_height - 1)));
+		int y = static_cast<int>(std::round(v * (_length - 1)));
 
 		return sample(x, y);
 	}

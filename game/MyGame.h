@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "core/Game.h"
 #include "core/EventCallbacks.h"
 #include "resources/AssetManager.h"
@@ -21,4 +23,6 @@ public:
 
 private:
 	engine::Object* cube;
+	engine::Object* pointLightCenter;
+	std::vector<engine::Object*> objects;
 };
