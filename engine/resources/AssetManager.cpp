@@ -5,9 +5,14 @@
 #include <fstream>
 #include <stdexcept>
 #include <cassert>
+#include <string>
 #include <array>
 #include <stb_image.h>
 #include <glm/glm.hpp>
+#include <tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include "resources/Heightmap.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
@@ -28,6 +33,53 @@ namespace engine
 		std::stringstream ss;
 		ss << fileHandle.rdbuf();
 		return ss.str();
+	}
+
+	static std::unique_ptr<Mesh> buildMeshFromAiMesh(const aiMesh* aiMeshData)
+	{
+		std::vector<glm::vec3> positions(aiMeshData->mNumVertices);
+		std::vector<glm::vec3> normals(aiMeshData->mNumVertices, glm::vec3(0.0f, 1.0f, 0.0f));
+		std::vector<glm::vec2> texcoords(aiMeshData->mNumVertices, glm::vec2(0.0f));
+		std::vector<unsigned int> indices;
+
+		for (unsigned int i = 0; i < aiMeshData->mNumVertices; ++i)
+		{
+			//convert from Assimp's aiVector3D to glm::vec3
+			positions[i] = glm::vec3(
+				aiMeshData->mVertices[i].x,
+				aiMeshData->mVertices[i].y,
+				aiMeshData->mVertices[i].z
+			);
+
+			if (aiMeshData->HasNormals())
+			{
+				normals[i] = glm::vec3(
+					aiMeshData->mNormals[i].x,
+					aiMeshData->mNormals[i].y,
+					aiMeshData->mNormals[i].z
+				);
+			}
+
+			if (aiMeshData->HasTextureCoords(0))
+			{
+				texcoords[i] = glm::vec2(
+					aiMeshData->mTextureCoords[0][i].x, 
+					aiMeshData->mTextureCoords[0][i].y
+				);
+			}
+		}
+        
+		indices.reserve(aiMeshData->mNumFaces * 3); //preallocate memory for the indices (assuming triangles)
+		for (unsigned int i = 0; i < aiMeshData->mNumFaces; ++i)
+		{
+			const aiFace& face = aiMeshData->mFaces[i]; 
+			for (unsigned int j = 0; j < face.mNumIndices; ++j)
+			{
+				indices.push_back(face.mIndices[j]);  
+			}
+		}
+
+		return std::make_unique<Mesh>(positions, normals, texcoords, indices);
 	}
 
 	AssetManager::AssetManager(const std::string& assetDir) : _assetDir(assetDir) {}
@@ -114,23 +166,78 @@ namespace engine
 
 	Handle<Mesh> AssetManager::loadMesh(const std::string& name, const std::string& path)
 	{
-		std::string absPath = resolvePath(path).string();
+		// Keep the existing public API, but route loading through the Assimp path.
+		// This avoids tight coupling to the legacy tinyobj loader here and supports
+		// additional formats (fbx, gltf, glb, ...) through one code path.
+		return loadMeshAssimp(name, path, 0);
+	}
 
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> objMaterials;
-		std::string errStr;
-		bool rc = tinyobj::LoadObj(shapes, objMaterials, errStr, absPath.c_str());
+	Handle<Mesh> AssetManager::loadMeshAssimp(const std::string& name,
+		const std::string& path, unsigned int meshIndex)
+	{
+		const std::string absPath = resolvePath(path).string();
 
-		if (!rc)
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(
+			absPath,
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_GenSmoothNormals |
+			aiProcess_FlipUVs
+		);
+
+		if (!scene || !scene->HasMeshes())
 		{
-			throw std::runtime_error("Failed to load mesh: " + errStr);
+			throw std::runtime_error("Failed to load mesh with Assimp: " + absPath +
+				"\nassimp reason: " + importer.GetErrorString());
 		}
 
-		_meshes.assets.emplace_back(std::make_unique<Mesh>(shapes[0]));
+		if (meshIndex >= scene->mNumMeshes)
+		{
+			throw std::runtime_error("Assimp mesh index out of range for: " + absPath);
+		}
+
+		_meshes.assets.emplace_back(buildMeshFromAiMesh(scene->mMeshes[meshIndex]));
 		Handle<Mesh> handle = { _meshes.assets.size() - 1 };
 		_meshes.nameToHandle[name] = handle;
 
 		return handle;
+	}
+
+	std::vector<Handle<Mesh>> AssetManager::loadModelMeshesAssimp(const std::string& namePrefix,
+		const std::string& path)
+	{
+		const std::string absPath = resolvePath(path).string();
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(
+			absPath,
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_GenSmoothNormals |
+			aiProcess_FlipUVs
+		);
+
+		if (!scene || !scene->HasMeshes())
+		{
+			throw std::runtime_error("Failed to load model meshes with Assimp: " + absPath +
+				"\nassimp reason: " + importer.GetErrorString());
+		}
+
+		std::vector<Handle<Mesh>> handles;
+		handles.reserve(scene->mNumMeshes);
+
+		for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
+		{
+			const std::string meshName = namePrefix + "_" + std::to_string(i);
+			_meshes.assets.emplace_back(buildMeshFromAiMesh(scene->mMeshes[i]));
+
+			Handle<Mesh> handle = { _meshes.assets.size() - 1 };
+			_meshes.nameToHandle[meshName] = handle;
+			handles.push_back(handle);
+		}
+
+		return handles;
 	}
 
 	Handle<Heightmap> AssetManager::loadHeightmap(const std::string& name,

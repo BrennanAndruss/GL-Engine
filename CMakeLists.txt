@@ -41,6 +41,15 @@ set(BUILD_OPENGL3_DEMOS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(bullet)
 
 FetchContent_Declare(
+	assimp
+	GIT_REPOSITORY https://github.com/assimp/assimp.git
+	GIT_TAG v5.4.3
+)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(assimp)
+
+FetchContent_Declare(
 	imgui
 	GIT_REPOSITORY https://github.com/ocornut/imgui.git
 	GIT_TAG master

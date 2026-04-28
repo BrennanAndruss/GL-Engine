@@ -47,6 +47,10 @@ namespace engine
 									const std::array<std::string, 6>& facePaths);
 
 		Handle<Mesh> loadMesh(const std::string& name, const std::string& path);
+		Handle<Mesh> loadMeshAssimp(const std::string& name, const std::string& path,
+			unsigned int meshIndex = 0);
+		std::vector<Handle<Mesh>> loadModelMeshesAssimp(const std::string& namePrefix,
+			const std::string& path);
 		Handle<Material> loadMaterial(const std::string& name);
 
 		Handle<Heightmap> loadHeightmap(const std::string& name,
