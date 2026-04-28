@@ -4,6 +4,13 @@ namespace engine
 {
 	void Scene::start()
 	{
+		// Resolve hierarchical transforms from scene initialization
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
+		// Start components
 		for (auto& object : _objects)
 		{
 			object->start();
@@ -12,9 +19,36 @@ namespace engine
 
 	void Scene::update(float deltaTime)
 	{
+		// Run all component logic updates
 		for (auto& object : _objects)
 		{
 			object->update(deltaTime);
+		}
+
+		// Step physics
+		_physics->update(deltaTime);
+
+		// Resolve all dirty transforms recursively once per frame
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
+		// Sync camera with clean transforms
+		if (_mainCamera) _mainCamera->updateViewMatrix();
+	}
+
+	void Scene::resolveTransforms(Transform& t, const glm::mat4& parentWorld)
+	{
+		if (t.isDirty())
+		{
+			t.cleanWorldMatrix(parentWorld);
+		}
+
+		// Pass the clean world matrix down to children
+		for (auto* child : t.getChildren())
+		{
+			resolveTransforms(*child, t.getWorldMatrix());
 		}
 	}
 
@@ -36,11 +70,5 @@ namespace engine
 			}
 		}
 		return roots;
-	}
-
-	Camera& Scene::createCamera(glm::vec3 position, float fov, float aspect, float near, float far)
-	{
-		_camera = std::make_unique<Camera>(position, fov, aspect, near, far);
-		return *_camera;
 	}
 }

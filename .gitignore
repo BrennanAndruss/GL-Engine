@@ -1,5 +1,8 @@
-ld artifacts
+# Build artifacts
 build/
+
+# MacOS
+.DS_Store
 
 # CMake files
 CMakeLists.txt.user

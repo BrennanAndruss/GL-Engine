@@ -10,7 +10,6 @@
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "renderer/passes/ForwardRenderPass.h"
-#include "scene/Light.h"
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
@@ -49,9 +48,18 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 	
 	std::cout << "Loading materials...\n";
-	//make plane
+
+	// todo: move creation to assetmanager
+	Handle<engine::Material> defaultMat = assets.loadMaterial("defaultMat");
+	auto* mat = assets.getMaterial(defaultMat);
+	mat->shader = shader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 32.0f;
+	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
-	auto* mat = assets.getMaterial(grassMat);
+	mat = assets.getMaterial(grassMat);
 	mat->shader = shader;
 	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
@@ -86,36 +94,57 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// Initialize scene
 	{
-		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-		auto& camera = scene.createCamera(glm::vec3(0.0f, 1.0f, 5.0f), 45.0f, aspect);
-	}
-
-	{
-		auto& dirLight = scene.createLight<engine::DirectionalLight>();
-		dirLight.setDirection(glm::vec3(0.8f, -1.0f, 0.6f));
+		auto& obj = scene.createObject("DirLight");
+		auto& dirLight = obj.addComponent<engine::DirectionalLight>();
+		obj.transform.lookAt(glm::vec3(0.8f, -1.0f, 0.6f));
 		dirLight.setColor(glm::vec3(1.0f));
 		dirLight.setIntensity(1.0f);
 	}
 
 	{
-		auto& pointLight1 = scene.createLight<engine::PointLight>();
-		pointLight1.setPosition(glm::vec3(2.0f, 2.0f, 2.0f));
+		cube = &scene.createObject("Cube");
+		cube->transform.setPosition(glm::vec3(0.0f, 2.0f, -5.0f));
+
+		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
+		meshRenderer.mesh = cubeMesh;
+		meshRenderer.material = defaultMat;
+
+		auto& collider = cube->addComponent<engine::BoxCollider>();
+		auto& rb = cube->addComponent<engine::RigidBody>();
+		rb.mass = 0.0f;
+	}
+
+	pointLightCenter = &scene.createObject("PointLightCenter");
+	pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
+
+	{
+		auto& obj = scene.createObject("PointLight1");
+		obj.transform.setParent(&pointLightCenter->transform);
+		obj.transform.setPosition(glm::vec3(2.5f, 0.0f, 0.0f));
+
+		auto& pointLight1 = obj.addComponent<engine::PointLight>();
 		pointLight1.setRange(10.0f);
 		pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 		pointLight1.setIntensity(1.0f);
 	}
 
 	{
-		auto& pointLight2 = scene.createLight<engine::PointLight>();
-		pointLight2.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
+		auto& obj = scene.createObject("PointLight2");
+		obj.transform.setParent(&pointLightCenter->transform);
+		obj.transform.setPosition(glm::vec3(0.0f, -2.5f, 0.0f));
+
+		auto& pointLight2 = obj.addComponent<engine::PointLight>();
 		pointLight2.setRange(10.0f);
 		pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
 		pointLight2.setIntensity(1.0f);
 	}
 
 	{
-		auto& pointLight3 = scene.createLight<engine::PointLight>();
-		pointLight3.setPosition(glm::vec3(0.0f, 0.5f, 0.0f));
+		auto& obj = scene.createObject("PointLight3");
+		obj.transform.setParent(&pointLightCenter->transform);
+		obj.transform.setPosition(glm::vec3(0.0f, 0.0f, 2.5f));
+
+		auto& pointLight3 = obj.addComponent<engine::PointLight>();
 		pointLight3.setRange(10.0f);
 		pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
 		pointLight3.setIntensity(1.0f);
@@ -146,7 +175,7 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.material = grassMat;
 	}
 
-	// Initialize player
+	// Initialize player and main camera
 	{
 		auto& player = scene.createObject("Player");
 		player.transform.setPosition(glm::vec3(5.0f, 10.0f, 0.0f));
@@ -155,9 +184,17 @@ void MyGame::init(engine::AssetManager& assets,
 		charController.height = 1.0f;
 
 		auto& playerController = player.addComponent<PlayerController>();
-		playerController.camera = scene.getCamera();
 		playerController.moveSpeed = 10.0f;
 		playerController.eyeHeight = 0.5f;
+
+		auto& camObj = scene.createObject("MainCamera");
+		camObj.transform.setParent(&player.transform);
+
+		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
+		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 100.0f);
+		scene.setMainCamera(&camera);
+		
+		playerController.cameraTransform = &camObj.transform;
 	}
 
 	// Initialize collectables

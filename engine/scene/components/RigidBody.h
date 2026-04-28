@@ -1,7 +1,10 @@
 #pragma once
 
-#include <scene/components/Component.h>
-#include <scene/components/Collider.h>
+#include "scene/components/Component.h"
+#include "scene/components/Collider.h"
+
+// Forward declarations
+class btRigidBody;
 
 namespace engine
 {

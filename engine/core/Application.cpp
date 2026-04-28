@@ -48,9 +48,6 @@ namespace engine
                 _editor.beginFrame();
             }
 
-            // Update physics
-            _physics.update(Time::deltaTime());
-
             // Update gameplay logic
             game->update(Time::deltaTime());
             _scene.update(Time::deltaTime());
@@ -105,7 +102,7 @@ namespace engine
         _config.height = height;
 
         _renderer.resize(width, height);
-        if (auto* camera = _scene.getCamera())
+        if (auto* camera = _scene.getMainCamera())
             camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
     }
 
