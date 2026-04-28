@@ -14,6 +14,10 @@ struct Material
 	vec3 diffuse;
 	vec3 specular;
 	float shininess;
+	sampler2D difTex; 
+	sampler2D specTex;
+	int hasDifTex;
+	int hasSpecTex;
 };
 
 struct Light
@@ -46,9 +50,21 @@ void main()
 {
 	vec3 normal = normalize(fragNor);
 	vec3 view = normalize(cameraPos.xyz - fragPos);
+
+	vec3 sampledDiffuse = mat.diffuse;
+	if (mat.hasDifTex == 1)
+	{
+		sampledDiffuse *= texture(mat.difTex, fragTexCoord).rgb;
+	}
+
+	vec3 sampledSpecular = mat.specular;
+	if (mat.hasSpecTex == 1)
+	{
+		sampledSpecular *= texture(mat.specTex, fragTexCoord).rgb;
+	}
 	
 	
-	vec3 ambient = mat.ambient;
+	vec3 ambient = mat.ambient * sampledDiffuse;
 	vec3 diffuseSum = vec3(0.0);
 	vec3 specularSum = vec3(0.0);
 
@@ -73,12 +89,12 @@ void main()
 
 		// Diffuse
 		float dC = max(dot(normal, lightDir), 0.0);
-		diffuseSum += mat.diffuse * dC * lightColor * attenuation;
+		diffuseSum += sampledDiffuse * dC * lightColor * attenuation; 
 
 		// Specular
-		vec3 halfDir = normalize(lightDir + view);
+		vec3 halfDir = normalize(lightDir + view); 
 		float sC = max(dot(normal, halfDir), 0.0);
-		specularSum += mat.specular * pow(sC, mat.shininess) * lightColor * attenuation;
+		specularSum += sampledSpecular * pow(sC, mat.shininess) * lightColor * attenuation;
 	}
 
 	vec3 reflection = ambient + diffuseSum + specularSum;

@@ -5,7 +5,7 @@
 
 namespace engine
 {
-	class Material;
+	struct Material;
 }
 
 class Collectable : public engine::Component
