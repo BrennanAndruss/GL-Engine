@@ -5,11 +5,13 @@
 #include <fstream>
 #include <stdexcept>
 #include <cassert>
+#include <array>
 #include <stb_image.h>
 #include <glm/glm.hpp>
 #include "resources/Heightmap.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
+#include "renderer/resources/Cubemap.h"
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 
@@ -46,7 +48,6 @@ namespace engine
 		std::filesystem::path absFragPath = resolvePath(fragPath);
 		std::string fragSrc = readFile(absFragPath);
 
-		// Create and store asset in shader pool
 		_shaders.assets.emplace_back(std::make_unique<Shader>(vertSrc, fragSrc));
 		Handle<Shader> handle = { _shaders.assets.size() - 1 };
 		_shaders.nameToHandle[name] = handle;
@@ -54,12 +55,11 @@ namespace engine
 		return handle;
 	}
 
-	Handle<Texture> AssetManager::loadTexture(const std::string& name, 
+	Handle<Texture> AssetManager::loadTexture(const std::string& name,
 		const std::string& path, bool alpha)
 	{
 		std::string absPath = resolvePath(path).string();
 
-		// Load image data
 		int width, height, nrChannels;
 		unsigned char* textureData = stbi_load(absPath.c_str(), &width, &height, &nrChannels, 0);
 		if (!textureData)
@@ -74,21 +74,40 @@ namespace engine
 			texture = std::make_unique<Texture>(width, height, format, textureData);
 			stbi_image_free(textureData);
 		}
-		catch (const std::runtime_error& e)
+		catch (const std::runtime_error&)
 		{
 			stbi_image_free(textureData);
 			throw std::runtime_error("Failed to initialize texture: " + absPath +
 				"\nstb reason: " + stbi_failure_reason());
 		}
 
-		// Set unique texture unit
 		std::size_t id = _textures.assets.size();
 		texture->setUnit(static_cast<GLint>(id));
 
-		// Store asset in texture pool
 		Handle<Texture> handle = { id };
 		_textures.assets.push_back(std::move(texture));
 		_textures.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
+	Handle<Cubemap> AssetManager::loadCubemap(const std::string& name,
+		const std::array<std::string, 6>& facePaths)
+	{
+		std::array<std::string, 6> absPaths;
+		for (std::size_t i = 0; i < 6; ++i)
+		{
+			absPaths[i] = resolvePath(facePaths[i]).string();
+		}
+
+		auto cubemap = std::make_unique<Cubemap>(absPaths);
+
+		std::size_t id = _cubemaps.assets.size();
+		cubemap->setUnit(static_cast<GLint>(id));
+
+		Handle<Cubemap> handle = { id };
+		_cubemaps.assets.push_back(std::move(cubemap));
+		_cubemaps.nameToHandle[name] = handle;
 
 		return handle;
 	}
@@ -119,7 +138,6 @@ namespace engine
 	{
 		std::string absPath = resolvePath(path).string();
 
-		// Load image data
 		int width, height, nrChannels;
 		unsigned char* data = stbi_load(absPath.c_str(), &width, &height, &nrChannels, 0);
 		if (!data)
@@ -142,7 +160,7 @@ namespace engine
 	{
 		float halfLen = planeLen * 0.5f;
 		float stepLen = planeLen / static_cast<float>(planeRes);
-		// Resize Buffers to fit resolution-- how many vertices / positions.
+
 		std::vector<glm::vec3> positions((planeRes + 1) * (planeRes + 1));
 		std::vector<glm::vec3> normals((planeRes + 1) * (planeRes + 1), glm::vec3(0.0f, 1.0f, 0.0f));
 		std::vector<glm::vec2> texcoords((planeRes + 1) * (planeRes + 1));
@@ -153,7 +171,7 @@ namespace engine
 			{
 				positions[i] = glm::vec3(
 					x * stepLen - halfLen,
-					0.0f, //here is where we would sample the y from heightmap.png
+					0.0f,
 					z * stepLen - halfLen
 				);
 
@@ -164,7 +182,7 @@ namespace engine
 			}
 		}
 
-		std::vector<unsigned int> indices(planeRes * planeRes * 6); // triangles buffer generated 
+		std::vector<unsigned int> indices(planeRes * planeRes * 6);
 
 		for (int ti = 0, vi = 0, x = 0; x < planeRes; ++x, ++vi)
 		{
@@ -196,7 +214,7 @@ namespace engine
 
 		float halfLen = planeLen * 0.5f;
 		float stepLen = planeLen / static_cast<float>(planeRes);
-		// init buffers to hold data
+
 		std::vector<glm::vec3> positions((planeRes + 1) * (planeRes + 1));
 		std::vector<glm::vec3> normals((planeRes + 1) * (planeRes + 1), glm::vec3(0.0f));
 		std::vector<glm::vec2> texcoords((planeRes + 1) * (planeRes + 1));
@@ -207,7 +225,6 @@ namespace engine
 			{
 				float u = static_cast<float>(x) / planeRes;
 				float v = static_cast<float>(z) / planeRes;
-				// === MAIN DIFFERENCE BETWEEN PLANE & TERRAINPLANE ===
 				float height = heightmap.sample(u, v) * heightmap.getHeightScale();
 
 				positions[i] = glm::vec3(
@@ -236,7 +253,6 @@ namespace engine
 			}
 		}
 
-		// Compute smooth vertex normals from triangle faces
 		for (std::size_t i = 0; i < indices.size(); i += 3)
 		{
 			unsigned int i0 = indices[i + 0];
@@ -245,25 +261,16 @@ namespace engine
 
 			glm::vec3 edge1 = positions[i1] - positions[i0];
 			glm::vec3 edge2 = positions[i2] - positions[i0];
-			// cross product to get normals
 			glm::vec3 faceNormal = glm::normalize(glm::cross(edge1, edge2));
 
 			normals[i0] += faceNormal;
 			normals[i1] += faceNormal;
 			normals[i2] += faceNormal;
 		}
-		
-		// normalize normals 
-		for (glm::vec3& normal : normals)
+
+		for (glm::vec3& n : normals)
 		{
-			if (glm::length(normal) > 0.0f)
-			{
-				normal = glm::normalize(normal);
-			}
-			else
-			{
-				normal = glm::vec3(0.0f, 1.0f, 0.0f);
-			}
+			n = glm::normalize(n);
 		}
 
 		_meshes.assets.emplace_back(std::make_unique<Mesh>(positions, normals, texcoords, indices));
@@ -278,82 +285,119 @@ namespace engine
 		_materials.assets.emplace_back(std::make_unique<Material>());
 		Handle<Material> handle = { _materials.assets.size() - 1 };
 		_materials.nameToHandle[name] = handle;
-
 		return handle;
 	}
 
 	Shader* AssetManager::getShader(Handle<Shader> handle) const
 	{
-		assert(handle.index < _shaders.assets.size() && "Shader index out of range: " + handle.index);
+		if (!handle.valid() || handle.index >= _shaders.assets.size()) return nullptr;
 		return _shaders.assets[handle.index].get();
 	}
 
-	Shader* AssetManager::getShader(const std::string& name) const 
+	Shader* AssetManager::getShader(const std::string& name) const
 	{
-		return getShader(_shaders.nameToHandle.at(name));
+		auto it = _shaders.nameToHandle.find(name);
+		if (it == _shaders.nameToHandle.end()) return nullptr;
+		return getShader(it->second);
 	}
 
 	Handle<Shader> AssetManager::getShaderHandle(const std::string& name) const
 	{
-		return _shaders.nameToHandle.at(name);
+		auto it = _shaders.nameToHandle.find(name);
+		if (it == _shaders.nameToHandle.end()) return {};
+		return it->second;
 	}
 
 	Texture* AssetManager::getTexture(Handle<Texture> handle) const
 	{
-		assert(handle.index < _textures.assets.size() && "Texture index out of range: " + handle.index);
+		if (!handle.valid() || handle.index >= _textures.assets.size()) return nullptr;
 		return _textures.assets[handle.index].get();
 	}
 
 	Texture* AssetManager::getTexture(const std::string& name) const
 	{
-		return getTexture(_textures.nameToHandle.at(name));
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return nullptr;
+		return getTexture(it->second);
 	}
 
 	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
 	{
-		return _textures.nameToHandle.at(name);
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+	Cubemap* AssetManager::getCubemap(Handle<Cubemap> handle) const
+	{
+		if (!handle.valid() || handle.index >= _cubemaps.assets.size()) return nullptr;
+		return _cubemaps.assets[handle.index].get();
+	}
+
+	Cubemap* AssetManager::getCubemap(const std::string& name) const
+	{
+		auto it = _cubemaps.nameToHandle.find(name);
+		if (it == _cubemaps.nameToHandle.end()) return nullptr;
+		return getCubemap(it->second);
+	}
+
+	Handle<Cubemap> AssetManager::getCubemapHandle(const std::string& name) const
+	{
+		auto it = _cubemaps.nameToHandle.find(name);
+		if (it == _cubemaps.nameToHandle.end()) return {};
+		return it->second;
 	}
 
 	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
 	{
-		assert(handle.index < _meshes.assets.size() && "Mesh index out of range: " + handle.index);
+		if (!handle.valid() || handle.index >= _meshes.assets.size()) return nullptr;
 		return _meshes.assets[handle.index].get();
 	}
 
 	Mesh* AssetManager::getMesh(const std::string& name) const
 	{
-		return getMesh(_meshes.nameToHandle.at(name));
+		auto it = _meshes.nameToHandle.find(name);
+		if (it == _meshes.nameToHandle.end()) return nullptr;
+		return getMesh(it->second);
 	}
 
 	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
 	{
-		return _meshes.nameToHandle.at(name);
+		auto it = _meshes.nameToHandle.find(name);
+		if (it == _meshes.nameToHandle.end()) return {};
+		return it->second;
 	}
 
 	Material* AssetManager::getMaterial(Handle<Material> handle) const
 	{
-		assert(handle.index < _materials.assets.size() && "Material index out of range: " + handle.index);
+		if (!handle.valid() || handle.index >= _materials.assets.size()) return nullptr;
 		return _materials.assets[handle.index].get();
 	}
 
 	Material* AssetManager::getMaterial(const std::string& name) const
 	{
-		return getMaterial(_materials.nameToHandle.at(name));
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return nullptr;
+		return getMaterial(it->second);
 	}
 
 	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
 	{
-		return _materials.nameToHandle.at(name);
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return {};
+		return it->second;
 	}
-	
+
 	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const
 	{
-		assert(handle.index < _heightmaps.assets.size() && "Heightmap index out of range: " + handle.index);
+		if (!handle.valid() || handle.index >= _heightmaps.assets.size()) return nullptr;
 		return _heightmaps.assets[handle.index].get();
 	}
 
 	Heightmap* AssetManager::getHeightmap(const std::string& name) const
 	{
-		return getHeightmap(_heightmaps.nameToHandle.at(name));
+		auto it = _heightmaps.nameToHandle.find(name);
+		if (it == _heightmaps.nameToHandle.end()) return nullptr;
+		return getHeightmap(it->second);
 	}
 }

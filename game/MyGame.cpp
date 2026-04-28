@@ -9,6 +9,8 @@
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
+#include "renderer/resources/Cubemap.h"
+#include "renderer/passes/SkyboxRenderPass.h"
 #include "renderer/passes/ForwardRenderPass.h"
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
@@ -22,18 +24,28 @@ void MyGame::init(engine::AssetManager& assets,
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
+	Handle<engine::Shader> skyboxShader = assets.loadShader("skybox", "shaders/skybox.vert", "shaders/skybox.frag");
 
 	std::cout << "Loading textures...\n";
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
+	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
+		"textures/px.png",
+		"textures/nx.png",
+		"textures/py.png",
+		"textures/ny.png",
+		"textures/pz.png",
+		"textures/nz.png"
+	});
+
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 
-	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
+	int planeRes = heightmap->getWidth() / 2 - 1;
 	float planeLen = 100.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
-	
+
 	std::cout << "Loading materials...\n";
 
 	// todo: move creation to assetmanager
@@ -161,6 +173,9 @@ void MyGame::init(engine::AssetManager& assets,
 		playerController.cameraTransform = &camObj.transform;
 	}
 
+	//Initialize skybox
+	scene.setSkybox(skyboxCubemap);
+
 	// Initialize collectables
 	for (int i = 0; i < 0; i++)
 	{
@@ -182,6 +197,7 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Configure render pipeline
+	renderer.addRenderPass(std::make_unique<engine::SkyboxRenderPass>());
 	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
 
 	engine::Input::setMouseTrapped(true);
