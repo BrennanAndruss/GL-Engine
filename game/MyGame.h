@@ -22,7 +22,6 @@ public:
 	void update(float deltaTime) override;
 
 private:
-	engine::Object* cube;
-	engine::Object* pointLightCenter;
+	engine::Object* gem;
 	std::vector<engine::Object*> objects;
 };

@@ -27,8 +27,21 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
+    //loading textures
+	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuse", "textures/yellow_gem_texture.png", true);
+
 	std::cout << "Loading models...\n";
-	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	Handle<engine::Mesh> gemMesh;
+	try
+	{
+		gemMesh = assets.loadMeshAssimp("gem", "models/gem_model.fbx");
+		std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Assimp load failed, falling back to OBJ: " << e.what() << "\n";
+		gemMesh = assets.loadMesh("gem", "models/cube.obj");
+	}
 
 	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
 	float planeLen = 100.0f;
@@ -68,6 +81,16 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	mat->shininess = 32.0f;
+
+	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
+	mat = assets.getMaterial(gemMat);
+	mat->shader = shader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 64.0f;
+	mat->difTex = gemDiffuseTex;
+	mat->specTex = gemDiffuseTex; //using diffuse texture as specular for a shiny effect
 
 	// Initialize scene
 	{
@@ -126,6 +149,19 @@ void MyGame::init(engine::AssetManager& assets,
 		pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
 		pointLight3.setIntensity(1.0f);
 	}
+	
+	{
+		gem = &scene.createObject("Gem");
+		gem->transform.setPosition(glm::vec3(0.0f, 4.0f, 0.0f));
+		gem->transform.setScale(glm::vec3(0.5f));
+
+		auto& meshRenderer = gem->addComponent<engine::MeshRenderer>();
+		meshRenderer.mesh = gemMesh;
+		meshRenderer.material = gemMat;
+
+		//cube->addComponent<engine::BoxCollider>();
+		//cube->addComponent<engine::RigidBody>();
+	}
 
 	{
 		auto& terrain = scene.createObject("Floor");
@@ -169,7 +205,7 @@ void MyGame::init(engine::AssetManager& assets,
 		obj.transform.setScale(glm::vec3(0.25f));
 
 		auto& mr = obj.addComponent<engine::MeshRenderer>();
-		mr.mesh = cubeMesh;
+		mr.mesh = gemMesh;
 		mr.material = redMat;
 
 		auto& collider = obj.addComponent<engine::BoxCollider>();
@@ -177,8 +213,8 @@ void MyGame::init(engine::AssetManager& assets,
 		collider.isTrigger = true;
 
 		auto& collectable = obj.addComponent<Collectable>();
-		collectable.defaultMat = redMat;
-		collectable.collectedMat = greenMat;
+		collectable.defaultMat = redMat; 
+		collectable.collectedMat = gemMat;
 	}
 
 	// Configure render pipeline
@@ -191,6 +227,5 @@ void MyGame::init(engine::AssetManager& assets,
 
 void MyGame::update(float deltaTime)
 {
-	// cube->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
-	pointLightCenter->transform.rotate(glm::vec3(-1.0f, 1.0f, -1.0f) * (deltaTime * 15.0f));
+	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
 }

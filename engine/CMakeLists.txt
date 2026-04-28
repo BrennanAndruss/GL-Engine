@@ -26,6 +26,11 @@ target_include_directories(engine PUBLIC
     ${bullet_SOURCE_DIR}/src
 )
 
+set(ASSIMP_LINK_TARGET assimp)
+if (TARGET assimp::assimp)
+    set(ASSIMP_LINK_TARGET assimp::assimp)
+endif()
+
 # Link dependencies
 target_link_libraries(engine PUBLIC
     glfw
@@ -35,6 +40,7 @@ target_link_libraries(engine PUBLIC
     BulletDynamics
     BulletCollision
     LinearMath
+    ${ASSIMP_LINK_TARGET}
 )
 
 if (APPLE)
