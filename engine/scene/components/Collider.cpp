@@ -8,6 +8,20 @@
 
 namespace engine
 {
+	void Collider::update(float deltaTime)
+	{
+		if (!_object)
+		{
+			return;
+		}
+
+		btTransform t;
+		t.setIdentity();
+		t.setOrigin(PhysicsSystem::toBullet(owner->transform.getWorldPosition()));
+		t.setRotation(PhysicsSystem::toBullet(owner->transform.getWorldRotation()));
+		_object->setWorldTransform(t);
+	}
+
 	// Constructors defined in implementation where classes are included
 	BoxCollider::BoxCollider() = default;
 	BoxCollider::~BoxCollider() = default;
@@ -39,6 +53,16 @@ namespace engine
 		}
 	}
 
+	void BoxCollider::update(float deltaTime)
+	{
+		if (_shape)
+		{
+			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+		}
+
+		Collider::update(deltaTime);
+	}
+
 	SphereCollider::SphereCollider() = default;
 	SphereCollider::~SphereCollider() = default;
 
@@ -67,6 +91,16 @@ namespace engine
 				_object->setActivationState(DISABLE_DEACTIVATION);
 			}
 		}
+	}
+
+	void SphereCollider::update(float deltaTime)
+	{
+		if (_shape)
+		{
+			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+		}
+
+		Collider::update(deltaTime);
 	}
 
 	CapsuleCollider::CapsuleCollider() = default;
@@ -113,5 +147,15 @@ namespace engine
 				_object->setActivationState(DISABLE_DEACTIVATION);
 			}
 		}
+	}
+
+	void CapsuleCollider::update(float deltaTime)
+	{
+		if (_shape)
+		{
+			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+		}
+
+		Collider::update(deltaTime);
 	}
 }

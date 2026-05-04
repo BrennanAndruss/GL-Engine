@@ -46,6 +46,17 @@ namespace engine
 	void Input::setMouseTrapped(bool trapped)
 	{
 		_mouseTrapped = trapped;
+		double cursorX = 0.0;
+		double cursorY = 0.0;
+		if (GLFWwindow* window = glfwGetCurrentContext())
+		{
+			glfwGetCursorPos(window, &cursorX, &cursorY);
+		}
+
+		_mousePos = glm::vec2(cursorX, cursorY);
+		_prevMousePos = _mousePos;
+		_mouseDelta = glm::vec2(0.0f);
+
 		if (trapped)
 		{
 			glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);

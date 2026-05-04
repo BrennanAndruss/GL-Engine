@@ -23,6 +23,7 @@ namespace engine
         void beginFrame();
         void draw(Scene& scene, AssetManager& assets);
         void endFrame();
+        bool hasSelectedObject() const { return _selectedObject != nullptr; }
 
     private:
         bool _initialized = false;
