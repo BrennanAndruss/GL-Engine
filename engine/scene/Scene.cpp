@@ -1,5 +1,7 @@
 #include "scene/Scene.h"
 
+#include "resources/AssetManager.h"
+
 namespace engine
 {
 	void Scene::start()
@@ -19,14 +21,15 @@ namespace engine
 
 	void Scene::update(float deltaTime)
 	{
-		// Run all component logic updates
 		for (auto& object : _objects)
 		{
 			object->update(deltaTime);
 		}
 
-		// Step physics
-		_physics->update(deltaTime);
+		if (_physics)
+		{
+			_physics->update(deltaTime);
+		}
 
 		// Resolve all dirty transforms recursively once per frame
 		for (auto* root : getRootObjects())
@@ -35,6 +38,26 @@ namespace engine
 		}
 
 		// Sync camera with clean transforms
+		if (_mainCamera) _mainCamera->updateViewMatrix();
+	}
+
+	void Scene::update(float deltaTime, AssetManager& assets)
+	{
+		for (auto& object : _objects)
+		{
+			object->update(deltaTime, assets);
+		}
+
+		if (_physics)
+		{
+			_physics->update(deltaTime);
+		}
+
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
 		if (_mainCamera) _mainCamera->updateViewMatrix();
 	}
 

@@ -10,6 +10,7 @@
 namespace engine
 {
 	class Scene;
+	class AssetManager;
 }
 
 namespace engine
@@ -26,6 +27,7 @@ namespace engine
 
 		void start();
 		void update(float deltaTime);
+		void update(float deltaTime, AssetManager& assets);
 
 		template<typename T, typename... Args>
 		T& addComponent(Args&&... args)

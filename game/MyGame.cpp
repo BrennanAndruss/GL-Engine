@@ -24,6 +24,7 @@ void MyGame::init(engine::AssetManager& assets,
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
+	Handle<engine::Shader> skinnedShader = assets.loadShader("skinned", "shaders/skinned.vert", "shaders/simple.frag");
 	Handle<engine::Shader> skyboxShader = assets.loadShader("skybox", "shaders/skybox.vert", "shaders/skybox.frag");
 
 	//loading textures
@@ -107,6 +108,16 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->difTex = gemDiffuseTex;
 	mat->specTex = gemDiffuseTex; //using diffuse texture as specular for a shiny effect
 
+	Handle<engine::Material> skinnedGemMat = assets.loadMaterial("skinnedGemMat");
+	mat = assets.getMaterial(skinnedGemMat);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 64.0f;
+	mat->difTex = gemDiffuseTex;
+	mat->specTex = gemDiffuseTex;
+
 	// Initialize scene
 	{
 		auto& obj = scene.createObject("DirLight");
@@ -176,6 +187,31 @@ void MyGame::init(engine::AssetManager& assets,
 
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
+	}
+
+	{
+		try
+		{
+			Handle<engine::Mesh> riggedMesh = assets.loadMeshAssimp("riggedGem", "models/gem_model.fbx");
+			Handle<engine::Skeleton> riggedSkeleton = assets.loadSkeletonAssimp("riggedGemSkeleton", "models/gem_model.fbx");
+			Handle<engine::AnimationClip> riggedClip = assets.loadAnimationClipAssimp("riggedGemIdle", "models/gem_model.fbx");
+
+			auto& riggedGem = scene.createObject("RiggedGem");
+			riggedGem.transform.setPosition(glm::vec3(2.0f, 4.0f, 0.0f));
+			riggedGem.transform.setScale(glm::vec3(0.5f));
+
+			auto& meshRenderer = riggedGem.addComponent<engine::MeshRenderer>();
+			meshRenderer.mesh = riggedMesh;
+			meshRenderer.material = skinnedGemMat;
+
+			auto& animator = riggedGem.addComponent<engine::Animator>();
+			animator.skeleton = riggedSkeleton;
+			animator.clip = riggedClip;
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Rigged Assimp import failed, keeping static mesh path only: " << e.what() << "\n";
+		}
 	}
 
 	{

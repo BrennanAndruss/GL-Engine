@@ -7,13 +7,18 @@
 #include <cassert>
 #include <string>
 #include <array>
+#include <unordered_map>
+#include <cmath>
 #include <stb_image.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <tiny_obj_loader.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "resources/Heightmap.h"
+#include "resources/SkeletalAnimation.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
 #include "renderer/resources/Cubemap.h"
@@ -35,11 +40,51 @@ namespace engine
 		return ss.str();
 	}
 
+	static glm::mat4 aiToGlm(const aiMatrix4x4& m)
+	{
+		glm::mat4 result(1.0f);
+		result[0][0] = m.a1; result[1][0] = m.a2; result[2][0] = m.a3; result[3][0] = m.a4;
+		result[0][1] = m.b1; result[1][1] = m.b2; result[2][1] = m.b3; result[3][1] = m.b4;
+		result[0][2] = m.c1; result[1][2] = m.c2; result[2][2] = m.c3; result[3][2] = m.c4;
+		result[0][3] = m.d1; result[1][3] = m.d2; result[2][3] = m.d3; result[3][3] = m.d4;
+		return result;
+	}
+
+	static void addBoneInfluence(glm::uvec4& ids, glm::vec4& weights, unsigned int boneId, float weight)
+	{
+		for (std::size_t i = 0; i < MAX_BONE_INFLUENCES; ++i)
+		{
+			if (weights[i] == 0.0f)
+			{
+				ids[i] = boneId;
+				weights[i] = weight;
+				return;
+			}
+		}
+
+		std::size_t smallestIdx = 0;
+		for (std::size_t i = 1; i < MAX_BONE_INFLUENCES; ++i)
+		{
+			if (weights[i] < weights[smallestIdx])
+			{
+				smallestIdx = i;
+			}
+		}
+
+		if (weight > weights[smallestIdx])
+		{
+			ids[smallestIdx] = boneId;
+			weights[smallestIdx] = weight;
+		}
+	}
+
 	static std::unique_ptr<Mesh> buildMeshFromAiMesh(const aiMesh* aiMeshData)
 	{
 		std::vector<glm::vec3> positions(aiMeshData->mNumVertices);
 		std::vector<glm::vec3> normals(aiMeshData->mNumVertices, glm::vec3(0.0f, 1.0f, 0.0f));
 		std::vector<glm::vec2> texcoords(aiMeshData->mNumVertices, glm::vec2(0.0f));
+		std::vector<glm::uvec4> boneIds(aiMeshData->mNumVertices, glm::uvec4(0));
+		std::vector<glm::vec4> boneWeights(aiMeshData->mNumVertices, glm::vec4(0.0f));
 		std::vector<unsigned int> indices;
 
 		for (unsigned int i = 0; i < aiMeshData->mNumVertices; ++i)
@@ -79,7 +124,167 @@ namespace engine
 			}
 		}
 
-		return std::make_unique<Mesh>(positions, normals, texcoords, indices);
+		if (!aiMeshData->HasBones() || aiMeshData->mNumBones == 0)
+		{
+			return std::make_unique<Mesh>(positions, normals, texcoords, indices);
+		}
+
+		std::unordered_map<std::string, unsigned int> boneNameToId;
+		boneNameToId.reserve(aiMeshData->mNumBones);
+
+		unsigned int nextBoneId = 0;
+		for (unsigned int boneIndex = 0; boneIndex < aiMeshData->mNumBones; ++boneIndex)
+		{
+			const aiBone* bone = aiMeshData->mBones[boneIndex];
+			if (!bone) continue;
+
+			const std::string boneName = bone->mName.C_Str();
+			auto [it, inserted] = boneNameToId.emplace(boneName, nextBoneId);
+			if (inserted)
+			{
+				++nextBoneId;
+			}
+
+			const unsigned int mappedBoneId = it->second;
+			for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex)
+			{
+				const aiVertexWeight& vertexWeight = bone->mWeights[weightIndex];
+				if (vertexWeight.mVertexId >= aiMeshData->mNumVertices)
+				{
+					continue;
+				}
+
+				addBoneInfluence(
+					boneIds[vertexWeight.mVertexId],
+					boneWeights[vertexWeight.mVertexId],
+					mappedBoneId,
+					vertexWeight.mWeight
+				);
+			}
+		}
+
+		for (glm::vec4& weights : boneWeights)
+		{
+			const float sum = weights.x + weights.y + weights.z + weights.w;
+			if (sum > 0.0f)
+			{
+				weights /= sum;
+			}
+		}
+
+		return std::make_unique<Mesh>(positions, normals, texcoords, indices, boneIds, boneWeights);
+	}
+
+	static void buildSkeletonNodeTree(const aiNode* node, int parentIndex, Skeleton& skeleton)
+	{
+		const int nodeIndex = static_cast<int>(skeleton.nodes.size());
+		skeleton.nodes.push_back({
+			node->mName.C_Str(),
+			parentIndex,
+			{},
+			aiToGlm(node->mTransformation),
+			glm::mat4(1.0f),
+			false,
+			-1
+		});
+		skeleton.nodeLookup[skeleton.nodes.back().name] = nodeIndex;
+
+		if (parentIndex >= 0)
+		{
+			skeleton.nodes[parentIndex].children.push_back(nodeIndex);
+		}
+		else
+		{
+			skeleton.rootNodeIndex = nodeIndex;
+		}
+
+		for (unsigned int childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+		{
+			buildSkeletonNodeTree(node->mChildren[childIndex], nodeIndex, skeleton);
+		}
+	}
+
+	static std::unique_ptr<Skeleton> buildSkeletonFromAiMesh(const aiScene* scene, const aiMesh* aiMeshData)
+	{
+		auto skeleton = std::make_unique<Skeleton>();
+		skeleton->globalInverseTransform = glm::inverse(aiToGlm(scene->mRootNode->mTransformation));
+		buildSkeletonNodeTree(scene->mRootNode, -1, *skeleton);
+
+		for (unsigned int boneIndex = 0; boneIndex < aiMeshData->mNumBones; ++boneIndex)
+		{
+			const aiBone* bone = aiMeshData->mBones[boneIndex];
+			if (!bone) continue;
+
+			const std::string boneName = bone->mName.C_Str();
+			const int nodeIndex = skeleton->findNodeIndex(boneName);
+			if (nodeIndex < 0)
+			{
+				continue;
+			}
+
+			SkeletonNode& node = skeleton->nodes[nodeIndex];
+			node.isBone = true;
+			node.boneIndex = static_cast<int>(boneIndex);
+			node.inverseBindMatrix = aiToGlm(bone->mOffsetMatrix);
+		}
+
+		return skeleton;
+	}
+
+	static std::unique_ptr<AnimationClip> buildAnimationClipFromAiAnimation(const aiAnimation* aiAnimationData)
+	{
+		auto clip = std::make_unique<AnimationClip>();
+		clip->name = aiAnimationData->mName.C_Str();
+		clip->durationTicks = static_cast<float>(aiAnimationData->mDuration);
+		clip->ticksPerSecond = (aiAnimationData->mTicksPerSecond > 0.0) ? static_cast<float>(aiAnimationData->mTicksPerSecond) : 25.0f;
+		clip->tracks.reserve(aiAnimationData->mNumChannels);
+
+		for (unsigned int channelIndex = 0; channelIndex < aiAnimationData->mNumChannels; ++channelIndex)
+		{
+			const aiNodeAnim* channel = aiAnimationData->mChannels[channelIndex];
+			if (!channel)
+			{
+				continue;
+			}
+
+			BoneTrack track;
+			track.nodeName = channel->mNodeName.C_Str();
+			track.positions.reserve(channel->mNumPositionKeys);
+			track.rotations.reserve(channel->mNumRotationKeys);
+			track.scales.reserve(channel->mNumScalingKeys);
+
+			for (unsigned int keyIndex = 0; keyIndex < channel->mNumPositionKeys; ++keyIndex)
+			{
+				const auto& key = channel->mPositionKeys[keyIndex];
+				track.positions.push_back({
+					static_cast<float>(key.mTime),
+					glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z)
+				});
+			}
+
+			for (unsigned int keyIndex = 0; keyIndex < channel->mNumRotationKeys; ++keyIndex)
+			{
+				const auto& key = channel->mRotationKeys[keyIndex];
+				track.rotations.push_back({
+					static_cast<float>(key.mTime),
+					glm::normalize(glm::quat(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z))
+				});
+			}
+
+			for (unsigned int keyIndex = 0; keyIndex < channel->mNumScalingKeys; ++keyIndex)
+			{
+				const auto& key = channel->mScalingKeys[keyIndex];
+				track.scales.push_back({
+					static_cast<float>(key.mTime),
+					glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z)
+				});
+			}
+
+			clip->trackLookup[track.nodeName] = clip->tracks.size();
+			clip->tracks.push_back(std::move(track));
+		}
+
+		return clip;
 	}
 
 	AssetManager::AssetManager(const std::string& assetDir) : _assetDir(assetDir) {}
@@ -238,6 +443,74 @@ namespace engine
 		}
 
 		return handles;
+	}
+
+	Handle<Skeleton> AssetManager::loadSkeletonAssimp(const std::string& name, const std::string& path,
+		unsigned int meshIndex)
+	{
+		const std::string absPath = resolvePath(path).string();
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(
+			absPath,
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_GenSmoothNormals |
+			aiProcess_FlipUVs
+		);
+
+		if (!scene || !scene->HasMeshes())
+		{
+			throw std::runtime_error("Failed to load skeleton with Assimp: " + absPath +
+				"\nassimp reason: " + importer.GetErrorString());
+		}
+
+		if (meshIndex >= scene->mNumMeshes)
+		{
+			throw std::runtime_error("Assimp mesh index out of range for skeleton import: " + absPath);
+		}
+
+		const aiMesh* aiMeshData = scene->mMeshes[meshIndex];
+		if (!aiMeshData->HasBones())
+		{
+			throw std::runtime_error("Assimp mesh has no bones: " + absPath);
+		}
+
+		_skeletons.assets.emplace_back(buildSkeletonFromAiMesh(scene, aiMeshData));
+		Handle<Skeleton> handle = { _skeletons.assets.size() - 1 };
+		_skeletons.nameToHandle[name] = handle;
+		return handle;
+	}
+
+	Handle<AnimationClip> AssetManager::loadAnimationClipAssimp(const std::string& name, const std::string& path,
+		unsigned int animationIndex)
+	{
+		const std::string absPath = resolvePath(path).string();
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(
+			absPath,
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_GenSmoothNormals |
+			aiProcess_FlipUVs
+		);
+
+		if (!scene || !scene->HasAnimations())
+		{
+			throw std::runtime_error("Failed to load animation clip with Assimp: " + absPath +
+				"\nassimp reason: " + importer.GetErrorString());
+		}
+
+		if (animationIndex >= scene->mNumAnimations)
+		{
+			throw std::runtime_error("Assimp animation index out of range for: " + absPath);
+		}
+
+		_animationClips.assets.emplace_back(buildAnimationClipFromAiAnimation(scene->mAnimations[animationIndex]));
+		Handle<AnimationClip> handle = { _animationClips.assets.size() - 1 };
+		_animationClips.nameToHandle[name] = handle;
+		return handle;
 	}
 
 	Handle<Heightmap> AssetManager::loadHeightmap(const std::string& name,
@@ -472,6 +745,46 @@ namespace engine
 	{
 		auto it = _meshes.nameToHandle.find(name);
 		if (it == _meshes.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+	Skeleton* AssetManager::getSkeleton(Handle<Skeleton> handle) const
+	{
+		if (!handle.valid() || handle.index >= _skeletons.assets.size()) return nullptr;
+		return _skeletons.assets[handle.index].get();
+	}
+
+	Skeleton* AssetManager::getSkeleton(const std::string& name) const
+	{
+		auto it = _skeletons.nameToHandle.find(name);
+		if (it == _skeletons.nameToHandle.end()) return nullptr;
+		return getSkeleton(it->second);
+	}
+
+	Handle<Skeleton> AssetManager::getSkeletonHandle(const std::string& name) const
+	{
+		auto it = _skeletons.nameToHandle.find(name);
+		if (it == _skeletons.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+	AnimationClip* AssetManager::getAnimationClip(Handle<AnimationClip> handle) const
+	{
+		if (!handle.valid() || handle.index >= _animationClips.assets.size()) return nullptr;
+		return _animationClips.assets[handle.index].get();
+	}
+
+	AnimationClip* AssetManager::getAnimationClip(const std::string& name) const
+	{
+		auto it = _animationClips.nameToHandle.find(name);
+		if (it == _animationClips.nameToHandle.end()) return nullptr;
+		return getAnimationClip(it->second);
+	}
+
+	Handle<AnimationClip> AssetManager::getAnimationClipHandle(const std::string& name) const
+	{
+		auto it = _animationClips.nameToHandle.find(name);
+		if (it == _animationClips.nameToHandle.end()) return {};
 		return it->second;
 	}
 
