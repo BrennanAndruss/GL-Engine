@@ -12,7 +12,7 @@ namespace engine
 	class CharacterController : public Component
 	{
 	public:
-		float height = 2.0f;
+		float height = 1.0f;//mess around with these in MyGame.cpp to get the right size for your character
 		float radius = 0.5f;
 
 		void start() override;

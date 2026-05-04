@@ -47,7 +47,6 @@ namespace engine
 		// Sync the engine transform with the physics world transform
 		btTransform t = _ghostObject->getWorldTransform();
 		owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
-		owner->transform.setRotation(PhysicsSystem::toGlm(t.getRotation()));
 
 		_walkDirection = glm::vec3(0.0f);
 	}

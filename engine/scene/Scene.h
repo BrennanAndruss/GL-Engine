@@ -9,9 +9,12 @@
 #include "scene/Object.h"
 #include "scene/components/Camera.h"
 #include "scene/components/Light.h"
+#include "resources/Handle.h"
 
 namespace engine
 {
+	class Cubemap;
+
 	class Scene
 	{
 	public:
@@ -23,10 +26,7 @@ namespace engine
 
 		Object& createObject(const std::string& name);
 
-		// All objects for flat traversal
 		const std::vector<std::unique_ptr<Object>>& getObjects() const { return _objects; }
-
-		// Root objects for hierarchical traversal
 		std::vector<Object*> getRootObjects() const;
 
 		void setPhysicsSystem(PhysicsSystem* physics) { _physics = physics; }
@@ -38,6 +38,15 @@ namespace engine
 		void addLight(Light* light) { _lights.push_back(light); }
 		const std::vector<Light*>& getLights() const { return _lights; }
 
+		void setSkybox(Handle<Cubemap> cubemap)
+		{
+			_skybox = cubemap;
+			_hasSkybox = cubemap.valid();
+		}
+
+		Handle<Cubemap> getSkybox() const { return _skybox; }
+		bool hasSkybox() const { return _hasSkybox; }
+
 	private:
 		std::vector<std::unique_ptr<Object>> _objects;
 		bool _started = false;
@@ -45,6 +54,9 @@ namespace engine
 		PhysicsSystem* _physics = nullptr;
 		Camera* _mainCamera = nullptr;
 		std::vector<Light*> _lights;
+
+		Handle<Cubemap> _skybox;
+		bool _hasSkybox = false;
 
 		void resolveTransforms(Transform& t, const glm::mat4& parentWorld);
 	};
