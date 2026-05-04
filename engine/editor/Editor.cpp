@@ -94,6 +94,10 @@ namespace engine
         ImGui::Separator();
 
         ImGui::Text("Select object:");
+        if (ImGui::Button("Clear Selection"))
+        {
+            _selectedObject = nullptr;
+        }
 
 
         for (const auto& object : scene.getObjects())
@@ -131,6 +135,42 @@ namespace engine
             {
                 _selectedObject->transform.setScale(scale);
             }
+
+            // add component button
+
+            const bool hasCollider = _selectedObject->getComponent<BoxCollider>() != nullptr;
+            const bool hasRigidBody = _selectedObject->getComponent<RigidBody>() != nullptr;
+            if (!hasCollider || !hasRigidBody)
+            {
+                if (ImGui::Button("Add Physics Collision"))
+                {
+                    if (!hasCollider)
+                    {
+                        _selectedObject->addComponent<BoxCollider>();
+                    }
+
+                    if (!hasRigidBody)
+                    {
+                        _selectedObject->addComponent<RigidBody>();
+                    }
+                }
+            }
+
+            if (auto* rigidBody = _selectedObject->getComponent<RigidBody>())
+            {
+                const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
+                int selectedType = static_cast<int>(rigidBody->getBodyType());
+                if (ImGui::Combo("RigidBody Type", &selectedType, bodyTypes, IM_ARRAYSIZE(bodyTypes)))
+                {
+                    rigidBody->setBodyType(static_cast<RigidBody::BodyType>(selectedType));
+                }
+
+                if (rigidBody->getBodyType() == RigidBody::BodyType::Dynamic)
+                {
+                    ImGui::DragFloat("Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
+                }
+            }
+            
         }
         else
         {

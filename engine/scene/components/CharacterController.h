@@ -19,6 +19,9 @@ namespace engine
 		void update(float deltaTime) override;
 
 		void move(glm::vec3 delta);
+		bool isOnGround() const;
+		bool canJump() const;
+		void jump(glm::vec3 direction = glm::vec3(0.0f, 1.0f, 0.0f));
 
 	private:
 		btPairCachingGhostObject* _ghostObject = nullptr;

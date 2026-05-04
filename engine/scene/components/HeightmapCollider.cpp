@@ -42,4 +42,30 @@ namespace engine
         // Register as static collision object
         _object = physics->createCollisionObject(_shape.get(), worldPos, false);
     }
+
+    void HeightmapCollider::update(float deltaTime)
+    {
+        if (!_shape || !_object)
+        {
+            return;
+        }
+
+        glm::vec3 worldScale = owner->transform.getWorldScale();
+        float planeRes = static_cast<float>(heightmap->getWidth() - 1);
+        float doubleScale = planeLen / planeRes;
+        _shape->setLocalScaling(btVector3(
+            doubleScale * worldScale.x,
+            worldScale.y,
+            doubleScale * worldScale.z
+        ));
+
+        btTransform t;
+        t.setIdentity();
+
+        glm::vec3 worldPos = owner->transform.getWorldPosition();
+        worldPos.y += heightmap->getHeightScale() * 0.5f * worldScale.y;
+        t.setOrigin(PhysicsSystem::toBullet(worldPos));
+        t.setRotation(PhysicsSystem::toBullet(owner->transform.getWorldRotation()));
+        _object->setWorldTransform(t);
+    }
 }

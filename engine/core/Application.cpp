@@ -34,13 +34,19 @@ namespace engine
 
     void Application::run(std::unique_ptr<Game> game)
     {
+		_game = game.get();
         game->init(_assets, _renderer, _scene, _config);
+		_game->setEditorMode(_editorActive, _scene);
         _scene.start();
 
         while (!_window.shouldClose())
         {
             Time::update();
             Input::update();
+			if (_game)
+			{
+				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
+			}
 
             const bool editorEnabledThisFrame = _editorActive;
             if (editorEnabledThisFrame)
@@ -87,6 +93,11 @@ namespace engine
         {
             _editorActive = !_editorActive;
             Input::setMouseTrapped(!_editorActive);
+			if (_game)
+			{
+				_game->setEditorMode(_editorActive, _scene);
+                _game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
+			}
         }
     }
 

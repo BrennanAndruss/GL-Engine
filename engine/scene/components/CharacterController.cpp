@@ -30,7 +30,7 @@ namespace engine
 		float stepHeight = 0.45f;
 		_controller = new btKinematicCharacterController(_ghostObject, _shape.get(), stepHeight);
 		_controller->setUp(btVector3(0, 1, 0));
-		_controller->setGravity(btVector3(0, -10, 0));
+		_controller->setGravity(btVector3(0, -9.81f, 0));
 
 		// Add to world with filters
 		int group = btBroadphaseProxy::CharacterFilter;
@@ -55,5 +55,23 @@ namespace engine
 	void CharacterController::move(glm::vec3 direction)
 	{
 		_walkDirection = direction;
+	}
+
+	bool CharacterController::isOnGround() const
+	{
+		return _controller ? _controller->onGround() : false;
+	}
+
+	bool CharacterController::canJump() const
+	{
+		return _controller ? _controller->canJump() : false;
+	}
+
+	void CharacterController::jump(glm::vec3 direction)
+	{
+		if (_controller)
+		{
+			_controller->jump(btVector3(direction.x, direction.y, direction.z));
+		}
 	}
 }

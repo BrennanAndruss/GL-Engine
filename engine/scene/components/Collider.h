@@ -27,7 +27,14 @@ namespace engine
 		bool isTrigger = false;
 
 		virtual btCollisionShape* getShape() const = 0;
+		void update(float deltaTime) override;
 		btCollisionObject* getCollisionObject() const { return _object; }
+		btCollisionObject* releaseCollisionObject()
+		{
+			auto* object = _object;
+			_object = nullptr;
+			return object;
+		}
 
 	protected:
 		btCollisionObject* _object = nullptr;
@@ -45,6 +52,7 @@ namespace engine
 
 		void start() override;
 		btCollisionShape* getShape() const override;
+		void update(float deltaTime) override;
 
 	private:
 		std::unique_ptr<btBoxShape> _shape;
@@ -63,6 +71,7 @@ namespace engine
 
 		void start() override;
 		btCollisionShape* getShape() const override;
+		void update(float deltaTime) override;
 
 	private:
 		std::unique_ptr<btCapsuleShape> _shape;
@@ -79,6 +88,7 @@ namespace engine
 
 		void start() override;
 		btCollisionShape* getShape() const override;
+		void update(float deltaTime) override;
 
 	private:
 		std::unique_ptr<btSphereShape> _shape;
