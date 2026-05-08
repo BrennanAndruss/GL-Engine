@@ -16,6 +16,7 @@
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
 
+
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
 				  engine::Scene& scene,
@@ -192,21 +193,29 @@ void MyGame::init(engine::AssetManager& assets,
 	{
 		try
 		{
-			Handle<engine::Mesh> riggedMesh = assets.loadMeshAssimp("riggedGem", "models/gem_model.fbx");
-			Handle<engine::Skeleton> riggedSkeleton = assets.loadSkeletonAssimp("riggedGemSkeleton", "models/gem_model.fbx");
-			Handle<engine::AnimationClip> riggedClip = assets.loadAnimationClipAssimp("riggedGemIdle", "models/gem_model.fbx");
+			Handle<engine::Mesh> sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
+			Handle<engine::Skeleton> sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
+			Handle<engine::AnimationClip> sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
 
-			auto& riggedGem = scene.createObject("RiggedGem");
-			riggedGem.transform.setPosition(glm::vec3(2.0f, 4.0f, 0.0f));
-			riggedGem.transform.setScale(glm::vec3(0.5f));
+			const auto* skel = assets.getSkeleton(sprintSkeleton);
+			const auto* clip = assets.getAnimationClip(sprintClip);
+			if (skel && clip)
+			{
+				std::cout << "[Sprint] Skeleton loaded: " << skel->nodes.size() << " nodes, " << skel->boneCount() << " bones\n";
+				std::cout << "[Sprint] Animation: \"" << clip->name << "\" duration=" << clip->durationTicks << " ticks @ " << clip->ticksPerSecond << " TPS, " << clip->tracks.size() << " tracks\n";
+			}
 
-			auto& meshRenderer = riggedGem.addComponent<engine::MeshRenderer>();
-			meshRenderer.mesh = riggedMesh;
+			auto& sprinter = scene.createObject("Sprinter");
+			sprinter.transform.setPosition(glm::vec3(20.0f, 2.0f, 5.0f));
+			sprinter.transform.setScale(glm::vec3(0.2f));
+
+			auto& meshRenderer = sprinter.addComponent<engine::MeshRenderer>();
+			meshRenderer.mesh = sprintMesh;
 			meshRenderer.material = skinnedGemMat;
 
-			auto& animator = riggedGem.addComponent<engine::Animator>();
-			animator.skeleton = riggedSkeleton;
-			animator.clip = riggedClip;
+			auto& animator = sprinter.addComponent<engine::Animator>();
+			animator.skeleton = sprintSkeleton;
+			animator.clip = sprintClip;
 		}
 		catch (const std::exception& e)
 		{

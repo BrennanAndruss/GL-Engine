@@ -41,6 +41,7 @@ namespace engine
         {
             Time::update();
             Input::update();
+            _window.pollEvents();
 
             const bool editorEnabledThisFrame = _editorActive;
             if (editorEnabledThisFrame)
@@ -63,7 +64,6 @@ namespace engine
             
             
             _window.swapBuffers();
-            _window.pollEvents();
         }
     }
 

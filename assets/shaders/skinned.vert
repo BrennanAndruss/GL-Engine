@@ -20,12 +20,38 @@ layout (std140) uniform CameraData
 uniform mat4 model;
 uniform int isSkinned;
 uniform int numBones;
+uniform int debugSingleInfluence;
+uniform int debugUseMaxWeight;
 uniform mat4 bones[100];
 
 mat4 getSkinMatrix()
 {
 	if (isSkinned == 0)
 	{
+		return mat4(1.0);
+	}
+
+	if (debugSingleInfluence != 0)
+	{
+		int slot = 0;
+		if (debugUseMaxWeight != 0)
+		{
+			float best = boneWeights[0];
+			for (int i = 1; i < 4; ++i)
+			{
+				if (boneWeights[i] > best)
+				{
+					best = boneWeights[i];
+					slot = i;
+				}
+			}
+		}
+
+		uint boneId = boneIds[slot];
+		if (boneId < uint(numBones))
+		{
+			return bones[boneId];
+		}
 		return mat4(1.0);
 	}
 

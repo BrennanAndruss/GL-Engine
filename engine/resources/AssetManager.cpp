@@ -17,6 +17,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/config.h>
 #include "resources/Heightmap.h"
 #include "resources/SkeletalAnimation.h"
 #include "renderer/resources/Shader.h"
@@ -129,23 +130,14 @@ namespace engine
 			return std::make_unique<Mesh>(positions, normals, texcoords, indices);
 		}
 
-		std::unordered_map<std::string, unsigned int> boneNameToId;
-		boneNameToId.reserve(aiMeshData->mNumBones);
-
-		unsigned int nextBoneId = 0;
+		// Use the aiMesh bone indices directly so that vertex bone IDs match the
+		// order used when we assign inverseBindMatrix in buildSkeletonFromAiMesh.
 		for (unsigned int boneIndex = 0; boneIndex < aiMeshData->mNumBones; ++boneIndex)
 		{
 			const aiBone* bone = aiMeshData->mBones[boneIndex];
 			if (!bone) continue;
 
-			const std::string boneName = bone->mName.C_Str();
-			auto [it, inserted] = boneNameToId.emplace(boneName, nextBoneId);
-			if (inserted)
-			{
-				++nextBoneId;
-			}
-
-			const unsigned int mappedBoneId = it->second;
+			const unsigned int mappedBoneId = boneIndex; // keep ai ordering
 			for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex)
 			{
 				const aiVertexWeight& vertexWeight = bone->mWeights[weightIndex];
@@ -169,6 +161,22 @@ namespace engine
 			if (sum > 0.0f)
 			{
 				weights /= sum;
+			}
+		}
+
+		// Debug: print first few vertices' bone ids and weights
+		std::cout << "[AssetManager] Mesh bone influences (first 8 verts):\n";
+		int printed = 0;
+		for (unsigned int i = 0; i < boneIds.size() && printed < 8; ++i)
+		{
+			const auto& ids = boneIds[i];
+			const auto& w = boneWeights[i];
+			const float sum = w.x + w.y + w.z + w.w;
+			if (sum > 0.0f)
+			{
+				std::cout << "  v" << i << ": ids=[" << ids.x << "," << ids.y << "," << ids.z << "," << ids.w << "] ";
+				std::cout << "weights=[" << w.x << "," << w.y << "," << w.z << "," << w.w << "] sum=" << sum << "\n";
+				++printed;
 			}
 		}
 
@@ -210,6 +218,56 @@ namespace engine
 		skeleton->globalInverseTransform = glm::inverse(aiToGlm(scene->mRootNode->mTransformation));
 		buildSkeletonNodeTree(scene->mRootNode, -1, *skeleton);
 
+		// Debug: print ancestor chain for mixamorig:Hips to help choose a correct global inverse root
+		int hipNode = skeleton->findNodeIndex("mixamorig:Hips");
+		if (hipNode >= 0)
+		{
+			std::cout << "[AssetManager] Found mixamorig:Hips at node index " << hipNode << "\n";
+			int cur = hipNode;
+			std::vector<int> chain;
+			while (cur >= 0)
+			{
+				chain.push_back(cur);
+				cur = skeleton->nodes[cur].parentIndex;
+			}
+			std::cout << "[AssetManager] Ancestor chain (child->parent):\n";
+			for (std::size_t i = 0; i < chain.size(); ++i)
+			{
+				int idx = chain[i];
+				const auto& n = skeleton->nodes[idx];
+				std::cout << "  " << i << ": nodeIndex=" << idx << " name=\"" << n.name << "\" bindLocalPos=["
+					<< n.bindLocalTransform[3][0] << ", " << n.bindLocalTransform[3][1] << ", " << n.bindLocalTransform[3][2] << "]\n";
+			}
+
+			// Try to find a suitable root node (Armature, Root, or scene root name)
+			int chosenIdx = -1;
+			std::string sceneRootName = scene->mRootNode ? scene->mRootNode->mName.C_Str() : std::string();
+			for (int idx : chain)
+			{
+				std::string nm = skeleton->nodes[idx].name;
+				if (nm == "Armature" || nm == "Root" || nm == sceneRootName)
+				{
+					chosenIdx = idx;
+					break;
+				}
+			}
+			if (chosenIdx < 0) chosenIdx = skeleton->rootNodeIndex;
+			std::vector<int> rev;
+			int w = chosenIdx;
+			while (w >= 0)
+			{
+				rev.push_back(w);
+				w = skeleton->nodes[w].parentIndex;
+			}
+			glm::mat4 accum = glm::mat4(1.0f);
+			for (int i = static_cast<int>(rev.size()) - 1; i >= 0; --i)
+			{
+				accum = accum * skeleton->nodes[rev[i]].bindLocalTransform;
+			}
+			std::cout << "[AssetManager] Selected root node '" << skeleton->nodes[chosenIdx].name << "' (index " << chosenIdx << ") worldPos=["
+				<< accum[3][0] << ", " << accum[3][1] << ", " << accum[3][2] << "]\n";
+		}
+
 		for (unsigned int boneIndex = 0; boneIndex < aiMeshData->mNumBones; ++boneIndex)
 		{
 			const aiBone* bone = aiMeshData->mBones[boneIndex];
@@ -228,10 +286,35 @@ namespace engine
 			node.inverseBindMatrix = aiToGlm(bone->mOffsetMatrix);
 		}
 
+		// Debug: print first few actual bones and their inverse bind matrices
+		std::cout << "[AssetManager] Skeleton loaded:\n";
+		std::cout << "  GlobalInverseTransform[3]: [" 
+			<< skeleton->globalInverseTransform[3][0] << ", "
+			<< skeleton->globalInverseTransform[3][1] << ", "
+			<< skeleton->globalInverseTransform[3][2] << "]\n";
+		
+		int bonesPrinted = 0;
+		for (const auto& node : skeleton->nodes)
+		{
+			if (node.isBone && node.boneIndex >= 0)
+			{
+				std::cout << "  Bone " << node.boneIndex << " (" << node.name << "):\n"
+					<< "    InverseBindMatrix[3]: [" 
+					<< node.inverseBindMatrix[3][0] << ", " 
+					<< node.inverseBindMatrix[3][1] << ", " 
+					<< node.inverseBindMatrix[3][2] << "]\n"
+					<< "    BindLocal[3]: [" 
+					<< node.bindLocalTransform[3][0] << ", " 
+					<< node.bindLocalTransform[3][1] << ", " 
+					<< node.bindLocalTransform[3][2] << "]\n";
+				if (++bonesPrinted >= 3) break;
+			}
+		}
+
 		return skeleton;
 	}
 
-	static std::unique_ptr<AnimationClip> buildAnimationClipFromAiAnimation(const aiAnimation* aiAnimationData)
+	static std::unique_ptr<AnimationClip> buildAnimationClipFromAiAnimation(const aiAnimation* aiAnimationData, const Skeleton* skeleton = nullptr)
 	{
 		auto clip = std::make_unique<AnimationClip>();
 		clip->name = aiAnimationData->mName.C_Str();
@@ -253,12 +336,32 @@ namespace engine
 			track.rotations.reserve(channel->mNumRotationKeys);
 			track.scales.reserve(channel->mNumScalingKeys);
 
+			// Try to find this node in skeleton to check if it's a bone and get parent info
+			const SkeletonNode* skeletonNode = nullptr;
+			if (skeleton)
+			{
+				int nodeIdx = skeleton->findNodeIndex(track.nodeName);
+				if (nodeIdx >= 0 && nodeIdx < static_cast<int>(skeleton->nodes.size()))
+				{
+					skeletonNode = &skeleton->nodes[nodeIdx];
+				}
+			}
+
 			for (unsigned int keyIndex = 0; keyIndex < channel->mNumPositionKeys; ++keyIndex)
 			{
 				const auto& key = channel->mPositionKeys[keyIndex];
+				glm::vec3 pos(key.mValue.x, key.mValue.y, key.mValue.z);
+
+				// DEBUG: Don't convert yet - just log the raw values to understand what space they're in
+				if (keyIndex == 0)
+				{
+					std::cout << "    Track \"" << track.nodeName << "\" first keyframe pos: [" 
+						<< pos.x << ", " << pos.y << ", " << pos.z << "]\n";
+				}
+
 				track.positions.push_back({
 					static_cast<float>(key.mTime),
-					glm::vec3(key.mValue.x, key.mValue.y, key.mValue.z)
+					pos
 				});
 			}
 
@@ -383,6 +486,7 @@ namespace engine
 		const std::string absPath = resolvePath(path).string();
 
 		Assimp::Importer importer;
+		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = importer.ReadFile(
 			absPath,
 			aiProcess_Triangulate |
@@ -415,6 +519,7 @@ namespace engine
 		const std::string absPath = resolvePath(path).string();
 
 		Assimp::Importer importer;
+		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = importer.ReadFile(
 			absPath,
 			aiProcess_Triangulate |
@@ -451,6 +556,7 @@ namespace engine
 		const std::string absPath = resolvePath(path).string();
 
 		Assimp::Importer importer;
+		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = importer.ReadFile(
 			absPath,
 			aiProcess_Triangulate |
@@ -488,6 +594,7 @@ namespace engine
 		const std::string absPath = resolvePath(path).string();
 
 		Assimp::Importer importer;
+		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 		const aiScene* scene = importer.ReadFile(
 			absPath,
 			aiProcess_Triangulate |
@@ -507,7 +614,14 @@ namespace engine
 			throw std::runtime_error("Assimp animation index out of range for: " + absPath);
 		}
 
-		_animationClips.assets.emplace_back(buildAnimationClipFromAiAnimation(scene->mAnimations[animationIndex]));
+		// Load skeleton from same file to enable world-to-local position conversion
+		std::unique_ptr<Skeleton> skeleton = nullptr;
+		if (scene->HasMeshes() && scene->mMeshes[0]->HasBones())
+		{
+			skeleton = buildSkeletonFromAiMesh(scene, scene->mMeshes[0]);
+		}
+
+		_animationClips.assets.emplace_back(buildAnimationClipFromAiAnimation(scene->mAnimations[animationIndex], skeleton.get()));
 		Handle<AnimationClip> handle = { _animationClips.assets.size() - 1 };
 		_animationClips.nameToHandle[name] = handle;
 		return handle;
