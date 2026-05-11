@@ -5,7 +5,12 @@
 #include "renderer/passes/RenderPass.h"
 #include "renderer/UniformBuffer.h"
 #include "scene/Scene.h"
-#include "resources/AssetManager.h"
+
+// Forward declarations
+namespace engine
+{
+	class AssetManager;
+}
 
 namespace engine
 {
@@ -16,6 +21,8 @@ namespace engine
 	public:
 		Renderer(int width, int height);
 		~Renderer() = default;
+
+		void init(AssetManager& assets);
 
 		void addRenderPass(std::unique_ptr<RenderPass> renderPass);
 		void resize(int width, int height);

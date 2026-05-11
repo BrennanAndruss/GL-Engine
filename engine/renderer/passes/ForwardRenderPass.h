@@ -8,6 +8,7 @@
 namespace engine
 {
 	class AssetManager;
+	class Shader;
 }
 
 namespace engine
@@ -15,7 +16,7 @@ namespace engine
 	class ForwardRenderPass : public RenderPass
 	{
 	public:
-		ForwardRenderPass();
+		ForwardRenderPass(Handle<Shader> shader);
 		void execute(const Scene& scene, const AssetManager& assets) override;
 	};
 }

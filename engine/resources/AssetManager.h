@@ -38,10 +38,16 @@ namespace engine
 		Handle<Shader> loadShader(const std::string& name,
 								  const std::string& vertPath,
 								  const std::string& fragPath);
+		Handle<Shader> loadEngineShader(const std::string& name,
+										const std::string& vertPath,
+										const std::string& fragPath);
 
 		Handle<Texture> loadTexture(const std::string& name,
 									const std::string& path,
 									bool alpha);
+		Handle<Texture> loadTexture(const std::string& name,
+									unsigned char* data,
+									int width, int height);
 
 		Handle<Cubemap> loadCubemap(const std::string& name,
 									const std::array<std::string, 6>& facePaths);
@@ -51,6 +57,7 @@ namespace engine
 			unsigned int meshIndex = 0);
 		std::vector<Handle<Mesh>> loadModelMeshesAssimp(const std::string& namePrefix,
 			const std::string& path);
+
 		Handle<Material> loadMaterial(const std::string& name);
 
 		Handle<Heightmap> loadHeightmap(const std::string& name,
@@ -67,6 +74,7 @@ namespace engine
 										 int planeRes,
 										 float planeLen);
 
+		// Access
 		Shader* getShader(Handle<Shader> handle) const;
 		Shader* getShader(const std::string& name) const;
 		Handle<Shader> getShaderHandle(const std::string& name) const;
@@ -89,6 +97,16 @@ namespace engine
 
 		Heightmap* getHeightmap(Handle<Heightmap> handle) const;
 		Heightmap* getHeightmap(const std::string& name) const;
+		Handle<Heightmap> getHeightmapHandle(const std::string& name) const;
+
+		// Default assets
+		Handle<Shader> getDefaultShader() const { return _defaultShader; }
+		void setDefaultShader(Handle<Shader> shader);
+
+		Handle<Texture> getWhiteTexture() const { return _whiteTexture; }
+		Handle<Texture> getBlackTexture() const { return _blackTexture; }
+		Handle<Texture> getNormalTexture() const { return _normalTexture; }
+		Handle<Material> getDefaultMaterial() const { return _defaultMaterial; }
 
 	private:
 		AssetPool<Shader> _shaders;
@@ -98,7 +116,20 @@ namespace engine
 		AssetPool<Material> _materials;
 		AssetPool<Heightmap> _heightmaps;
 
+		Handle<Shader> _defaultShader;
+		Handle<Texture> _whiteTexture;
+		Handle<Texture> _blackTexture;
+		Handle<Texture> _normalTexture;
+		Handle<Material> _defaultMaterial;
+		void loadDefaults();
+
+		Handle<Shader> loadShaderFromRoot(const std::filesystem::path& root,
+			const std::string& name,
+			const std::string& vertPath,
+			const std::string& fragPath);
+
 		std::filesystem::path _assetDir;
+		std::filesystem::path _engineAssetDir;
 		std::filesystem::path resolvePath(const std::string& rel) const;
 	};
 }
