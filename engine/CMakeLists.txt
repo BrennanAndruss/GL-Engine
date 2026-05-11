@@ -15,6 +15,7 @@ add_library(engine ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 # Define project root directory (for cross-IDE compatibility)
 target_compile_definitions(engine PUBLIC
     PROJECT_ROOT="${CMAKE_SOURCE_DIR}/"
+    ENGINE_ROOT="${CMAKE_SOURCE_DIR}/engine/"
 )
 
 # Include directories

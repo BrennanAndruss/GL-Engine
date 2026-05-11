@@ -3,6 +3,9 @@
 #include <glad/glad.h>
 #include <cassert>
 #include <iostream>
+#include "renderer/passes/ForwardRenderPass.h"
+#include "renderer/passes/SkyboxRenderPass.h"
+#include "resources/AssetManager.h"
 
 namespace engine
 {
@@ -11,6 +14,22 @@ namespace engine
 		_height(height), 
 		_cameraUBO(sizeof(CameraData), static_cast<GLuint>(UBOBindings::Camera)),
 		_lightsUBO(MAX_LIGHTS * sizeof(LightData), static_cast<GLuint>(UBOBindings::Light)) {}
+
+	void Renderer::init(AssetManager& assets)
+	{
+		// Load engine shaders
+		Handle<Shader> skyboxShader = assets.loadEngineShader(
+			"EngineSkybox", "shaders/skybox.vert", "shaders/skybox.frag"
+		);
+		Handle<Shader> forwardShader = assets.loadEngineShader(
+			"EngineForward", "shaders/forward.vert", "shaders/forward.frag"
+		);
+		assets.setDefaultShader(forwardShader);
+
+		// Construct render passes
+		addRenderPass(std::make_unique<SkyboxRenderPass>(skyboxShader));
+		addRenderPass(std::make_unique<ForwardRenderPass>(forwardShader));
+	}
 
 	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
 	{

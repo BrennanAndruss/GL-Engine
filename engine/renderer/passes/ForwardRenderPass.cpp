@@ -11,7 +11,7 @@
 
 namespace engine
 {
-	ForwardRenderPass::ForwardRenderPass() = default;
+	ForwardRenderPass::ForwardRenderPass(Handle<Shader> shader) : RenderPass(shader) {}
 
 	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets)
 	{
@@ -25,7 +25,7 @@ namespace engine
 			auto* shader = assets.getShader(mat->shader);
 			if (!mesh || !mat || !shader) continue;
 
-			// Set simple shader uniforms
+			// Set shader uniforms
 			shader->bind();
 			shader->setMat4("model", object->transform.getWorldMatrix());
 			shader->setVec3("mat.ambient", mat->ambient);
@@ -33,29 +33,18 @@ namespace engine
 			shader->setVec3("mat.specular", mat->specular);
 			shader->setFloat("mat.shininess", mat->shininess);
 			shader->setInt("numLights", scene.getLights().size());
-			shader->setInt("mat.hasDifTex", 0);
-			shader->setInt("mat.hasSpecTex", 0);
 
-			if(mat->difTex.valid()){
-				if (auto* difTex = assets.getTexture(mat->difTex)){
-
-					difTex->bind(shader->getUniform("mat.difTex"));
-					shader->setInt("mat.hasDifTex", 1);
-				
-				}
-			}
+			// Bind textures
+			auto* difTex = assets.getTexture(mat->difTex);
+			difTex->bind(shader->getUniform("mat.difTex"));
 	
-
-			if(mat->specTex.valid()){
-				if (auto* specTex = assets.getTexture(mat->specTex)){
-					specTex->bind(shader->getUniform("mat.specTex"));
-					shader->setInt("mat.hasSpecTex", 1);
-				}
-					
-			}
+			auto* specTex = assets.getTexture(mat->specTex);
+			specTex->bind(shader->getUniform("mat.specTex"));
 
 			mesh->draw();
 			shader->unbind();
+			difTex->unbind();
+			specTex->unbind();
 		}
 	}
 }

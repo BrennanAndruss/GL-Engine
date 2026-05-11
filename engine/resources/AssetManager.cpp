@@ -82,23 +82,74 @@ namespace engine
 		return std::make_unique<Mesh>(positions, normals, texcoords, indices);
 	}
 
-	AssetManager::AssetManager(const std::string& assetDir) : _assetDir(assetDir) {}
+	AssetManager::AssetManager(const std::string& assetDir) : _assetDir(assetDir) 
+	{
+		_engineAssetDir = ENGINE_ROOT "assets/";
+		loadDefaults();
+	}
 
 	AssetManager::~AssetManager() = default;
+
+	void AssetManager::loadDefaults()
+	{
+		// Load 1x1 default textures
+		unsigned char white[4] = { 255, 255, 255, 255 };
+		unsigned char black[4] = { 0, 0, 0, 255 };
+		unsigned char normal[4] = { 128, 128, 255, 255 };
+
+		_whiteTexture = loadTexture("TexWhite", white, 1, 1);
+		_blackTexture = loadTexture("TexBlack", black, 1, 1);
+		_normalTexture = loadTexture("TexNormal", normal, 1, 1);
+
+		// Load default meshes
+
+		// Load and initialize default material
+		_materials.assets.emplace_back(std::make_unique<Material>());
+		_defaultMaterial = { _materials.assets.size() - 1 };
+		_materials.nameToHandle["MatDefault"] = _defaultMaterial;
+
+		auto* mat = getMaterial(_defaultMaterial);
+		mat->shader = _defaultShader;
+		mat->ambient = glm::vec3(0.2f);
+		mat->diffuse = glm::vec3(0.8f);
+		mat->specular = glm::vec3(1.0f);
+		mat->difTex = _whiteTexture;
+		mat->specTex = _whiteTexture;
+	}
+
+	void AssetManager::setDefaultShader(Handle<Shader> shader)
+	{
+		_defaultShader = shader;
+
+		// Initialize default material
+		auto* mat = getMaterial(_defaultMaterial);
+		mat->shader = _defaultShader;
+	}
 
 	std::filesystem::path AssetManager::resolvePath(const std::string& rel) const
 	{
 		return _assetDir / rel;
 	}
 
+#pragma region Shaders
+
 	Handle<Shader> AssetManager::loadShader(const std::string& name,
 		const std::string& vertPath, const std::string& fragPath)
 	{
-		std::filesystem::path absVertPath = resolvePath(vertPath);
-		std::string vertSrc = readFile(absVertPath);
+		return loadShaderFromRoot(_assetDir, name, vertPath, fragPath);
+	}
 
-		std::filesystem::path absFragPath = resolvePath(fragPath);
-		std::string fragSrc = readFile(absFragPath);
+	Handle<Shader> AssetManager::loadEngineShader(const std::string& name,
+		const std::string& vertPath, const std::string& fragPath)
+	{
+		return loadShaderFromRoot(_engineAssetDir, name, vertPath, fragPath);
+	}
+
+	Handle<Shader> AssetManager::loadShaderFromRoot(const std::filesystem::path& root,
+		const std::string& name, const std::string& vertPath, const std::string& fragPath)
+	{
+		std::string vertSrc = readFile(root / vertPath);
+		std::string fragSrc = readFile(root / fragPath);
 
 		_shaders.assets.emplace_back(std::make_unique<Shader>(vertSrc, fragSrc));
 		Handle<Shader> handle = { _shaders.assets.size() - 1 };
@@ -106,6 +157,30 @@ namespace engine
 
 		return handle;
 	}
+
+	Shader* AssetManager::getShader(Handle<Shader> handle) const
+	{
+		if (!handle.valid() || handle.index >= _shaders.assets.size()) return nullptr;
+		return _shaders.assets[handle.index].get();
+	}
+
+	Shader* AssetManager::getShader(const std::string& name) const
+	{
+		auto it = _shaders.nameToHandle.find(name);
+		if (it == _shaders.nameToHandle.end()) return nullptr;
+		return getShader(it->second);
+	}
+
+	Handle<Shader> AssetManager::getShaderHandle(const std::string& name) const
+	{
+		auto it = _shaders.nameToHandle.find(name);
+		if (it == _shaders.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+#pragma endregion
+
+#pragma region Textures
 
 	Handle<Texture> AssetManager::loadTexture(const std::string& name,
 		const std::string& path, bool alpha)
@@ -143,6 +218,48 @@ namespace engine
 		return handle;
 	}
 
+	Handle<Texture> AssetManager::loadTexture(const std::string& name, 
+		unsigned char* data, int width, int height)
+	{
+		GLint format = GL_RGBA;
+		auto& texture = std::make_unique<Texture>(width, height, format, data);
+
+		// Set unique texture unit
+		std::size_t id = _textures.assets.size();
+		texture->setUnit(static_cast<GLint>(id));
+
+		// Store asset in texture pool
+		Handle<Texture> handle = { id };
+		_textures.assets.push_back(std::move(texture));
+		_textures.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
+	Texture* AssetManager::getTexture(Handle<Texture> handle) const
+	{
+		if (!handle.valid() || handle.index >= _textures.assets.size()) return nullptr;
+		return _textures.assets[handle.index].get();
+	}
+
+	Texture* AssetManager::getTexture(const std::string& name) const
+	{
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return nullptr;
+		return getTexture(it->second);
+	}
+
+	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
+	{
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+#pragma endregion
+
+#pragma region Cubemaps
+
 	Handle<Cubemap> AssetManager::loadCubemap(const std::string& name,
 		const std::array<std::string, 6>& facePaths)
 	{
@@ -163,6 +280,30 @@ namespace engine
 
 		return handle;
 	}
+
+	Cubemap* AssetManager::getCubemap(Handle<Cubemap> handle) const
+	{
+		if (!handle.valid() || handle.index >= _cubemaps.assets.size()) return nullptr;
+		return _cubemaps.assets[handle.index].get();
+	}
+
+	Cubemap* AssetManager::getCubemap(const std::string& name) const
+	{
+		auto it = _cubemaps.nameToHandle.find(name);
+		if (it == _cubemaps.nameToHandle.end()) return nullptr;
+		return getCubemap(it->second);
+	}
+
+	Handle<Cubemap> AssetManager::getCubemapHandle(const std::string& name) const
+	{
+		auto it = _cubemaps.nameToHandle.find(name);
+		if (it == _cubemaps.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+#pragma endregion
+
+#pragma region Meshes
 
 	Handle<Mesh> AssetManager::loadMesh(const std::string& name, const std::string& path)
 	{
@@ -239,6 +380,30 @@ namespace engine
 
 		return handles;
 	}
+
+	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
+	{
+		if (!handle.valid() || handle.index >= _meshes.assets.size()) return nullptr;
+		return _meshes.assets[handle.index].get();
+	}
+
+	Mesh* AssetManager::getMesh(const std::string& name) const
+	{
+		auto it = _meshes.nameToHandle.find(name);
+		if (it == _meshes.nameToHandle.end()) return nullptr;
+		return getMesh(it->second);
+	}
+
+	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
+	{
+		auto it = _meshes.nameToHandle.find(name);
+		if (it == _meshes.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+#pragma endregion
+
+#pragma region Heightmaps
 
 	Handle<Heightmap> AssetManager::loadHeightmap(const std::string& name,
 		const std::string& path, float heightScale)
@@ -387,92 +552,41 @@ namespace engine
 		return handle;
 	}
 
+	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const
+	{
+		if (!handle.valid() || handle.index >= _heightmaps.assets.size()) return nullptr;
+		return _heightmaps.assets[handle.index].get();
+	}
+
+	Heightmap* AssetManager::getHeightmap(const std::string& name) const
+	{
+		auto it = _heightmaps.nameToHandle.find(name);
+		if (it == _heightmaps.nameToHandle.end()) return nullptr;
+		return getHeightmap(it->second);
+	}
+
+	Handle<Heightmap> AssetManager::getHeightmapHandle(const std::string& name) const
+	{
+		auto it = _heightmaps.nameToHandle.find(name);
+		if (it == _heightmaps.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+#pragma endregion
+
+#pragma region Materials
+
 	Handle<Material> AssetManager::loadMaterial(const std::string& name)
 	{
-		_materials.assets.emplace_back(std::make_unique<Material>());
+		// Start from a copy of the default material
+		assert(_defaultMaterial.valid() && "Default material not loaded");
+
+		_materials.assets.emplace_back(
+			std::make_unique<Material>(*getMaterial(_defaultMaterial))
+		);
 		Handle<Material> handle = { _materials.assets.size() - 1 };
 		_materials.nameToHandle[name] = handle;
 		return handle;
-	}
-
-	Shader* AssetManager::getShader(Handle<Shader> handle) const
-	{
-		if (!handle.valid() || handle.index >= _shaders.assets.size()) return nullptr;
-		return _shaders.assets[handle.index].get();
-	}
-
-	Shader* AssetManager::getShader(const std::string& name) const
-	{
-		auto it = _shaders.nameToHandle.find(name);
-		if (it == _shaders.nameToHandle.end()) return nullptr;
-		return getShader(it->second);
-	}
-
-	Handle<Shader> AssetManager::getShaderHandle(const std::string& name) const
-	{
-		auto it = _shaders.nameToHandle.find(name);
-		if (it == _shaders.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	Texture* AssetManager::getTexture(Handle<Texture> handle) const
-	{
-		if (!handle.valid() || handle.index >= _textures.assets.size()) return nullptr;
-		return _textures.assets[handle.index].get();
-	}
-
-	Texture* AssetManager::getTexture(const std::string& name) const
-	{
-		auto it = _textures.nameToHandle.find(name);
-		if (it == _textures.nameToHandle.end()) return nullptr;
-		return getTexture(it->second);
-	}
-
-	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
-	{
-		auto it = _textures.nameToHandle.find(name);
-		if (it == _textures.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	Cubemap* AssetManager::getCubemap(Handle<Cubemap> handle) const
-	{
-		if (!handle.valid() || handle.index >= _cubemaps.assets.size()) return nullptr;
-		return _cubemaps.assets[handle.index].get();
-	}
-
-	Cubemap* AssetManager::getCubemap(const std::string& name) const
-	{
-		auto it = _cubemaps.nameToHandle.find(name);
-		if (it == _cubemaps.nameToHandle.end()) return nullptr;
-		return getCubemap(it->second);
-	}
-
-	Handle<Cubemap> AssetManager::getCubemapHandle(const std::string& name) const
-	{
-		auto it = _cubemaps.nameToHandle.find(name);
-		if (it == _cubemaps.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
-	{
-		if (!handle.valid() || handle.index >= _meshes.assets.size()) return nullptr;
-		return _meshes.assets[handle.index].get();
-	}
-
-	Mesh* AssetManager::getMesh(const std::string& name) const
-	{
-		auto it = _meshes.nameToHandle.find(name);
-		if (it == _meshes.nameToHandle.end()) return nullptr;
-		return getMesh(it->second);
-	}
-
-	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
-	{
-		auto it = _meshes.nameToHandle.find(name);
-		if (it == _meshes.nameToHandle.end()) return {};
-		return it->second;
 	}
 
 	Material* AssetManager::getMaterial(Handle<Material> handle) const
@@ -495,16 +609,6 @@ namespace engine
 		return it->second;
 	}
 
-	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const
-	{
-		if (!handle.valid() || handle.index >= _heightmaps.assets.size()) return nullptr;
-		return _heightmaps.assets[handle.index].get();
-	}
+#pragma endregion
 
-	Heightmap* AssetManager::getHeightmap(const std::string& name) const
-	{
-		auto it = _heightmaps.nameToHandle.find(name);
-		if (it == _heightmaps.nameToHandle.end()) return nullptr;
-		return getHeightmap(it->second);
-	}
 }

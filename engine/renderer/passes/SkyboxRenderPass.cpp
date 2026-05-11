@@ -32,7 +32,7 @@ namespace engine
 		 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f
 	};
 
-	SkyboxRenderPass::SkyboxRenderPass()
+	SkyboxRenderPass::SkyboxRenderPass(Handle<Shader> shader) : RenderPass(shader)
 	{
 		glGenVertexArrays(1, &_vao);
 		glGenBuffers(1, &_vbo);

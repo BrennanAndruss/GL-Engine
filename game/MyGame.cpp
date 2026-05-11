@@ -10,8 +10,6 @@
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "renderer/resources/Cubemap.h"
-#include "renderer/passes/SkyboxRenderPass.h"
-#include "renderer/passes/ForwardRenderPass.h"
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
@@ -22,15 +20,9 @@ void MyGame::init(engine::AssetManager& assets,
 				  const engine::AppConfig& config)
 {
 	// Initialize resources
-	std::cout << "Loading shaders...\n";
-	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
-	Handle<engine::Shader> skyboxShader = assets.loadShader("skybox", "shaders/skybox.vert", "shaders/skybox.frag");
-
-	//loading textures
 	std::cout << "Loading textures...\n";
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
-
 
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
 		"textures/px.png",
@@ -63,19 +55,10 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
+	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
 
-	// todo: move creation to assetmanager
-	Handle<engine::Material> defaultMat = assets.loadMaterial("defaultMat");
-	auto* mat = assets.getMaterial(defaultMat);
-	mat->shader = shader;
-	mat->ambient = glm::vec3(0.2f);
-	mat->diffuse = glm::vec3(0.8f);
-	mat->specular = glm::vec3(1.0f);
-	mat->shininess = 32.0f;
-	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
-	mat = assets.getMaterial(grassMat);
-	mat->shader = shader;
+	auto* mat = assets.getMaterial(grassMat);
 	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
 	mat->specular = glm::vec3(0.5, 0.5, 0.5);
@@ -83,7 +66,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
 	mat = assets.getMaterial(redMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
 	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -91,7 +73,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
 	mat = assets.getMaterial(greenMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
 	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -99,7 +80,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
 	mat = assets.getMaterial(gemMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f);
 	mat->diffuse = glm::vec3(0.8f);
 	mat->specular = glm::vec3(1.0f);
@@ -242,9 +222,8 @@ void MyGame::init(engine::AssetManager& assets,
 		collectable.collectedMat = gemMat;
 	}
 
-	// Configure render pipeline
-	renderer.addRenderPass(std::make_unique<engine::SkyboxRenderPass>());
-	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
+	// Add post-processing render passes
+	//renderer.addRenderPass(...);
 
 	engine::Input::setMouseTrapped(true);
 
