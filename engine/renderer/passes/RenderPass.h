@@ -19,7 +19,7 @@ namespace engine
 		virtual	~RenderPass() = default;
 		virtual void execute(const Scene& scene, const AssetManager& assets) = 0;
 
-	private:
+	protected:
 		Handle<Shader> _shader;
 	};
 }

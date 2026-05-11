@@ -15,6 +15,8 @@ namespace engine
 
 	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets)
 	{
+		auto* shader = assets.getShader(_shader);
+
 		for (const auto& object : scene.getObjects())
 		{
 			auto* meshRenderer = object->getComponent<MeshRenderer>();
@@ -22,8 +24,7 @@ namespace engine
 
 			auto* mesh = assets.getMesh(meshRenderer->mesh);
 			auto* mat = assets.getMaterial(meshRenderer->material);
-			auto* shader = assets.getShader(mat->shader);
-			if (!mesh || !mat || !shader) continue;
+			if (!mesh || !mat || _shader.index != mat->shader.index) continue;
 
 			// Set shader uniforms
 			shader->bind();

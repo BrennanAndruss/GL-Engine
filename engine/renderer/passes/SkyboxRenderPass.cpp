@@ -57,7 +57,7 @@ namespace engine
 	{
 		if (!scene.hasSkybox()) return;
 
-		auto* shader = assets.getShader("skybox");
+		auto* shader = assets.getShader(_shader);
 		auto* cubemap = assets.getCubemap(scene.getSkybox());
 		auto* camera = scene.getMainCamera();
 		if (!shader || !cubemap || !camera) return;
