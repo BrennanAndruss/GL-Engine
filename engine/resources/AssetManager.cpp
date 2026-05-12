@@ -729,8 +729,7 @@ namespace engine
 		return handle;
 	}
 
-	Handle<AnimationClip> AssetManager::
-  ClipAssimp(const std::string& name, const std::string& path,
+	Handle<AnimationClip> AssetManager::loadAnimationClipAssimp(const std::string& name, const std::string& path,
 		unsigned int animationIndex)
 	{
 		const std::string absPath = resolvePath(path).string();
