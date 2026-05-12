@@ -1,20 +1,80 @@
 #include "renderer/passes/ForwardRenderPass.h"
 
 #include <glad/glad.h>
+#include "renderer/RenderContext.h"
 #include "renderer/resources/Shader.h"
+#include "renderer/resources/Cubemap.h"
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "renderer/resources/Texture.h"
 #include "resources/AssetManager.h"
+
+#include "scene/Scene.h"
 #include "scene/components/Component.h"
 #include "scene/components/MeshRenderer.h"
 
 namespace engine
 {
-	ForwardRenderPass::ForwardRenderPass(Handle<Shader> shader) : RenderPass(shader) {}
-
-	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets)
+	static const float SKYBOX_VERTICES[] =
 	{
+		-1.0f,  1.0f, -1.0f,  -1.0f, -1.0f, -1.0f,   1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,   1.0f,  1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,  -1.0f, -1.0f, -1.0f,  -1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,  -1.0f,  1.0f,  1.0f,  -1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,   1.0f, -1.0f,  1.0f,   1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,   1.0f,  1.0f, -1.0f,   1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,  -1.0f,  1.0f,  1.0f,   1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,   1.0f, -1.0f,  1.0f,  -1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,   1.0f,  1.0f, -1.0f,   1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,  -1.0f,  1.0f,  1.0f,  -1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f
+	};
+
+	ForwardRenderPass::ForwardRenderPass(int width, int height, Handle<Shader> shader) :
+		_shader(shader),
+		_framebuffer(width, height, {
+			{ AttachmentFormat::RGBA8 },
+			{ AttachmentFormat::Depth24 }
+			}) 
+	{
+		glGenVertexArrays(1, &_vao);
+		glGenBuffers(1, &_vbo);
+
+		glBindVertexArray(_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(SKYBOX_VERTICES), SKYBOX_VERTICES, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+		glBindVertexArray(0);
+	}
+
+	ForwardRenderPass::~ForwardRenderPass()
+	{
+		if (_vbo != 0) glDeleteBuffers(1, &_vbo);
+		if (_vao != 0) glDeleteVertexArrays(1, &_vao);
+	}
+
+	void ForwardRenderPass::resize(int width, int height)
+	{
+		_framebuffer.resize(width, height);
+	}
+
+	void ForwardRenderPass::execute(const Scene& scene, 
+		const AssetManager& assets, RenderContext& ctx)
+	{
+		_framebuffer.bind();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Draw opaque geometry
+		auto* shader = assets.getShader(_shader);
 		for (const auto& object : scene.getObjects())
 		{
 			auto* meshRenderer = object->getComponent<MeshRenderer>();
@@ -22,8 +82,10 @@ namespace engine
 
 			auto* mesh = assets.getMesh(meshRenderer->mesh);
 			auto* mat = assets.getMaterial(meshRenderer->material);
-			auto* shader = assets.getShader(mat->shader);
-			if (!mesh || !mat || !shader) continue;
+			if (!mesh || !mat) continue;
+
+			// Skip materials using other shaders (non-default)
+			if (_shader.index != mat->shader.index) continue;
 
 			// Set shader uniforms
 			shader->bind();
@@ -46,5 +108,45 @@ namespace engine
 			difTex->unbind();
 			specTex->unbind();
 		}
+
+		//// Draw skybox where no geometry was drawn
+		//if (scene.hasSkybox())
+		//{
+		//	shader = assets.getShader(_skyboxShader);
+
+		//	auto* cubemap = assets.getCubemap(scene.getSkybox());
+		//	auto* camera = scene.getMainCamera();
+		//	if (cubemap && camera)
+		//	{
+		//		glDepthFunc(GL_LEQUAL);
+		//		glDepthMask(GL_FALSE);
+
+		//		shader->bind();
+
+		//		const CameraData& camData = camera->getCameraData();
+		//		glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(camData.view));
+
+		//		shader->setMat4("view", viewNoTranslation);
+		//		shader->setMat4("projection", camData.projection);
+		//		cubemap->bind(shader->getUniform("skybox"));
+
+		//		glBindVertexArray(_vao);
+		//		glDrawArrays(GL_TRIANGLES, 0, 36);
+		//		glBindVertexArray(0);
+
+		//		cubemap->unbind();
+		//		shader->unbind();
+
+		//		glDepthMask(GL_TRUE);
+		//		glDepthFunc(GL_LESS);
+		//	}
+		//}
+
+		_framebuffer.unbind();
+		
+		// Register outputs with render context
+		ctx.setBuffer(BufferNames::SceneColor, _framebuffer.getAttachment(AttachmentFormat::RGBA8));
+		ctx.setBuffer(BufferNames::SceneDepth, _framebuffer.getAttachment(AttachmentFormat::Depth24));
+		ctx.sceneFramebuffer = &_framebuffer;
 	}
 }
