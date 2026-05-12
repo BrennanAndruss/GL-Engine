@@ -37,6 +37,7 @@ void MyGame::init(engine::AssetManager& assets,
 		"textures/pz.png",
 		"textures/nz.png"
 	});
+	scene.setSkybox(skyboxCubemap);
 
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture(
 		"gemDiffuse", "textures/yellow_gem_texture.png", true);

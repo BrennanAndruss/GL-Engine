@@ -41,11 +41,10 @@ namespace engine
 		void setSkybox(Handle<Cubemap> cubemap)
 		{
 			_skybox = cubemap;
-			_hasSkybox = cubemap.valid();
 		}
 
 		Handle<Cubemap> getSkybox() const { return _skybox; }
-		bool hasSkybox() const { return _hasSkybox; }
+		bool hasSkybox() const { return _skybox.valid(); }
 
 	private:
 		std::vector<std::unique_ptr<Object>> _objects;
@@ -56,7 +55,6 @@ namespace engine
 		std::vector<Light*> _lights;
 
 		Handle<Cubemap> _skybox;
-		bool _hasSkybox = false;
 
 		void resolveTransforms(Transform& t, const glm::mat4& parentWorld);
 	};
