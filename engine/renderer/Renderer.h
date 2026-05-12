@@ -25,10 +25,11 @@ namespace engine
 		~Renderer() = default;
 
 		void init(AssetManager& assets);
-
-		void addRenderPass(std::unique_ptr<RenderPass> renderPass);
 		void resize(int width, int height);
 		void render(const Scene& scene, const AssetManager& assets);
+
+		void addRenderPass(std::unique_ptr<RenderPass> pass);
+		RenderPass& addPostProcessPass(std::unique_ptr<RenderPass> pass);
 
 	private:
 		std::vector<std::unique_ptr<RenderPass>> _renderPasses;

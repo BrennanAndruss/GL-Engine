@@ -22,13 +22,15 @@ void MyGame::init(engine::AssetManager& assets,
 {
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
-	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
-	Handle<engine::Shader> skinnedShader = assets.loadShader("skinned", "shaders/skinned.vert", "shaders/simple.frag");
-	Handle<engine::Shader> skyboxShader = assets.loadShader("skybox", "shaders/skybox.vert", "shaders/skybox.frag");
+	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
+		"colorRestoreShader", "shaders/colorRestore.vert", "shaders/colorRestore.frag");
+	Handle<engine::Shader> skinnedShader = assets.loadShader(
+		"skinned", "shaders/skinned.vert", "shaders/simple.frag");
 
 	//loading textures
 	std::cout << "Loading textures...\n";
-	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap(
+		"terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
@@ -39,6 +41,7 @@ void MyGame::init(engine::AssetManager& assets,
 		"textures/pz.png",
 		"textures/nz.png"
 	});
+	scene.setSkybox(skyboxCubemap);
 
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuse", "textures/yellow_gem_texture.png", true);
 	// Base color for skinned character
@@ -61,7 +64,8 @@ void MyGame::init(engine::AssetManager& assets,
 
 	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
 	float planeLen = 100.0f;
-	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
+	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh(
+		"terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
@@ -286,7 +290,9 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Add post-processing render passes
-	//renderer.addRenderPass(...);
+	_colorRestorePass = static_cast<ColorRestorationPass*>(
+		&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
+			config.width, config.height, colorRestoreShader)));
 
 	engine::Input::setMouseTrapped(true);
 
@@ -296,6 +302,23 @@ void MyGame::init(engine::AssetManager& assets,
 void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+
+	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_M)) _collectedMagenta += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_Y)) _collectedYellow += 0.002f;
+	if (engine::Input::isKeyPressed(GLFW_KEY_K))
+	{
+		_collectedCyan = _collectedMagenta = _collectedYellow = 0.0f;
+	}
+
+	if (_colorRestorePass)
+	{
+		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
+		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
+		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
+		_colorRestorePass->key = 
+			1.0f - ((_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f);
+	}
 }
 
 void MyGame::setEditorMode(bool editorActive, engine::Scene& scene)
