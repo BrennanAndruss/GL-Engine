@@ -53,11 +53,24 @@ namespace engine
 		computeBBox(positions);
 	}
 
+	Mesh::Mesh(const std::vector<glm::vec3>& positions,
+			   const std::vector<glm::vec3>& normals,
+			   const std::vector<glm::vec2>& texcoords,
+			   const std::vector<unsigned int>& indices,
+			   const std::vector<glm::uvec4>& boneIds,
+			   const std::vector<glm::vec4>& boneWeights)
+	{
+		setupMesh(positions, normals, texcoords, indices, boneIds, boneWeights);
+		computeBBox(positions);
+	}
+
 	void Mesh::setupMesh(const std::vector<glm::vec3>& positions,
 						 const std::vector<glm::vec3>& normals,
 						 const std::vector<glm::vec2>& texcoords,
 						 const std::vector<unsigned int>& indices)
 	{
+		_isSkinned = false;
+
 		glGenVertexArrays(1, &_vao);
 		glBindVertexArray(_vao);
 
@@ -86,26 +99,126 @@ namespace engine
 			_vertBuf[vi++] = texcoords[i].y;
 		}
 
-		glBufferData(GL_ARRAY_BUFFER, _vertBuf.size() * sizeof(float), _vertBuf.data(), GL_STATIC_DRAW);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			_vertBuf.size() * sizeof(float),
+			_vertBuf.data(),
+			GL_STATIC_DRAW
+		);
+
+		glBufferData(
+			GL_ELEMENT_ARRAY_BUFFER,
+			indices.size() * sizeof(unsigned int),
+			indices.data(),
+			GL_STATIC_DRAW
+		);
 
 		std::size_t stride = VERTEX_SIZE * sizeof(float);
 		std::size_t offset = 0;
 
 		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::Position));
-		glVertexAttribPointer(static_cast<GLuint>(Attrib::Position), 3, GL_FLOAT, GL_FALSE, stride, (void*)offset);
+		glVertexAttribPointer(
+			static_cast<GLuint>(Attrib::Position),
+			3,
+			GL_FLOAT,
+			GL_FALSE,
+			stride,
+			(void*)offset
+		);
 		offset += 3 * sizeof(float);
 
 		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::Normal));
-		glVertexAttribPointer(static_cast<GLuint>(Attrib::Normal), 3, GL_FLOAT, GL_FALSE, stride, (void*)offset);
+		glVertexAttribPointer(
+			static_cast<GLuint>(Attrib::Normal),
+			3,
+			GL_FLOAT,
+			GL_FALSE,
+			stride,
+			(void*)offset
+		);
 		offset += 3 * sizeof(float);
 
 		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::TexCoord));
-		glVertexAttribPointer(static_cast<GLuint>(Attrib::TexCoord), 2, GL_FLOAT, GL_FALSE, stride, (void*)offset);
+		glVertexAttribPointer(
+			static_cast<GLuint>(Attrib::TexCoord),
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			stride,
+			(void*)offset
+		);
 
 		glBindVertexArray(0);
 
 		_numIndices = indices.size();
+	}
+
+	void Mesh::setupMesh(const std::vector<glm::vec3>& positions,
+						 const std::vector<glm::vec3>& normals,
+						 const std::vector<glm::vec2>& texcoords,
+						 const std::vector<unsigned int>& indices,
+						 const std::vector<glm::uvec4>& boneIds,
+						 const std::vector<glm::vec4>& boneWeights)
+	{
+		_isSkinned = true;
+
+		setupMesh(positions, normals, texcoords, indices);
+
+		_isSkinned = true;
+
+		glBindVertexArray(_vao);
+
+		_boneIdBuf = boneIds;
+		_boneWeightBuf = boneWeights;
+
+		if (_boneIdBuf.size() != positions.size())
+		{
+			_boneIdBuf.assign(positions.size(), glm::uvec4(0));
+		}
+
+		if (_boneWeightBuf.size() != positions.size())
+		{
+			_boneWeightBuf.assign(positions.size(), glm::vec4(0.0f));
+		}
+
+		glGenBuffers(1, &_boneIdVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, _boneIdVbo);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			_boneIdBuf.size() * sizeof(glm::uvec4),
+			_boneIdBuf.data(),
+			GL_STATIC_DRAW
+		);
+
+		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::BoneIds));
+		glVertexAttribIPointer(
+			static_cast<GLuint>(Attrib::BoneIds),
+			4,
+			GL_UNSIGNED_INT,
+			sizeof(glm::uvec4),
+			(void*)0
+		);
+
+		glGenBuffers(1, &_boneWeightVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, _boneWeightVbo);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			_boneWeightBuf.size() * sizeof(glm::vec4),
+			_boneWeightBuf.data(),
+			GL_STATIC_DRAW
+		);
+
+		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::BoneWeights));
+		glVertexAttribPointer(
+			static_cast<GLuint>(Attrib::BoneWeights),
+			4,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(glm::vec4),
+			(void*)0
+		);
+
+		glBindVertexArray(0);
 	}
 
 	void Mesh::computeBBox(const std::vector<glm::vec3>& positions)
@@ -128,7 +241,12 @@ namespace engine
 	void Mesh::draw() const
 	{
 		glBindVertexArray(_vao);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(_numIndices), GL_UNSIGNED_INT, (void*)0);
+		glDrawElements(
+			GL_TRIANGLES,
+			static_cast<GLsizei>(_numIndices),
+			GL_UNSIGNED_INT,
+			(void*)0
+		);
 		glBindVertexArray(0);
 	}
 }
