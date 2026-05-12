@@ -43,6 +43,7 @@ namespace engine
         {
             Time::update();
             Input::update();
+            _window.pollEvents();
 			if (_game)
 			{
 				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
@@ -56,7 +57,7 @@ namespace engine
 
             // Update gameplay logic
             game->update(Time::deltaTime());
-            _scene.update(Time::deltaTime());
+            _scene.update(Time::deltaTime(), _assets);
 
             // Render
             _renderer.render(_scene, _assets);
@@ -69,7 +70,6 @@ namespace engine
             
             
             _window.swapBuffers();
-            _window.pollEvents();
         }
     }
 

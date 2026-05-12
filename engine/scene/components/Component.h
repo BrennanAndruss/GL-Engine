@@ -3,6 +3,7 @@
 namespace engine
 {
 	class Object;
+	class AssetManager;
 }
 
 namespace engine
@@ -15,5 +16,9 @@ namespace engine
 		virtual ~Component() = default;
 		virtual void start() {}
 		virtual void update(float deltaTime) {}
+		virtual void update(float deltaTime, AssetManager& assets)
+		{
+			update(deltaTime);
+		}
 	};
 }

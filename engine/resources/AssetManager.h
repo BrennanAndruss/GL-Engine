@@ -15,6 +15,8 @@ namespace engine
 	class Texture;
 	class Cubemap;
 	class Mesh;
+	struct Skeleton;
+	struct AnimationClip;
 	struct Material;
 	class Heightmap;
 }
@@ -57,7 +59,10 @@ namespace engine
 			unsigned int meshIndex = 0);
 		std::vector<Handle<Mesh>> loadModelMeshesAssimp(const std::string& namePrefix,
 			const std::string& path);
-
+		Handle<Skeleton> loadSkeletonAssimp(const std::string& name, const std::string& path,
+			unsigned int meshIndex = 0);
+		Handle<AnimationClip> loadAnimationClipAssimp(const std::string& name, const std::string& path,
+			unsigned int animationIndex = 0);
 		Handle<Material> loadMaterial(const std::string& name);
 
 		Handle<Heightmap> loadHeightmap(const std::string& name,
@@ -91,6 +96,14 @@ namespace engine
 		Mesh* getMesh(const std::string& name) const;
 		Handle<Mesh> getMeshHandle(const std::string& name) const;
 
+		Skeleton* getSkeleton(Handle<Skeleton> handle) const;
+		Skeleton* getSkeleton(const std::string& name) const;
+		Handle<Skeleton> getSkeletonHandle(const std::string& name) const;
+
+		AnimationClip* getAnimationClip(Handle<AnimationClip> handle) const;
+		AnimationClip* getAnimationClip(const std::string& name) const;
+		Handle<AnimationClip> getAnimationClipHandle(const std::string& name) const;
+
 		Material* getMaterial(Handle<Material> handle) const;
 		Material* getMaterial(const std::string& name) const;
 		Handle<Material> getMaterialHandle(const std::string& name) const;
@@ -113,6 +126,8 @@ namespace engine
 		AssetPool<Texture> _textures;
 		AssetPool<Cubemap> _cubemaps;
 		AssetPool<Mesh> _meshes;
+		AssetPool<Skeleton> _skeletons;
+		AssetPool<AnimationClip> _animationClips;
 		AssetPool<Material> _materials;
 		AssetPool<Heightmap> _heightmaps;
 
