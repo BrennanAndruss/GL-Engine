@@ -44,6 +44,8 @@ void MyGame::init(engine::AssetManager& assets,
 	});
 
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuse", "textures/yellow_gem_texture.png", true);
+	// Base color for skinned character
+	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBase", "textures/char_Base_color.png", true);
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -118,6 +120,17 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->shininess = 64.0f;
 	mat->difTex = gemDiffuseTex;
 	mat->specTex = gemDiffuseTex;
+	
+
+	Handle<engine::Material> charTex = assets.loadMaterial("charBaseTex");
+	mat = assets.getMaterial(charTex);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 20.0f;
+	mat->difTex = charBaseTex;
+	mat->specTex = charBaseTex;
 
 	// Initialize scene
 	{
@@ -211,7 +224,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 			auto& meshRenderer = sprinter.addComponent<engine::MeshRenderer>();
 			meshRenderer.mesh = sprintMesh;
-			meshRenderer.material = skinnedGemMat;
+			meshRenderer.material = charTex;
 
 			auto& animator = sprinter.addComponent<engine::Animator>();
 			animator.skeleton = sprintSkeleton;

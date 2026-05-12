@@ -26,35 +26,11 @@ namespace engine
 	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets)
 	{
 		static bool showSkeletonVisualizer = true;
-		static bool debugSingleInfluence = false;
-		static bool debugUseMaxWeight = true;
 		if (Input::isKeyPressed(GLFW_KEY_F3))
 		{
 			showSkeletonVisualizer = !showSkeletonVisualizer;
 			std::cout << "[ForwardRenderPass] Skeleton visualizer "
 				<< (showSkeletonVisualizer ? "enabled" : "disabled") << " (F3)\n";
-		}
-		if (Input::isKeyPressed(GLFW_KEY_F4))
-		{
-			debugSingleInfluence = !debugSingleInfluence;
-			std::cout << "[ForwardRenderPass] Single-influence skin debug "
-				<< (debugSingleInfluence ? "enabled" : "disabled") << " (F4)\n";
-		}
-		if (Input::isKeyPressed(GLFW_KEY_F5))
-		{
-			debugUseMaxWeight = !debugUseMaxWeight;
-			std::cout << "[ForwardRenderPass] Single-influence source="
-				<< (debugUseMaxWeight ? "max weight" : "slot 0") << " (F5)\n";
-		}
-		if (Input::isKeyPressed(GLFW_KEY_F6))
-		{
-			cycleRotationConversionMode();
-		}
-		if (Input::isKeyPressed(GLFW_KEY_F7))
-		{
-			limbCorrectionEnabled() = !limbCorrectionEnabled();
-			std::cout << "[ForwardRenderPass] Limb correction test "
-				<< (limbCorrectionEnabled() ? "enabled" : "disabled") << " (F7)\n";
 		}
 
 		for (const auto& object : scene.getObjects())
@@ -109,8 +85,6 @@ namespace engine
 					const int numBones = static_cast<int>(std::min(boneMatrices.size(), MAX_SHADER_BONES));
 					shader->setInt("isSkinned", 1);
 					shader->setInt("numBones", numBones);
-					shader->setInt("debugSingleInfluence", debugSingleInfluence ? 1 : 0);
-					shader->setInt("debugUseMaxWeight", debugUseMaxWeight ? 1 : 0);
 					for (int i = 0; i < numBones; ++i)
 					{
 						shader->setMat4("bones[" + std::to_string(i) + "]", boneMatrices[static_cast<std::size_t>(i)]);

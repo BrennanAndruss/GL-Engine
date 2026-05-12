@@ -13,43 +13,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
-
 namespace engine
 {
-	enum class RotationConversionMode
-	{
-		Raw = 0,
-		MirrorX,
-		MirrorY,
-		MirrorZ,
-	};
-
-	inline RotationConversionMode& rotationConversionMode()
-	{
-		static RotationConversionMode mode = RotationConversionMode::MirrorX;
-		return mode;
-	}
-
-	inline const char* rotationConversionModeName(RotationConversionMode mode)
-	{
-		switch (mode)
-		{
-		case RotationConversionMode::Raw: return "Raw";
-		case RotationConversionMode::MirrorX: return "MirrorX";
-		case RotationConversionMode::MirrorY: return "MirrorY";
-		case RotationConversionMode::MirrorZ: return "MirrorZ";
-		default: return "Unknown";
-		}
-	}
-
-	inline void cycleRotationConversionMode()
-	{
-		auto& mode = rotationConversionMode();
-		mode = static_cast<RotationConversionMode>((static_cast<int>(mode) + 1) % 4);
-		std::cout << "[SkeletalAnimation] Rotation conversion mode = " << rotationConversionModeName(mode) << "\n";
-	}
-
 	struct KeyPosition
 	{
 		float time = 0.0f;
@@ -206,7 +171,7 @@ namespace engine
 	{
 		if (keys.empty())
 		{
-			return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
 		}
 
 		if (keys.size() == 1)
@@ -224,19 +189,7 @@ namespace engine
 
 	inline glm::quat convertAnimationRotationHandedness(const glm::quat& q)
 	{
-		switch (rotationConversionMode())
-		{
-		case RotationConversionMode::Raw:
-			return glm::normalize(q);
-		case RotationConversionMode::MirrorX:
-			return glm::normalize(glm::quat(q.w, q.x, -q.y, -q.z));
-		case RotationConversionMode::MirrorY:
-			return glm::normalize(glm::quat(q.w, -q.x, q.y, -q.z));
-		case RotationConversionMode::MirrorZ:
-			return glm::normalize(glm::quat(q.w, -q.x, -q.y, q.z));
-		default:
-			return glm::normalize(q);
-		}
+		return glm::normalize(q);
 	}
 
 	inline glm::vec3 interpolateScale(const std::vector<KeyScale>& keys, float time)
@@ -268,16 +221,6 @@ namespace engine
 		);
 	}
 
-	inline bool shouldUseAnimatedTranslation(const SkeletonNode& node)
-	{
-		// Keep root motion and hips translation animated; stabilize children with bind translation.
-		if (node.parentIndex < 0)
-		{
-			return true;
-		}
-		return node.name.find("Hips") != std::string::npos;
-	}
-
 	inline bool shouldUseAnimatedRotationAbsolute(const SkeletonNode& node)
 	{
 		// Root/hips are usually authored in absolute local orientation.
@@ -288,77 +231,15 @@ namespace engine
 		return node.name.find("Hips") != std::string::npos;
 	}
 
-	inline bool isLimbBoneName(const std::string& name)
-	{
-		return name.find("Arm") != std::string::npos ||
-			name.find("ForeArm") != std::string::npos ||
-			name.find("Hand") != std::string::npos ||
-			name.find("UpLeg") != std::string::npos ||
-			name.find("Leg") != std::string::npos ||
-			name.find("Foot") != std::string::npos ||
-			name.find("Toe") != std::string::npos;
-	}
-
-	inline glm::quat limbCorrectionTest(const SkeletonNode& node)
-	{
-		// Temporary test correction for potential limb basis mismatch.
-		// Set to identity by default and enable only for limb names.
-		if (!isLimbBoneName(node.name))
-		{
-			return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-		}
-
-		const float correctionRadians = glm::radians(180.0f);
-		return glm::angleAxis(correctionRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-	}
-
-	inline bool& limbCorrectionEnabled()
-	{
-		static bool enabled = false;
-		return enabled;
-	}
-
-	inline glm::mat4 evaluateTrackWithBindTranslation(const SkeletonNode& node, const BoneTrack& track, float time, bool debugRotationInfo = false)
+	inline glm::mat4 evaluateTrackWithBindTranslation(const SkeletonNode& node, const BoneTrack& track, float time)
 	{
 		glm::vec3 position = interpolatePosition(track.positions, time);
 		glm::quat rotation = convertAnimationRotationHandedness(interpolateRotation(track.rotations, time));
 		glm::vec3 scale = interpolateScale(track.scales, time);
 
-		if (!shouldUseAnimatedTranslation(node))
-		{
-			position = glm::vec3(node.bindLocalTransform[3]);
-		}
-
 		if (!shouldUseAnimatedRotationAbsolute(node))
 		{
 			const glm::mat3 bindBasis(node.bindLocalTransform);
-			const glm::quat bindRot = glm::normalize(glm::quat_cast(bindBasis));
-			rotation = glm::normalize(bindRot * rotation);
-		}
-
-		// Optional limb correction test for basis mismatch experiments.
-		if (limbCorrectionEnabled())
-		{
-			rotation = glm::normalize(rotation * limbCorrectionTest(node));
-		}
-
-		if (debugRotationInfo && isLimbBoneName(node.name))
-		{
-			const glm::mat3 bindBasis(node.bindLocalTransform);
-			const glm::quat bindRot = glm::normalize(glm::quat_cast(bindBasis));
-			const glm::quat animRotRaw = interpolateRotation(track.rotations, time);
-			std::cout << "    [RotDbg] " << node.name
-				<< " mode=" << rotationConversionModeName(rotationConversionMode())
-				<< " bindRot=[" << bindRot.w << ", " << bindRot.x << ", " << bindRot.y << ", " << bindRot.z << "]"
-				<< " animRotRaw=[" << animRotRaw.w << ", "
-				<< animRotRaw.x << ", "
-				<< animRotRaw.y << ", "
-				<< animRotRaw.z << "]"
-				<< " animRotConv=[" << convertAnimationRotationHandedness(animRotRaw).w << ", "
-				<< convertAnimationRotationHandedness(animRotRaw).x << ", "
-				<< convertAnimationRotationHandedness(animRotRaw).y << ", "
-				<< convertAnimationRotationHandedness(animRotRaw).z << "]"
-				<< " finalLocalRot=[" << rotation.w << ", " << rotation.x << ", " << rotation.y << ", " << rotation.z << "]\n";
 		}
 
 		return composeTransform(
@@ -391,7 +272,7 @@ namespace engine
 		{
 			if (const BoneTrack* track = clip->findTrack(node.name)) // if animation track for this node exists, 
 			{
-				localTransform = evaluateTrackWithBindTranslation(node, *track, time, debugFirstFrame); // keep bind translation for most children
+				localTransform = evaluateTrackWithBindTranslation(node, *track, time);
 				hasTrack = true;
 			}
 		}
@@ -400,12 +281,12 @@ namespace engine
 
 		if (node.isBone && node.boneIndex >= 0 && node.boneIndex < static_cast<int>(outBoneMatrices.size())) // check if valid bone index and if a bone 
 		{
-			// Try both common conventions: with and without the global inverse
+			// Compute both conventions for debug, but use the global-inverse version for skinning.
 			glm::mat4 finalWithGlobalInv = skeleton.globalInverseTransform * globalTransform * node.inverseBindMatrix;
 			glm::mat4 finalWithoutGlobalInv = globalTransform * node.inverseBindMatrix;
 
-			// Use the variant without global inverse by default (matches many skinning pipelines).
-			outBoneMatrices[node.boneIndex] = finalWithoutGlobalInv;
+			// Apply the global inverse in the active skinning path.
+			outBoneMatrices[node.boneIndex] = finalWithGlobalInv;
 
 			// Debug output for first frame
 			if (debugFirstFrame && debugDepth < 3)
@@ -477,7 +358,7 @@ namespace engine
 		{
 			if (const BoneTrack* track = clip->findTrack(node.name))
 			{
-				localTransform = evaluateTrackWithBindTranslation(node, *track, time, false);
+				localTransform = evaluateTrackWithBindTranslation(node, *track, time);
 			}
 		}
 
