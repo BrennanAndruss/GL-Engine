@@ -52,7 +52,7 @@ void MyGame::init(engine::AssetManager& assets,
 	try
 	{
 		gemMesh = assets.loadMeshAssimp("gem", "models/gem_model.fbx");
-		std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
+		// std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
 	}
 	catch (const std::exception& e)
 	{

@@ -165,20 +165,20 @@ namespace engine
 		}
 
 		// Debug: print first few vertices' bone ids and weights
-		std::cout << "[AssetManager] Mesh bone influences (first 8 verts):\n";
-		int printed = 0;
-		for (unsigned int i = 0; i < boneIds.size() && printed < 8; ++i)
-		{
-			const auto& ids = boneIds[i];
-			const auto& w = boneWeights[i];
-			const float sum = w.x + w.y + w.z + w.w;
-			if (sum > 0.0f)
-			{
-				std::cout << "  v" << i << ": ids=[" << ids.x << "," << ids.y << "," << ids.z << "," << ids.w << "] ";
-				std::cout << "weights=[" << w.x << "," << w.y << "," << w.z << "," << w.w << "] sum=" << sum << "\n";
-				++printed;
-			}
-		}
+		// std::cout << "[AssetManager] Mesh bone influences (first 8 verts):\n";
+		//int printed = 0;
+		//for (unsigned int i = 0; i < boneIds.size() && printed < 8; ++i)
+		//{
+		//	const auto& ids = boneIds[i];
+		//	const auto& w = boneWeights[i];
+		//	const float sum = w.x + w.y + w.z + w.w;
+		//	if (sum > 0.0f)
+		//	{
+		//		std::cout << "  v" << i << ": ids=[" << ids.x << "," << ids.y << "," << ids.z << "," << ids.w << "] ";
+		//		std::cout << "weights=[" << w.x << "," << w.y << "," << w.z << "," << w.w << "] sum=" << sum << "\n";
+		//		++printed;
+		//	}
+		//}
 
 		return std::make_unique<Mesh>(positions, normals, texcoords, indices, boneIds, boneWeights);
 	}
@@ -222,7 +222,7 @@ namespace engine
 		int hipNode = skeleton->findNodeIndex("mixamorig:Hips");
 		if (hipNode >= 0)
 		{
-			std::cout << "[AssetManager] Found mixamorig:Hips at node index " << hipNode << "\n";
+			// std::cout << "[AssetManager] Found mixamorig:Hips at node index " << hipNode << "\n";
 			int cur = hipNode;
 			std::vector<int> chain;
 			while (cur >= 0)
@@ -230,13 +230,13 @@ namespace engine
 				chain.push_back(cur);
 				cur = skeleton->nodes[cur].parentIndex;
 			}
-			std::cout << "[AssetManager] Ancestor chain (child->parent):\n";
+			// std::cout << "[AssetManager] Ancestor chain (child->parent):\n";
 			for (std::size_t i = 0; i < chain.size(); ++i)
 			{
 				int idx = chain[i];
 				const auto& n = skeleton->nodes[idx];
-				std::cout << "  " << i << ": nodeIndex=" << idx << " name=\"" << n.name << "\" bindLocalPos=["
-					<< n.bindLocalTransform[3][0] << ", " << n.bindLocalTransform[3][1] << ", " << n.bindLocalTransform[3][2] << "]\n";
+				//std::cout << "  " << i << ": nodeIndex=" << idx << " name=\"" << n.name << "\" bindLocalPos=["
+				//	<< n.bindLocalTransform[3][0] << ", " << n.bindLocalTransform[3][1] << ", " << n.bindLocalTransform[3][2] << "]\n";
 			}
 
 			// Try to find a suitable root node (Armature, Root, or scene root name)
@@ -264,8 +264,8 @@ namespace engine
 			{
 				accum = accum * skeleton->nodes[rev[i]].bindLocalTransform;
 			}
-			std::cout << "[AssetManager] Selected root node '" << skeleton->nodes[chosenIdx].name << "' (index " << chosenIdx << ") worldPos=["
-				<< accum[3][0] << ", " << accum[3][1] << ", " << accum[3][2] << "]\n";
+			//std::cout << "[AssetManager] Selected root node '" << skeleton->nodes[chosenIdx].name << "' (index " << chosenIdx << ") worldPos=["
+			//	<< accum[3][0] << ", " << accum[3][1] << ", " << accum[3][2] << "]\n";
 		}
 
 		for (unsigned int boneIndex = 0; boneIndex < aiMeshData->mNumBones; ++boneIndex)
@@ -287,26 +287,26 @@ namespace engine
 		}
 
 		// Debug: print first few actual bones and their inverse bind matrices
-		std::cout << "[AssetManager] Skeleton loaded:\n";
-		std::cout << "  GlobalInverseTransform[3]: [" 
-			<< skeleton->globalInverseTransform[3][0] << ", "
-			<< skeleton->globalInverseTransform[3][1] << ", "
-			<< skeleton->globalInverseTransform[3][2] << "]\n";
+		//std::cout << "[AssetManager] Skeleton loaded:\n";
+		//std::cout << "  GlobalInverseTransform[3]: [" 
+		//	<< skeleton->globalInverseTransform[3][0] << ", "
+		//	<< skeleton->globalInverseTransform[3][1] << ", "
+		//	<< skeleton->globalInverseTransform[3][2] << "]\n";
 		
 		int bonesPrinted = 0;
 		for (const auto& node : skeleton->nodes)
 		{
 			if (node.isBone && node.boneIndex >= 0)
 			{
-				std::cout << "  Bone " << node.boneIndex << " (" << node.name << "):\n"
-					<< "    InverseBindMatrix[3]: [" 
-					<< node.inverseBindMatrix[3][0] << ", " 
-					<< node.inverseBindMatrix[3][1] << ", " 
-					<< node.inverseBindMatrix[3][2] << "]\n"
-					<< "    BindLocal[3]: [" 
-					<< node.bindLocalTransform[3][0] << ", " 
-					<< node.bindLocalTransform[3][1] << ", " 
-					<< node.bindLocalTransform[3][2] << "]\n";
+				//std::cout << "  Bone " << node.boneIndex << " (" << node.name << "):\n"
+				//	<< "    InverseBindMatrix[3]: [" 
+				//	<< node.inverseBindMatrix[3][0] << ", " 
+				//	<< node.inverseBindMatrix[3][1] << ", " 
+				//	<< node.inverseBindMatrix[3][2] << "]\n"
+				//	<< "    BindLocal[3]: [" 
+				//	<< node.bindLocalTransform[3][0] << ", " 
+				//	<< node.bindLocalTransform[3][1] << ", " 
+				//	<< node.bindLocalTransform[3][2] << "]\n";
 				if (++bonesPrinted >= 3) break;
 			}
 		}
@@ -355,8 +355,8 @@ namespace engine
 				// DEBUG: Don't convert yet - just log the raw values to understand what space they're in
 				if (keyIndex == 0)
 				{
-					std::cout << "    Track \"" << track.nodeName << "\" first keyframe pos: [" 
-						<< pos.x << ", " << pos.y << ", " << pos.z << "]\n";
+					//std::cout << "    Track \"" << track.nodeName << "\" first keyframe pos: [" 
+					//	<< pos.x << ", " << pos.y << ", " << pos.z << "]\n";
 				}
 
 				track.positions.push_back({
