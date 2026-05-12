@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 #include "renderer/passes/RenderPass.h"
+#include "renderer/passes/BlitPass.h"
+#include "renderer/RenderContext.h"
 #include "renderer/UniformBuffer.h"
 #include "scene/Scene.h"
 
@@ -30,8 +32,10 @@ namespace engine
 
 	private:
 		std::vector<std::unique_ptr<RenderPass>> _renderPasses;
+		std::unique_ptr<BlitPass> _blitPass;
 		
 		int _width, _height;
+		RenderContext _ctx;
 		UniformBuffer _cameraUBO, _lightsUBO;
 	};
 }
