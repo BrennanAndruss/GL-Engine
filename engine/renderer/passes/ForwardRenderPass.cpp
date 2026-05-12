@@ -79,13 +79,13 @@ namespace engine
 
 	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets, RenderContext& ctx)
 	{
-		static bool showSkeletonVisualizer = true;
-		if (Input::isKeyPressed(GLFW_KEY_F3))
-		{
-			showSkeletonVisualizer = !showSkeletonVisualizer;
-			std::cout << "[ForwardRenderPass] Skeleton visualizer "
-				<< (showSkeletonVisualizer ? "enabled" : "disabled") << " (F3)\n";
-		}
+		static bool showSkeletonVisualizer;
+		// if (Input::isKeyPressed(GLFW_KEY_F3))
+		// {
+		// 	showSkeletonVisualizer = !showSkeletonVisualizer;
+		// 	std::cout << "[ForwardRenderPass] Skeleton visualizer "
+		// 		<< (showSkeletonVisualizer ? "enabled" : "disabled") << " (F3)\n";
+		// }
 
 		_framebuffer.bind();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

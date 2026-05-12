@@ -58,6 +58,18 @@ void PlayerController::update(float deltaTime)
 	if (engine::Input::isKeyDown(GLFW_KEY_A)) input.x -= 1.0f;
 	if (engine::Input::isKeyDown(GLFW_KEY_D)) input.x += 1.0f;
 
+	if (animator)
+	{
+		if (input.z != 0.0f && sprintClip.valid())
+		{
+			animator->clip = sprintClip;
+		}
+		else if (idleClip.valid())
+		{
+			animator->clip = idleClip;
+		}
+	}
+
 	if (_characterController->isOnGround()) {
 		hasJumped = false;
 	}
