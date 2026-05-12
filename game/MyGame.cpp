@@ -14,6 +14,7 @@
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
 
+
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
 				  engine::Scene& scene,
@@ -23,7 +24,10 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
 		"colorRestoreShader", "shaders/colorRestore.vert", "shaders/colorRestore.frag");
+	Handle<engine::Shader> skinnedShader = assets.loadShader(
+		"skinned", "shaders/skinned.vert", "shaders/simple.frag");
 
+	//loading textures
 	std::cout << "Loading textures...\n";
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap(
 		"terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
@@ -39,8 +43,9 @@ void MyGame::init(engine::AssetManager& assets,
 	});
 	scene.setSkybox(skyboxCubemap);
 
-	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture(
-		"gemDiffuse", "textures/yellow_gem_texture.png", true);
+	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuse", "textures/yellow_gem_texture.png", true);
+	// Base color for skinned character
+	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBase", "textures/char_Base_color.png", true);
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -94,6 +99,27 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->shininess = 64.0f;
 	mat->difTex = gemDiffuseTex;
 	mat->specTex = gemDiffuseTex; //using diffuse texture as specular for a shiny effect
+
+	Handle<engine::Material> skinnedGemMat = assets.loadMaterial("skinnedGemMat");
+	mat = assets.getMaterial(skinnedGemMat);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 64.0f;
+	mat->difTex = gemDiffuseTex;
+	mat->specTex = gemDiffuseTex;
+	
+
+	Handle<engine::Material> charTex = assets.loadMaterial("charBaseTex");
+	mat = assets.getMaterial(charTex);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 20.0f;
+	mat->difTex = charBaseTex;
+	mat->specTex = charBaseTex;
 
 	// Initialize scene
 	{
@@ -171,6 +197,39 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
+		try
+		{
+			Handle<engine::Mesh> sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
+			Handle<engine::Skeleton> sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
+			Handle<engine::AnimationClip> sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
+
+			const auto* skel = assets.getSkeleton(sprintSkeleton);
+			const auto* clip = assets.getAnimationClip(sprintClip);
+			if (skel && clip)
+			{
+				std::cout << "[Sprint] Skeleton loaded: " << skel->nodes.size() << " nodes, " << skel->boneCount() << " bones\n";
+				std::cout << "[Sprint] Animation: \"" << clip->name << "\" duration=" << clip->durationTicks << " ticks @ " << clip->ticksPerSecond << " TPS, " << clip->tracks.size() << " tracks\n";
+			}
+
+			auto& sprinter = scene.createObject("Sprinter");
+			sprinter.transform.setPosition(glm::vec3(20.0f, 2.0f, 5.0f));
+			sprinter.transform.setScale(glm::vec3(0.2f));
+
+			auto& meshRenderer = sprinter.addComponent<engine::MeshRenderer>();
+			meshRenderer.mesh = sprintMesh;
+			meshRenderer.material = charTex;
+
+			auto& animator = sprinter.addComponent<engine::Animator>();
+			animator.skeleton = sprintSkeleton;
+			animator.clip = sprintClip;
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Rigged Assimp import failed, keeping static mesh path only: " << e.what() << "\n";
+		}
+	}
+
+	{
 		auto& terrain = scene.createObject("Floor");
 
 		auto& collider = terrain.addComponent<engine::HeightmapCollider>();
@@ -244,9 +303,9 @@ void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
 
-	if (engine::Input::isKeyPressed(GLFW_KEY_C)) _collectedCyan += 0.2f;
-	if (engine::Input::isKeyPressed(GLFW_KEY_M)) _collectedMagenta += 0.2f;
-	if (engine::Input::isKeyPressed(GLFW_KEY_Y)) _collectedYellow += 0.2f;
+	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_M)) _collectedMagenta += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_Y)) _collectedYellow += 0.002f;
 	if (engine::Input::isKeyPressed(GLFW_KEY_K))
 	{
 		_collectedCyan = _collectedMagenta = _collectedYellow = 0.0f;
@@ -254,9 +313,9 @@ void MyGame::update(float deltaTime)
 
 	if (_colorRestorePass)
 	{
-		_colorRestorePass->cyan = _collectedCyan;
-		_colorRestorePass->magenta = _collectedMagenta;
-		_colorRestorePass->yellow = _collectedYellow;
+		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
+		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
+		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
 		_colorRestorePass->key = 
 			1.0f - ((_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f);
 	}

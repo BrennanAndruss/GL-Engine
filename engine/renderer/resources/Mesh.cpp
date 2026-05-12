@@ -2,48 +2,10 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <stdexcept>
 
 namespace engine
 {
-	Mesh::Mesh(const tinyobj::shape_t& shape)
-	{
-		std::size_t numVertices = shape.mesh.positions.size() / 3;
-
-		std::vector<glm::vec3> positions(numVertices);
-		std::vector<glm::vec3> normals(numVertices, glm::vec3(0.0f, 1.0f, 0.0f));
-		std::vector<glm::vec2> texcoords(numVertices, glm::vec2(0.0f));
-		std::vector<unsigned int> indices = shape.mesh.indices;
-
-		for (std::size_t i = 0; i < numVertices; ++i)
-		{
-			positions[i] = glm::vec3(
-				shape.mesh.positions[3 * i],
-				shape.mesh.positions[3 * i + 1],
-				shape.mesh.positions[3 * i + 2]
-			);
-
-			if (!shape.mesh.normals.empty())
-			{
-				normals[i] = glm::vec3(
-					shape.mesh.normals[3 * i],
-					shape.mesh.normals[3 * i + 1],
-					shape.mesh.normals[3 * i + 2]
-				);
-			}
-
-			if (!shape.mesh.texcoords.empty() && i < shape.mesh.texcoords.size() / 2)
-			{
-				texcoords[i] = glm::vec2(
-					shape.mesh.texcoords[2 * i],
-					shape.mesh.texcoords[2 * i + 1]
-				);
-			}
-		}
-
-		setupMesh(positions, normals, texcoords, indices);
-		computeBBox(positions);
-	}
-
 	Mesh::Mesh(const std::vector<glm::vec3>& positions,
 			   const std::vector<glm::vec3>& normals,
 			   const std::vector<glm::vec2>& texcoords,
@@ -53,11 +15,24 @@ namespace engine
 		computeBBox(positions);
 	}
 
+	Mesh::Mesh(const std::vector<glm::vec3>& positions,
+			   const std::vector<glm::vec3>& normals,
+			   const std::vector<glm::vec2>& texcoords,
+			   const std::vector<unsigned int>& indices,
+			   const std::vector<glm::uvec4>& boneIds,
+			   const std::vector<glm::vec4>& boneWeights)
+	{
+		setupMesh(positions, normals, texcoords, indices, boneIds, boneWeights);
+		computeBBox(positions);
+	}
+
 	void Mesh::setupMesh(const std::vector<glm::vec3>& positions,
 						 const std::vector<glm::vec3>& normals,
 						 const std::vector<glm::vec2>& texcoords,
 						 const std::vector<unsigned int>& indices)
 	{
+		_isSkinned = false;
+
 		glGenVertexArrays(1, &_vao);
 		glBindVertexArray(_vao);
 
@@ -106,6 +81,41 @@ namespace engine
 		glBindVertexArray(0);
 
 		_numIndices = indices.size();
+	}
+
+	void Mesh::setupMesh(const std::vector<glm::vec3>& positions,
+					 const std::vector<glm::vec3>& normals,
+					 const std::vector<glm::vec2>& texcoords,
+					 const std::vector<unsigned int>& indices,
+					 const std::vector<glm::uvec4>& boneIds,
+					 const std::vector<glm::vec4>& boneWeights)
+	{
+		if (positions.size() != boneIds.size() || positions.size() != boneWeights.size())
+		{
+			throw std::runtime_error("Skinned mesh vertex data size mismatch");
+		}
+
+		setupMesh(positions, normals, texcoords, indices);
+
+		_isSkinned = true;
+		_boneIdBuf = boneIds;
+		_boneWeightBuf = boneWeights;
+
+		glBindVertexArray(_vao);
+
+		glGenBuffers(1, &_boneIdVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, _boneIdVbo);
+		glBufferData(GL_ARRAY_BUFFER, _boneIdBuf.size() * sizeof(glm::uvec4), _boneIdBuf.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::BoneIds));
+		glVertexAttribIPointer(static_cast<GLuint>(Attrib::BoneIds), 4, GL_UNSIGNED_INT, sizeof(glm::uvec4), (void*)0);
+
+		glGenBuffers(1, &_boneWeightVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, _boneWeightVbo);
+		glBufferData(GL_ARRAY_BUFFER, _boneWeightBuf.size() * sizeof(glm::vec4), _boneWeightBuf.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(static_cast<GLuint>(Attrib::BoneWeights));
+		glVertexAttribPointer(static_cast<GLuint>(Attrib::BoneWeights), 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*)0); // this 
+
+		glBindVertexArray(0);
 	}
 
 	void Mesh::computeBBox(const std::vector<glm::vec3>& positions)

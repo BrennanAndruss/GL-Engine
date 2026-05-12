@@ -58,7 +58,7 @@ namespace engine
 
             // Update gameplay logic
             game->update(Time::deltaTime());
-            _scene.update(Time::deltaTime());
+            _scene.update(Time::deltaTime(), _assets);
 
             // Render
             _renderer.render(_scene, _assets);

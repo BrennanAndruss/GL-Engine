@@ -14,6 +14,7 @@
 namespace engine
 {
 	class Cubemap;
+	class AssetManager;
 
 	class Scene
 	{
@@ -23,6 +24,7 @@ namespace engine
 
 		void start();
 		void update(float deltaTime);
+		void update(float deltaTime, AssetManager& assets);
 
 		Object& createObject(const std::string& name);
 
