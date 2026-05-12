@@ -212,8 +212,8 @@ void MyGame::init(engine::AssetManager& assets,
 			}
 
 			auto& sprinter = scene.createObject("Sprinter");
-			sprinter.transform.setPosition(glm::vec3(20.0f, 2.0f, 5.0f));
-			sprinter.transform.setScale(glm::vec3(0.2f));
+				sprinter.transform.setPosition(glm::vec3(1.5f, 5.0f, -2.0f));
+				sprinter.transform.setScale(glm::vec3(0.5f));
 
 			auto& meshRenderer = sprinter.addComponent<engine::MeshRenderer>();
 			meshRenderer.mesh = sprintMesh;
@@ -222,6 +222,8 @@ void MyGame::init(engine::AssetManager& assets,
 			auto& animator = sprinter.addComponent<engine::Animator>();
 			animator.skeleton = sprintSkeleton;
 			animator.clip = sprintClip;
+
+				std::cout << "[Sprint] Skinned mesh spawned in scene\n";
 		}
 		catch (const std::exception& e)
 		{
