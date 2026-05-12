@@ -28,7 +28,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	//loading textures
 	std::cout << "Loading textures...\n";
-	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/E3EEDCB3-C8AE-4191-AE13-47F0A66B584C.png", 256.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
 
@@ -41,7 +41,7 @@ void MyGame::init(engine::AssetManager& assets,
 		"textures/nz.png"
 	});
 
-	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuse", "textures/yellow_gem_texture.png", true);
+	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -58,8 +58,8 @@ void MyGame::init(engine::AssetManager& assets,
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 
-	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
-	float planeLen = 100.0f;
+	int planeRes = heightmap->getWidth() - 1; // 256x256 vertices (half-resolution)
+	float planeLen = 256.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
@@ -69,9 +69,11 @@ void MyGame::init(engine::AssetManager& assets,
 	auto* mat = assets.getMaterial(defaultMat);
 	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f);
-	mat->diffuse = glm::vec3(0.8f);
-	mat->specular = glm::vec3(1.0f);
+	mat->diffuse = glm::vec3(1.0f);
+	mat->specular = glm::vec3(0.25f);
 	mat->shininess = 32.0f;
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
 	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
 	mat = assets.getMaterial(grassMat);
@@ -80,6 +82,8 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
 	mat->specular = glm::vec3(0.5, 0.5, 0.5);
 	mat->shininess = 32.0f;
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
 	mat = assets.getMaterial(redMat);
@@ -88,6 +92,8 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	mat->shininess = 32.0f;
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
 
 	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
 	mat = assets.getMaterial(greenMat);
@@ -96,6 +102,8 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	mat->shininess = 32.0f;
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
 
 	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
 	mat = assets.getMaterial(gemMat);
@@ -104,8 +112,8 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->diffuse = glm::vec3(0.8f);
 	mat->specular = glm::vec3(1.0f);
 	mat->shininess = 64.0f;
-	mat->difTex = gemDiffuseTex;
-	mat->specTex = gemDiffuseTex; //using diffuse texture as specular for a shiny effect
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
 
 	// Initialize scene
 	{
@@ -118,7 +126,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		cube = &scene.createObject("Player");
-		cube->transform.setPosition(glm::vec3(0.0f, 5.0f, -5.0f));
+		cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
 		cube->transform.setScale(glm::vec3(0.5f));
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
@@ -176,7 +184,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 		auto& meshRenderer = gem->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = gemMesh;
-		meshRenderer.material = gemMat;
+		meshRenderer.material = defaultMat;
 
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
@@ -200,7 +208,7 @@ void MyGame::init(engine::AssetManager& assets,
 		gameplayCameraObject = &camObj;
 
 		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 100.0f);
+		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 1000.0f);
 		scene.setMainCamera(&camera);
 		
 		gameplayController = cube->getComponent<PlayerController>();
@@ -215,7 +223,7 @@ void MyGame::init(engine::AssetManager& assets,
 		camObj.transform.lookAt(playerPos + glm::vec3(0.0f, 1.0f, 0.0f));
 
 		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 200.0f);
+		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 1000.0f);
 		(void)camera;
 
 		editorController = &camObj.addComponent<FreeCameraController>();

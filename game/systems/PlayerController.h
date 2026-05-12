@@ -8,12 +8,12 @@
 class PlayerController : public engine::Component
 {
 public:
-	float moveSpeed = 4.0f;
+	float moveSpeed = 11.5f;
 	float rotationSpeed = 1.0f;
 	float eyeHeight = 2.5f;
 	float cameraDistance = 6.0f;
 	float sensitivity = 0.1f;
-	float jumpForce = 8.0f;
+	float jumpForce = 16.0f;
 	bool invertMouseMove = false;
 	bool enabled = true;
 	bool hasJumped = false;

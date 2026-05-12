@@ -143,6 +143,21 @@ namespace engine
 		return handle;
 	}
 
+	Handle<Texture> AssetManager::createSolidTexture(const std::string& name,
+		const std::array<unsigned char, 4>& rgba)
+	{
+		auto texture = std::make_unique<Texture>(1, 1, GL_RGBA, rgba.data());
+
+		std::size_t id = _textures.assets.size();
+		texture->setUnit(static_cast<GLint>(id));
+
+		Handle<Texture> handle = { id };
+		_textures.assets.push_back(std::move(texture));
+		_textures.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
 	Handle<Cubemap> AssetManager::loadCubemap(const std::string& name,
 		const std::array<std::string, 6>& facePaths)
 	{
@@ -435,6 +450,19 @@ namespace engine
 		return it->second;
 	}
 
+	std::string AssetManager::getTextureName(Handle<Texture> handle) const
+	{
+		if (!handle.valid()) return "";
+		for (const auto& entry : _textures.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
+	}
+
 	Cubemap* AssetManager::getCubemap(Handle<Cubemap> handle) const
 	{
 		if (!handle.valid() || handle.index >= _cubemaps.assets.size()) return nullptr;
@@ -493,6 +521,19 @@ namespace engine
 		auto it = _materials.nameToHandle.find(name);
 		if (it == _materials.nameToHandle.end()) return {};
 		return it->second;
+	}
+
+	std::string AssetManager::getMaterialName(Handle<Material> handle) const
+	{
+		if (!handle.valid()) return "";
+		for (const auto& entry : _materials.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
 	}
 
 	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const

@@ -43,6 +43,9 @@ namespace engine
 									const std::string& path,
 									bool alpha);
 
+		Handle<Texture> createSolidTexture(const std::string& name,
+									  const std::array<unsigned char, 4>& rgba);
+
 		Handle<Cubemap> loadCubemap(const std::string& name,
 									const std::array<std::string, 6>& facePaths);
 
@@ -74,6 +77,7 @@ namespace engine
 		Texture* getTexture(Handle<Texture> handle) const;
 		Texture* getTexture(const std::string& name) const;
 		Handle<Texture> getTextureHandle(const std::string& name) const;
+		std::string getTextureName(Handle<Texture> handle) const;
 
 		Cubemap* getCubemap(Handle<Cubemap> handle) const;
 		Cubemap* getCubemap(const std::string& name) const;
@@ -86,6 +90,7 @@ namespace engine
 		Material* getMaterial(Handle<Material> handle) const;
 		Material* getMaterial(const std::string& name) const;
 		Handle<Material> getMaterialHandle(const std::string& name) const;
+		std::string getMaterialName(Handle<Material> handle) const;
 
 		Heightmap* getHeightmap(Handle<Heightmap> handle) const;
 		Heightmap* getHeightmap(const std::string& name) const;

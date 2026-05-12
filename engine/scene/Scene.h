@@ -26,6 +26,8 @@ namespace engine
 
 		Object& createObject(const std::string& name);
 
+		std::vector<std::unique_ptr<Object>>& getObjects() { return _objects; }
+		
 		const std::vector<std::unique_ptr<Object>>& getObjects() const { return _objects; }
 		std::vector<Object*> getRootObjects() const;
 

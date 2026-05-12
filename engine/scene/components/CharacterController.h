@@ -12,8 +12,11 @@ namespace engine
 	class CharacterController : public Component
 	{
 	public:
-		float height = 1.0f;//mess around with these in MyGame.cpp to get the right size for your character
+		float height = 1.0f;
 		float radius = 0.5f;
+		float gravity = 36.0f;
+		float fallSpeed = 60.0f;
+	
 
 		void start() override;
 		void update(float deltaTime) override;
