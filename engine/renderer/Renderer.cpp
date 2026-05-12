@@ -3,6 +3,10 @@
 #include <glad/glad.h>
 #include <cassert>
 #include <iostream>
+#include "renderer/RenderContext.h"
+#include "renderer/passes/ForwardRenderPass.h"
+#include "renderer/passes/SkyboxRenderPass.h"
+#include "resources/AssetManager.h"
 
 namespace engine
 {
@@ -12,23 +16,43 @@ namespace engine
 		_cameraUBO(sizeof(CameraData), static_cast<GLuint>(UBOBindings::Camera)),
 		_lightsUBO(MAX_LIGHTS * sizeof(LightData), static_cast<GLuint>(UBOBindings::Light)) {}
 
-	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
+	void Renderer::init(AssetManager& assets)
 	{
-		assert(pass != nullptr && "Null render pass.");
-		_renderPasses.push_back(std::move(pass));
+		// Load engine shaders
+		Handle<Shader> forwardShader = assets.loadEngineShader(
+			"EngineForward", "shaders/forward.vert", "shaders/forward.frag"
+		);
+		Handle<Shader> skyboxShader = assets.loadEngineShader(
+			"EngineSkybox", "shaders/skybox.vert", "shaders/skybox.frag"
+		);
+		assets.setDefaultShader(forwardShader);
+
+		// Construct render passes
+		addRenderPass(std::make_unique<ForwardRenderPass>(_width, _height, forwardShader));
+		addRenderPass(std::make_unique<SkyboxRenderPass>(skyboxShader));
+		_blitPass = std::make_unique<BlitPass>();
 	}
 
 	void Renderer::resize(int width, int height)
 	{
 		_width = width;
 		_height = height;
+
+		for (auto& pass : _renderPasses)
+		{
+			pass->resize(width, height);
+		}
 	}
 
 	void Renderer::render(const Scene& scene, const AssetManager& assets)
 	{
-		// Clear the previous frame
 		glViewport(0, 0, _width, _height);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		// Reset context each frame
+		_ctx.buffers.clear();
+		_ctx.sceneFramebuffer = nullptr;
+		_ctx.width = _width;
+		_ctx.height = _height;
 
 		// Update uniform buffer objects
 		auto* camera = scene.getMainCamera();
@@ -43,9 +67,25 @@ namespace engine
 			_lightsUBO.update(&data, sizeof(LightData), i * sizeof(LightData));
 		}
 
+		// Run render pipeline
 		for (const auto& pass : _renderPasses)
 		{
-			pass->execute(scene, assets);
+			pass->execute(scene, assets, _ctx);
 		}
+
+		// Blit processed frame to screen
+		_blitPass->execute(scene, assets, _ctx);
+	}
+
+	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
+	{
+		assert(pass != nullptr && "Null render pass.");
+		_renderPasses.push_back(std::move(pass));
+	}
+
+	RenderPass& Renderer::addPostProcessPass(std::unique_ptr<RenderPass> pass)
+	{
+		assert(pass != nullptr && "Null post process pass.");
+		return *_renderPasses.emplace_back(std::move(pass));
 	}
 }

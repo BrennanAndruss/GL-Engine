@@ -17,9 +17,9 @@ namespace engine
 
         _window.setEventCallbacks(this);
         _scene.setPhysicsSystem(&_physics);
+        _renderer.init(_assets);
 
-        int framebufferWidth = 0;
-        int framebufferHeight = 0;
+        int framebufferWidth = 0, framebufferHeight = 0;
         glfwGetFramebufferSize(_window.getHandle(), &framebufferWidth, &framebufferHeight);
         _renderer.resize(framebufferWidth, framebufferHeight);
         glViewport(0, 0, framebufferWidth, framebufferHeight);
@@ -43,6 +43,8 @@ namespace engine
         {
             Time::update();
             Input::update();
+            _window.pollEvents();
+            
 			if (_game)
 			{
 				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
@@ -56,7 +58,7 @@ namespace engine
 
             // Update gameplay logic
             game->update(Time::deltaTime());
-            _scene.update(Time::deltaTime());
+            _scene.update(Time::deltaTime(), _assets);
 
             // Render
             _renderer.render(_scene, _assets);
@@ -67,9 +69,7 @@ namespace engine
                 _editor.endFrame();
             }
             
-            
             _window.swapBuffers();
-            _window.pollEvents();
         }
     }
 

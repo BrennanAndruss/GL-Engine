@@ -10,11 +10,10 @@
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "renderer/resources/Cubemap.h"
-#include "renderer/passes/SkyboxRenderPass.h"
-#include "renderer/passes/ForwardRenderPass.h"
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
+
 
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
@@ -23,14 +22,15 @@ void MyGame::init(engine::AssetManager& assets,
 {
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
-	Handle<engine::Shader> shader = assets.loadShader("simple", "shaders/simple.vert", "shaders/simple.frag");
-	Handle<engine::Shader> skyboxShader = assets.loadShader("skybox", "shaders/skybox.vert", "shaders/skybox.frag");
+	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
+		"colorRestoreShader", "shaders/colorRestore.vert", "shaders/colorRestore.frag");
+	Handle<engine::Shader> skinnedShader = assets.loadShader(
+		"skinned", "shaders/skinned.vert", "shaders/simple.frag");
 
 	//loading textures
 	std::cout << "Loading textures...\n";
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/E3EEDCB3-C8AE-4191-AE13-47F0A66B584C.png", 256.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
-
 
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
 		"textures/px.png",
@@ -40,6 +40,7 @@ void MyGame::init(engine::AssetManager& assets,
 		"textures/pz.png",
 		"textures/nz.png"
 	});
+	scene.setSkybox(skyboxCubemap);
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
 
@@ -48,7 +49,7 @@ void MyGame::init(engine::AssetManager& assets,
 	try
 	{
 		gemMesh = assets.loadMeshAssimp("gem", "models/gem_model.fbx");
-		std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
+		// std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
 	}
 	catch (const std::exception& e)
 	{
@@ -57,12 +58,28 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	Handle<engine::Mesh> sprintMesh;
+	Handle<engine::Skeleton> sprintSkeleton;
+	Handle<engine::AnimationClip> sprintClip;
+
+	try
+	{
+		sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
+		sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
+		sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Player skinned import failed, falling back to cube: " << e.what() << "\n";
+		sprintMesh = cubeMesh;
+	}
 
 	int planeRes = heightmap->getWidth() - 1; // 256x256 vertices (half-resolution)
 	float planeLen = 256.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
+	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
 
 	// todo: move creation to assetmanager
 	Handle<engine::Material> defaultMat = assets.loadMaterial("defaultMat");
@@ -76,8 +93,7 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->specTex = defaultGrayTex;
 	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
-	mat = assets.getMaterial(grassMat);
-	mat->shader = shader;
+	auto* mat = assets.getMaterial(grassMat);
 	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
 	mat->specular = glm::vec3(0.5, 0.5, 0.5);
@@ -87,7 +103,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
 	mat = assets.getMaterial(redMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
 	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -97,7 +112,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
 	mat = assets.getMaterial(greenMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
 	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -107,13 +121,33 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
 	mat = assets.getMaterial(gemMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f);
 	mat->diffuse = glm::vec3(0.8f);
 	mat->specular = glm::vec3(1.0f);
 	mat->shininess = 64.0f;
 	mat->difTex = defaultGrayTex;
 	mat->specTex = defaultGrayTex;
+
+	Handle<engine::Material> skinnedGemMat = assets.loadMaterial("skinnedGemMat");
+	mat = assets.getMaterial(skinnedGemMat);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 64.0f;
+	mat->difTex = gemDiffuseTex;
+	mat->specTex = gemDiffuseTex;
+	
+
+	Handle<engine::Material> charTex = assets.loadMaterial("charBaseTex");
+	mat = assets.getMaterial(charTex);
+	mat->shader = skinnedShader;
+	mat->ambient = glm::vec3(0.2f);
+	mat->diffuse = glm::vec3(0.8f);
+	mat->specular = glm::vec3(1.0f);
+	mat->shininess = 20.0f;
+	mat->difTex = charBaseTex;
+	mat->specTex = charBaseTex;
 
 	// Initialize scene
 	{
@@ -129,17 +163,19 @@ void MyGame::init(engine::AssetManager& assets,
 		cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
 		cube->transform.setScale(glm::vec3(0.5f));
 
-		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = defaultMat;
+	auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
+	meshRenderer.mesh = sprintMesh;
+	meshRenderer.material = charTex;
+	auto& animator = cube->addComponent<engine::Animator>();
+	animator.skeleton = sprintSkeleton;
+	animator.clip = sprintClip;
+	cube->addComponent<engine::CharacterController>();
 
-		cube->addComponent<engine::CharacterController>();
-
-		auto& playerController = cube->addComponent<PlayerController>();
-		playerController.moveSpeed = 20.0f;
-		playerController.eyeHeight = 1.5f;
-		playerController.cameraDistance = 7.0f;
-	}
+	auto& playerController = cube->addComponent<PlayerController>();
+	playerController.moveSpeed = 20.0f;
+	playerController.eyeHeight = 1.5f;
+	playerController.cameraDistance = 7.0f;
+}
 
 	pointLightCenter = &scene.createObject("PointLightCenter");
 	pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
@@ -189,6 +225,7 @@ void MyGame::init(engine::AssetManager& assets,
 		//cube->addComponent<engine::BoxCollider>();
 		//cube->addComponent<engine::RigidBody>();
 	}
+
 
 	{
 		auto& terrain = scene.createObject("Floor");
@@ -250,9 +287,10 @@ void MyGame::init(engine::AssetManager& assets,
 		collectable.collectedMat = gemMat;
 	}
 
-	// Configure render pipeline
-	renderer.addRenderPass(std::make_unique<engine::SkyboxRenderPass>());
-	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
+	// Add post-processing render passes
+	_colorRestorePass = static_cast<ColorRestorationPass*>(
+		&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
+			config.width, config.height, colorRestoreShader)));
 
 	engine::Input::setMouseTrapped(true);
 
@@ -262,6 +300,23 @@ void MyGame::init(engine::AssetManager& assets,
 void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+
+	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_M)) _collectedMagenta += 0.002f;
+	if (engine::Input::isKeyDown(GLFW_KEY_Y)) _collectedYellow += 0.002f;
+	if (engine::Input::isKeyPressed(GLFW_KEY_K))
+	{
+		_collectedCyan = _collectedMagenta = _collectedYellow = 0.0f;
+	}
+
+	if (_colorRestorePass)
+	{
+		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
+		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
+		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
+		_colorRestorePass->key = 
+			1.0f - ((_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f);
+	}
 }
 
 void MyGame::setEditorMode(bool editorActive, engine::Scene& scene)

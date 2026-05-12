@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer/passes/RenderPass.h"
-#include "resources/Handle.h"
 
 // Forward declarations
 namespace engine
@@ -9,23 +8,14 @@ namespace engine
 	class Scene;
 	class AssetManager;
 	class RenderContext;
-	class Shader;
 }
 
 namespace engine
 {
-	class SkyboxRenderPass : public RenderPass
+	class BlitPass : public RenderPass
 	{
 	public:
-		SkyboxRenderPass(Handle<Shader> shader);
-		~SkyboxRenderPass() override;
-
 		void execute(const Scene& scene, const AssetManager& assets,
 			RenderContext& ctx) override;
-
-	private:
-		Handle<Shader> _shader;
-		unsigned int _vao = 0;
-		unsigned int _vbo = 0;
 	};
 }

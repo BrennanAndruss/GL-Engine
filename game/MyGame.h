@@ -8,6 +8,8 @@
 #include "renderer/Renderer.h"
 #include "scene/Scene.h"
 #include "scene/Object.h"
+
+#include "passes/ColorRestorationPass.h"
 #include "systems/FreeCameraController.h"
 #include "systems/PlayerController.h"
 
@@ -37,6 +39,9 @@ private:
 	bool editorModeActive = false;
 	bool editorCameraLocked = false;
 	std::vector<engine::Object*> objects;
+
+	ColorRestorationPass* _colorRestorePass;
+	float _collectedCyan = 0.0f, _collectedMagenta = 0.0f, _collectedYellow = 0.0f;
 
 	void refreshEditorCameraState(engine::Scene& scene);
 };
