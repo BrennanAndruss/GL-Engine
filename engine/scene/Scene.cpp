@@ -6,6 +6,8 @@ namespace engine
 {
 	void Scene::start()
 	{
+		_started = true;
+
 		// Resolve hierarchical transforms from scene initialization
 		for (auto* root : getRootObjects())
 		{
@@ -79,6 +81,10 @@ namespace engine
 	{
 		auto& object = _objects.emplace_back(std::make_unique<Object>(name));
 		object->setScene(this);
+		if (_started)
+		{
+			object->start();
+		}
 		return *object;
 	}
 

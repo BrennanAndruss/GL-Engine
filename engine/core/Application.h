@@ -42,6 +42,7 @@ namespace engine
 		Renderer _renderer;
 		AssetManager _assets;
 		Scene _scene;
+		Game* _game = nullptr;
 
 		bool _editorActive = false;
 	};

@@ -18,5 +18,7 @@ namespace engine
 		virtual ~Game() = default;
 		virtual void init(AssetManager& assets, Renderer& renderer, Scene& scene, const AppConfig& config) = 0;
 		virtual void update(float deltaTime) = 0;
+		virtual void setEditorMode(bool editorActive, Scene& scene) {}
+		virtual void setEditorSelectionLock(bool locked, Scene& scene) {}
 	};
 }

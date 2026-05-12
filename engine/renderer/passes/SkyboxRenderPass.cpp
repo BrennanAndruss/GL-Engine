@@ -6,6 +6,8 @@
 #include "resources/AssetManager.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Cubemap.h"
+#include "renderer/RenderContext.h"
+#include "renderer/Framebuffer.h"
 #include "scene/Scene.h"
 #include "scene/components/Camera.h"
 
@@ -32,7 +34,7 @@ namespace engine
 		 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f,  1.0f,   1.0f, -1.0f,  1.0f
 	};
 
-	SkyboxRenderPass::SkyboxRenderPass()
+	SkyboxRenderPass::SkyboxRenderPass(Handle<Shader> shader) : _shader(shader)
 	{
 		glGenVertexArrays(1, &_vao);
 		glGenBuffers(1, &_vbo);
@@ -53,14 +55,19 @@ namespace engine
 		if (_vao != 0) glDeleteVertexArrays(1, &_vao);
 	}
 
-	void SkyboxRenderPass::execute(const Scene& scene, const AssetManager& assets)
+	void SkyboxRenderPass::execute(const Scene& scene, 
+		const AssetManager &assets, RenderContext& ctx)
 	{
 		if (!scene.hasSkybox()) return;
 
-		auto* shader = assets.getShader("skybox");
+		auto* shader = assets.getShader(_shader);
 		auto* cubemap = assets.getCubemap(scene.getSkybox());
 		auto* camera = scene.getMainCamera();
 		if (!shader || !cubemap || !camera) return;
+
+		// Bind framebuffer from forward pass
+		Framebuffer* framebuffer = ctx.sceneFramebuffer;
+		framebuffer->bind();
 
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_FALSE);
@@ -84,5 +91,7 @@ namespace engine
 
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
+
+		framebuffer->unbind();
 	}
 }

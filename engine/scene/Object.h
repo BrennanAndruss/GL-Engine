@@ -37,6 +37,10 @@ namespace engine
 				std::make_unique<T>(std::forward<Args>(args)...)
 			);
 			ptr->owner = this;
+			if (_started)
+			{
+				ptr->start();
+			}
 			return static_cast<T&>(*ptr);
 		}
 
@@ -57,6 +61,7 @@ namespace engine
 
 	private:
 		Scene* _scene = nullptr;
+		bool _started = false;
 
 		std::vector<std::unique_ptr<Component>> _components;
 	};

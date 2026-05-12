@@ -51,6 +51,7 @@ namespace engine
 
 	private:
 		std::vector<std::unique_ptr<Object>> _objects;
+		bool _started = false;
 
 		PhysicsSystem* _physics = nullptr;
 		Camera* _mainCamera = nullptr;

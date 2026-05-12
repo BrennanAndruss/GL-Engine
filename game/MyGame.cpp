@@ -10,8 +10,6 @@
 #include "renderer/resources/Mesh.h"
 #include "renderer/resources/Material.h"
 #include "renderer/resources/Cubemap.h"
-#include "renderer/passes/SkyboxRenderPass.h"
-#include "renderer/passes/ForwardRenderPass.h"
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
@@ -32,7 +30,6 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading textures...\n";
 	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/HM_Unity02.png", 25.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
-
 
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
 		"textures/px.png",
@@ -60,26 +57,17 @@ void MyGame::init(engine::AssetManager& assets,
 		gemMesh = assets.loadMesh("gem", "models/cube.obj");
 	}
 
-	Handle<engine::Mesh> cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 
-	int planeRes = heightmap->getWidth() / 2 - 1;
+	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
 	float planeLen = 100.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
+	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
 
-	// todo: move creation to assetmanager
-	Handle<engine::Material> defaultMat = assets.loadMaterial("defaultMat");
-	auto* mat = assets.getMaterial(defaultMat);
-	mat->shader = shader;
-	mat->ambient = glm::vec3(0.2f);
-	mat->diffuse = glm::vec3(0.8f);
-	mat->specular = glm::vec3(1.0f);
-	mat->shininess = 32.0f;
-	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
-	mat = assets.getMaterial(grassMat);
-	mat->shader = shader;
+	auto* mat = assets.getMaterial(grassMat);
 	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
 	mat->specular = glm::vec3(0.5, 0.5, 0.5);
@@ -87,7 +75,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
 	mat = assets.getMaterial(redMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
 	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -95,7 +82,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
 	mat = assets.getMaterial(greenMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
 	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -103,7 +89,6 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
 	mat = assets.getMaterial(gemMat);
-	mat->shader = shader;
 	mat->ambient = glm::vec3(0.2f);
 	mat->diffuse = glm::vec3(0.8f);
 	mat->specular = glm::vec3(1.0f);
@@ -142,16 +127,20 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-		cube = &scene.createObject("Cube");
-		cube->transform.setPosition(glm::vec3(0.0f, 2.0f, -5.0f));
+		cube = &scene.createObject("Player");
+		cube->transform.setPosition(glm::vec3(0.0f, 5.0f, -5.0f));
+		cube->transform.setScale(glm::vec3(0.5f));
 
 		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = cubeMesh;
 		meshRenderer.material = defaultMat;
 
-		auto& collider = cube->addComponent<engine::BoxCollider>();
-		auto& rb = cube->addComponent<engine::RigidBody>();
-		rb.mass = 0.0f;
+		cube->addComponent<engine::CharacterController>();
+
+		auto& playerController = cube->addComponent<PlayerController>();
+		playerController.moveSpeed = 20.0f;
+		playerController.eyeHeight = 1.5f;
+		playerController.cameraDistance = 7.0f;
 	}
 
 	pointLightCenter = &scene.createObject("PointLightCenter");
@@ -250,28 +239,31 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// Initialize player and main camera
 	{
-		auto& player = scene.createObject("Player");
-		player.transform.setPosition(glm::vec3(5.0f, 10.0f, 0.0f));
-
-		auto& charController = player.addComponent<engine::CharacterController>();
-		charController.height = 1.0f;
-
-		auto& playerController = player.addComponent<PlayerController>();
-		playerController.moveSpeed = 10.0f;
-		playerController.eyeHeight = 0.5f;
-
 		auto& camObj = scene.createObject("MainCamera");
-		camObj.transform.setParent(&player.transform);
+		gameplayCameraObject = &camObj;
 
 		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
 		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 100.0f);
 		scene.setMainCamera(&camera);
 		
-		playerController.cameraTransform = &camObj.transform;
+		gameplayController = cube->getComponent<PlayerController>();
+		gameplayController->cameraTransform = &camObj.transform;
 	}
 
-	//Initialize skybox
-	scene.setSkybox(skyboxCubemap);
+	{
+		auto& camObj = scene.createObject("EditorCamera");
+		editorCameraObject = &camObj;
+		const glm::vec3 playerPos = cube->transform.getPosition();
+		camObj.transform.setPosition(playerPos + glm::vec3(0.0f, 3.0f, 8.0f));
+		camObj.transform.lookAt(playerPos + glm::vec3(0.0f, 1.0f, 0.0f));
+
+		float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
+		auto& camera = camObj.addComponent<engine::Camera>(45.0f, aspect, 0.1f, 200.0f);
+		(void)camera;
+
+		editorController = &camObj.addComponent<FreeCameraController>();
+		editorController->enabled = false;
+	}
 
 	// Initialize collectables
 	for (int i = 0; i < 0; i++)
@@ -293,9 +285,8 @@ void MyGame::init(engine::AssetManager& assets,
 		collectable.collectedMat = gemMat;
 	}
 
-	// Configure render pipeline
-	renderer.addRenderPass(std::make_unique<engine::SkyboxRenderPass>());
-	renderer.addRenderPass(std::make_unique<engine::ForwardRenderPass>());
+	// Add post-processing render passes
+	//renderer.addRenderPass(...);
 
 	engine::Input::setMouseTrapped(true);
 
@@ -305,4 +296,51 @@ void MyGame::init(engine::AssetManager& assets,
 void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+}
+
+void MyGame::setEditorMode(bool editorActive, engine::Scene& scene)
+{
+	const bool wasEditorMode = editorModeActive;
+	editorModeActive = editorActive;
+
+	if (!wasEditorMode && editorModeActive && gameplayCameraObject && editorCameraObject)
+	{
+		editorCameraObject->transform.setPosition(gameplayCameraObject->transform.getPosition());
+		editorCameraObject->transform.setRotation(gameplayCameraObject->transform.getRotation());
+		editorController->syncFromTransform(gameplayCameraObject->transform);
+	}
+	else if (wasEditorMode && !editorModeActive && gameplayCameraObject && editorCameraObject)
+	{
+		gameplayCameraObject->transform.setPosition(editorCameraObject->transform.getPosition());
+		gameplayCameraObject->transform.setRotation(editorCameraObject->transform.getRotation());
+	}
+
+	refreshEditorCameraState(scene);
+}
+
+void MyGame::setEditorSelectionLock(bool locked, engine::Scene& scene)
+{
+	(void)locked;
+	editorCameraLocked = false;
+	refreshEditorCameraState(scene);
+}
+
+void MyGame::refreshEditorCameraState(engine::Scene& scene)
+{
+	if (!gameplayCameraObject || !editorCameraObject || !gameplayController || !editorController)
+	{
+		return;
+	}
+
+	gameplayController->enabled = !editorModeActive;
+	editorController->enabled = editorModeActive;
+
+	if (editorModeActive)
+	{
+		scene.setMainCamera(editorCameraObject->getComponent<engine::Camera>());
+	}
+	else
+	{
+		scene.setMainCamera(gameplayCameraObject->getComponent<engine::Camera>());
+	}
 }

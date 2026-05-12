@@ -23,6 +23,7 @@ namespace engine
 
         void start() override;
         btCollisionShape* getShape() const override;
+        void update(float deltaTime) override;
 
     private:
         std::unique_ptr<btHeightfieldTerrainShape> _shape;

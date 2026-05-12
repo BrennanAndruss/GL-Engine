@@ -17,9 +17,9 @@ namespace engine
 
         _window.setEventCallbacks(this);
         _scene.setPhysicsSystem(&_physics);
+        _renderer.init(_assets);
 
-        int framebufferWidth = 0;
-        int framebufferHeight = 0;
+        int framebufferWidth = 0, framebufferHeight = 0;
         glfwGetFramebufferSize(_window.getHandle(), &framebufferWidth, &framebufferHeight);
         _renderer.resize(framebufferWidth, framebufferHeight);
         glViewport(0, 0, framebufferWidth, framebufferHeight);
@@ -34,7 +34,9 @@ namespace engine
 
     void Application::run(std::unique_ptr<Game> game)
     {
+		_game = game.get();
         game->init(_assets, _renderer, _scene, _config);
+		_game->setEditorMode(_editorActive, _scene);
         _scene.start();
 
         while (!_window.shouldClose())
@@ -42,6 +44,10 @@ namespace engine
             Time::update();
             Input::update();
             _window.pollEvents();
+			if (_game)
+			{
+				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
+			}
 
             const bool editorEnabledThisFrame = _editorActive;
             if (editorEnabledThisFrame)
@@ -87,6 +93,11 @@ namespace engine
         {
             _editorActive = !_editorActive;
             Input::setMouseTrapped(!_editorActive);
+			if (_game)
+			{
+				_game->setEditorMode(_editorActive, _scene);
+                _game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
+			}
         }
     }
 

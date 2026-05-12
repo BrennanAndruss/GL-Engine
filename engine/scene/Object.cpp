@@ -8,6 +8,7 @@ namespace engine
 
 	void Object::start()
 	{
+		_started = true;
 		for (auto& component : _components)
 		{
 			component->start();
