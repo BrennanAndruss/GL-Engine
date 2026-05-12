@@ -27,8 +27,6 @@ namespace engine
 		);
 		assets.setDefaultShader(forwardShader);
 
-		std::cout << "trying to make framebuffer...\n";
-
 		// Construct render passes
 		addRenderPass(std::make_unique<ForwardRenderPass>(_width, _height, forwardShader));
 		addRenderPass(std::make_unique<SkyboxRenderPass>(skyboxShader));

@@ -76,7 +76,6 @@ void PlayerController::update(float deltaTime)
 
 	if (engine::Input::isKeyDown(GLFW_KEY_SPACE) && !hasJumped && _characterController->canJump())
 	{
-		std::cout << "Jump!\n";
 		hasJumped = true;
 		_characterController->jump(glm::vec3(0.0f, jumpForce, 0.0f));
 	}

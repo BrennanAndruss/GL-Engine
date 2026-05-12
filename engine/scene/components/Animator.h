@@ -60,14 +60,16 @@ namespace engine
 			}
 
 			_boneMatrices.assign(skeletonData->boneCount(), glm::mat4(1.0f));
-				evaluateSkeletonPose(*skeletonData, clipData, _currentTime, _boneMatrices, !_debugPrinted);
+				evaluateSkeletonPose(*skeletonData, clipData, _currentTime, _boneMatrices, false);
 
 				// Also compute per-bone global transforms for debug visualization
 				_globalMatrices.assign(skeletonData->boneCount(), glm::mat4(1.0f));
 				evaluateSkeletonGlobals(*skeletonData, clipData, _currentTime, _globalMatrices);
 
 			// Debug: print first few bone matrices on first evaluation
-			if (!_debugPrinted && !_boneMatrices.empty())
+			// (added false to here and evalulateSkeletonPose to turn off logs)
+			// (maybe a better logging system for the engine can be added later...)
+			if (false && !_debugPrinted && !_boneMatrices.empty())
 			{
 				_debugPrinted = true;
 				std::cout << "[Animator] First pose evaluation - playback time=" << _currentTime << " ticks\n";
