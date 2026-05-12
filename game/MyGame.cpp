@@ -61,6 +61,21 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	Handle<engine::Mesh> sprintMesh;
+	Handle<engine::Skeleton> sprintSkeleton;
+	Handle<engine::AnimationClip> sprintClip;
+
+	try
+	{
+		sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
+		sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
+		sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Player skinned import failed, falling back to cube: " << e.what() << "\n";
+		sprintMesh = cubeMesh;
+	}
 
 	int planeRes = heightmap->getWidth() / 2 - 1; // 256x256 vertices (half-resolution)
 	float planeLen = 100.0f;
@@ -131,21 +146,23 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-		cube = &scene.createObject("Player");
-		cube->transform.setPosition(glm::vec3(0.0f, 5.0f, -5.0f));
-		cube->transform.setScale(glm::vec3(0.5f));
+	cube = &scene.createObject("Player");
+	cube->transform.setPosition(glm::vec3(0.0f, 5.0f, -5.0f));
+	cube->transform.setScale(glm::vec3(0.5f));
 
-		auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = cubeMesh;
-		meshRenderer.material = defaultMat;
+	auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
+	meshRenderer.mesh = sprintMesh;
+	meshRenderer.material = charTex;
+	auto& animator = cube->addComponent<engine::Animator>();
+	animator.skeleton = sprintSkeleton;
+	animator.clip = sprintClip;
+	cube->addComponent<engine::CharacterController>();
 
-		cube->addComponent<engine::CharacterController>();
-
-		auto& playerController = cube->addComponent<PlayerController>();
-		playerController.moveSpeed = 20.0f;
-		playerController.eyeHeight = 1.5f;
-		playerController.cameraDistance = 7.0f;
-	}
+	auto& playerController = cube->addComponent<PlayerController>();
+	playerController.moveSpeed = 20.0f;
+	playerController.eyeHeight = 1.5f;
+	playerController.cameraDistance = 7.0f;
+}
 
 	pointLightCenter = &scene.createObject("PointLightCenter");
 	pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
@@ -196,40 +213,6 @@ void MyGame::init(engine::AssetManager& assets,
 		//cube->addComponent<engine::RigidBody>();
 	}
 
-	{
-		try
-		{
-			Handle<engine::Mesh> sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
-			Handle<engine::Skeleton> sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
-			Handle<engine::AnimationClip> sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
-
-			const auto* skel = assets.getSkeleton(sprintSkeleton);
-			const auto* clip = assets.getAnimationClip(sprintClip);
-			if (skel && clip)
-			{
-				std::cout << "[Sprint] Skeleton loaded: " << skel->nodes.size() << " nodes, " << skel->boneCount() << " bones\n";
-				std::cout << "[Sprint] Animation: \"" << clip->name << "\" duration=" << clip->durationTicks << " ticks @ " << clip->ticksPerSecond << " TPS, " << clip->tracks.size() << " tracks\n";
-			}
-
-			auto& sprinter = scene.createObject("Sprinter");
-				sprinter.transform.setPosition(glm::vec3(1.5f, 5.0f, -2.0f));
-				sprinter.transform.setScale(glm::vec3(0.5f));
-
-			auto& meshRenderer = sprinter.addComponent<engine::MeshRenderer>();
-			meshRenderer.mesh = sprintMesh;
-			meshRenderer.material = charTex;
-
-			auto& animator = sprinter.addComponent<engine::Animator>();
-			animator.skeleton = sprintSkeleton;
-			animator.clip = sprintClip;
-
-				std::cout << "[Sprint] Skinned mesh spawned in scene\n";
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "Rigged Assimp import failed, keeping static mesh path only: " << e.what() << "\n";
-		}
-	}
 
 	{
 		auto& terrain = scene.createObject("Floor");

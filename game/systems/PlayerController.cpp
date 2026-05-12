@@ -83,7 +83,13 @@ void PlayerController::update(float deltaTime)
 			walkDir = glm::normalize(walkDir);
 		}
 
-		owner->transform.setRotation(glm::quatLookAt(glm::normalize(walkDir), glm::vec3(0.0f, 1.0f, 0.0f)));
+		glm::vec3 facingDir = yawQuat * glm::vec3(0.0f, 0.0f, -1.0f);
+		facingDir.y = 0.0f;
+		facingDir = glm::normalize(facingDir);
+
+		owner->transform.setRotation(
+		glm::quatLookAt(facingDir, glm::vec3(0.0f, 1.0f, 0.0f))
+		);
 	}
 	
 	// Apply horizontal movement through character controller
