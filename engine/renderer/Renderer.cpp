@@ -35,12 +35,6 @@ namespace engine
 		_blitPass = std::make_unique<BlitPass>();
 	}
 
-	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
-	{
-		assert(pass != nullptr && "Null render pass.");
-		_renderPasses.push_back(std::move(pass));
-	}
-
 	void Renderer::resize(int width, int height)
 	{
 		_width = width;
@@ -83,5 +77,17 @@ namespace engine
 
 		// Blit processed frame to screen
 		_blitPass->execute(scene, assets, _ctx);
+	}
+
+	void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass)
+	{
+		assert(pass != nullptr && "Null render pass.");
+		_renderPasses.push_back(std::move(pass));
+	}
+
+	RenderPass& Renderer::addPostProcessPass(std::unique_ptr<RenderPass> pass)
+	{
+		assert(pass != nullptr && "Null post process pass.");
+		return *_renderPasses.emplace_back(std::move(pass));
 	}
 }

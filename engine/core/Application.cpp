@@ -43,6 +43,8 @@ namespace engine
         {
             Time::update();
             Input::update();
+            _window.pollEvents();
+            
 			if (_game)
 			{
 				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
@@ -67,9 +69,7 @@ namespace engine
                 _editor.endFrame();
             }
             
-            
             _window.swapBuffers();
-            _window.pollEvents();
         }
     }
 

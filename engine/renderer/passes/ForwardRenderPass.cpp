@@ -109,39 +109,6 @@ namespace engine
 			specTex->unbind();
 		}
 
-		//// Draw skybox where no geometry was drawn
-		//if (scene.hasSkybox())
-		//{
-		//	shader = assets.getShader(_skyboxShader);
-
-		//	auto* cubemap = assets.getCubemap(scene.getSkybox());
-		//	auto* camera = scene.getMainCamera();
-		//	if (cubemap && camera)
-		//	{
-		//		glDepthFunc(GL_LEQUAL);
-		//		glDepthMask(GL_FALSE);
-
-		//		shader->bind();
-
-		//		const CameraData& camData = camera->getCameraData();
-		//		glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(camData.view));
-
-		//		shader->setMat4("view", viewNoTranslation);
-		//		shader->setMat4("projection", camData.projection);
-		//		cubemap->bind(shader->getUniform("skybox"));
-
-		//		glBindVertexArray(_vao);
-		//		glDrawArrays(GL_TRIANGLES, 0, 36);
-		//		glBindVertexArray(0);
-
-		//		cubemap->unbind();
-		//		shader->unbind();
-
-		//		glDepthMask(GL_TRUE);
-		//		glDepthFunc(GL_LESS);
-		//	}
-		//}
-
 		_framebuffer.unbind();
 		
 		// Register outputs with render context
