@@ -63,13 +63,16 @@ void MyGame::init(engine::AssetManager& assets,
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 	Handle<engine::Mesh> sprintMesh;
 	Handle<engine::Skeleton> sprintSkeleton;
+	Handle<engine::AnimationClip> idleClip;
 	Handle<engine::AnimationClip> sprintClip;
 
 	try
 	{
-		sprintMesh = assets.loadMeshAssimp("sprintMesh", "models/sprint.fbx");
-		sprintSkeleton = assets.loadSkeletonAssimp("sprintSkeleton", "models/sprint.fbx");
-		sprintClip = assets.loadAnimationClipAssimp("sprintAnimation", "models/sprint.fbx");
+		sprintMesh = assets.loadMeshAssimp("playerMesh", "models/sprint.fbx");
+		sprintSkeleton = assets.loadSkeletonAssimp("playerSkeleton", "models/sprint.fbx");
+
+		idleClip = assets.loadAnimationClipAssimp("playerIdleAnimation", "models/Idle.fbx");
+		sprintClip = assets.loadAnimationClipAssimp("playerSprintAnimation", "models/sprint.fbx");
 	}
 	catch (const std::exception& e)
 	{
@@ -155,13 +158,17 @@ void MyGame::init(engine::AssetManager& assets,
 	meshRenderer.material = charTex;
 	auto& animator = cube->addComponent<engine::Animator>();
 	animator.skeleton = sprintSkeleton;
-	animator.clip = sprintClip;
+	animator.clip = idleClip;
 	cube->addComponent<engine::CharacterController>();
 
 	auto& playerController = cube->addComponent<PlayerController>();
 	playerController.moveSpeed = 20.0f;
 	playerController.eyeHeight = 1.5f;
 	playerController.cameraDistance = 7.0f;
+
+	playerController.animator = &animator;
+	playerController.idleClip = idleClip;
+	playerController.sprintClip = sprintClip;
 }
 
 	pointLightCenter = &scene.createObject("PointLightCenter");

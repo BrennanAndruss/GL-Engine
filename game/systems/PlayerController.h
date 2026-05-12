@@ -4,6 +4,9 @@
 #include "scene/Transform.h"
 #include "scene/components/Component.h"
 #include "scene/components/CharacterController.h"
+#include "resources/Handle.h"
+#include "resources/SkeletalAnimation.h"
+#include "scene/components/Animator.h"
 
 class PlayerController : public engine::Component
 {
@@ -22,6 +25,9 @@ public:
 	
 	void start() override;
 	void update(float deltaTime) override;
+	engine::Animator* animator = nullptr;
+	Handle<engine::AnimationClip> idleClip;
+	Handle<engine::AnimationClip> sprintClip;
 
 private:
 	engine::CharacterController* _characterController = nullptr;
