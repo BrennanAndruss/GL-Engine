@@ -90,8 +90,6 @@ namespace engine
 		_framebuffer.bind();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		auto* shader = assets.getShader(_shader);
-
 		for (const auto& object : scene.getObjects())
 		{
 			auto* meshRenderer = object->getComponent<MeshRenderer>();
@@ -99,20 +97,16 @@ namespace engine
 
 			auto* mesh = assets.getMesh(meshRenderer->mesh);
 			auto* mat = assets.getMaterial(meshRenderer->material);
-			if (!mesh || !mat || !shader) continue;
+			auto* objectShader = mat ? assets.getShader(mat->shader) : nullptr;
+			if (!mesh || !mat || !objectShader) continue;
 
-			if (_shader.index != mat->shader.index) continue;
-
-			shader->bind();
-			shader->setMat4("model", object->transform.getWorldMatrix());
-			shader->setVec3("mat.ambient", mat->ambient);
-			shader->setVec3("mat.diffuse", mat->diffuse);
-			shader->setVec3("mat.specular", mat->specular);
-			shader->setFloat("mat.shininess", mat->shininess);
-			shader->setInt("numLights", scene.getLights().size());
-
-			shader->setInt("mat.hasDifTex", 0);
-			shader->setInt("mat.hasSpecTex", 0);
+			objectShader->bind();
+			objectShader->setMat4("model", object->transform.getWorldMatrix());
+			objectShader->setVec3("mat.ambient", mat->ambient);
+			objectShader->setVec3("mat.diffuse", mat->diffuse);
+			objectShader->setVec3("mat.specular", mat->specular);
+			objectShader->setFloat("mat.shininess", mat->shininess);
+			objectShader->setInt("numLights", scene.getLights().size());
 
 			Texture* difTex = nullptr;
 			Texture* specTex = nullptr;
@@ -122,8 +116,7 @@ namespace engine
 				difTex = assets.getTexture(mat->difTex);
 				if (difTex)
 				{
-					difTex->bind(shader->getUniform("mat.difTex"));
-					shader->setInt("mat.hasDifTex", 1);
+					difTex->bind(objectShader->getUniform("mat.difTex"));
 				}
 			}
 
@@ -132,13 +125,9 @@ namespace engine
 				specTex = assets.getTexture(mat->specTex);
 				if (specTex)
 				{
-					specTex->bind(shader->getUniform("mat.specTex"));
-					shader->setInt("mat.hasSpecTex", 1);
+					specTex->bind(objectShader->getUniform("mat.specTex"));
 				}
 			}
-
-			shader->setInt("isSkinned", 0);
-			shader->setInt("numBones", 0);
 
 			if (mesh->isSkinned())
 			{
@@ -146,18 +135,18 @@ namespace engine
 				{
 					const auto& boneMatrices = animator->getBoneMatrices();
 					const int numBones = static_cast<int>(std::min(boneMatrices.size(), MAX_SHADER_BONES));
-					shader->setInt("isSkinned", 1);
-					shader->setInt("numBones", numBones);
+					objectShader->setInt("isSkinned", 1);
+					objectShader->setInt("numBones", numBones);
 					for (int i = 0; i < numBones; ++i)
 					{
-						shader->setMat4("bones[" + std::to_string(i) + "]", boneMatrices[static_cast<std::size_t>(i)]);
+						objectShader->setMat4("bones[" + std::to_string(i) + "]", boneMatrices[static_cast<std::size_t>(i)]);
 					}
 				}
 			}
 
 			mesh->draw();
 
-			shader->unbind();
+			objectShader->unbind();
 			if (difTex) difTex->unbind();
 			if (specTex) specTex->unbind();
 
