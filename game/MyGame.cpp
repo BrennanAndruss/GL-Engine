@@ -43,6 +43,8 @@ void MyGame::init(engine::AssetManager& assets,
 	scene.setSkybox(skyboxCubemap);
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
+	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuseTex", "textures/cyan_gem_texture.png", true);
+	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBaseTex", "textures/char_Base_color.png", true);
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -80,11 +82,8 @@ void MyGame::init(engine::AssetManager& assets,
 
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
-
-	// todo: move creation to assetmanager
-	Handle<engine::Material> defaultMat = assets.loadMaterial("defaultMat");
 	auto* mat = assets.getMaterial(defaultMat);
-	mat->shader = shader;
+	mat->shader = assets.getDefaultShader();
 	mat->ambient = glm::vec3(0.2f);
 	mat->diffuse = glm::vec3(1.0f);
 	mat->specular = glm::vec3(0.25f);
@@ -93,7 +92,7 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->specTex = defaultGrayTex;
 	
 	Handle<engine::Material> grassMat = assets.loadMaterial("grassMat");
-	auto* mat = assets.getMaterial(grassMat);
+	mat = assets.getMaterial(grassMat);
 	mat->ambient = glm::vec3(0.113, 0.152, 0.081);
 	mat->diffuse = glm::vec3(0.565, 0.761, 0.404);
 	mat->specular = glm::vec3(0.5, 0.5, 0.5);
@@ -288,9 +287,9 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Add post-processing render passes
-	_colorRestorePass = static_cast<ColorRestorationPass*>(
-		&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
-			config.width, config.height, colorRestoreShader)));
+	// _colorRestorePass = static_cast<ColorRestorationPass*>(
+	// 	&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
+	// 		config.width, config.height, colorRestoreShader)));
 
 	engine::Input::setMouseTrapped(true);
 

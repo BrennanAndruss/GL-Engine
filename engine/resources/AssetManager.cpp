@@ -541,6 +541,41 @@ namespace engine
 		return handle;
 	}
 
+	Handle<Texture> AssetManager::loadTexture(const std::string& name,
+		unsigned char* data, int width, int height)
+	{
+		auto texture = std::make_unique<Texture>(width, height, GL_RGBA, data);
+
+		std::size_t id = _textures.assets.size();
+		texture->setUnit(static_cast<GLint>(id));
+
+		Handle<Texture> handle = { id };
+		_textures.assets.push_back(std::move(texture));
+		_textures.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
+	Texture* AssetManager::getTexture(Handle<Texture> handle) const
+	{
+		if (!handle.valid() || handle.index >= _textures.assets.size()) return nullptr;
+		return _textures.assets[handle.index].get();
+	}
+
+	Texture* AssetManager::getTexture(const std::string& name) const
+	{
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return nullptr;
+		return getTexture(it->second);
+	}
+
+	Handle<Texture> AssetManager::getTextureHandle(const std::string& name) const
+	{
+		auto it = _textures.nameToHandle.find(name);
+		if (it == _textures.nameToHandle.end()) return {};
+		return it->second;
+	}
+
 	Handle<Cubemap> AssetManager::loadCubemap(const std::string& name,
 		const std::array<std::string, 6>& facePaths)
 	{
@@ -948,6 +983,39 @@ namespace engine
 		return handle;
 	}
 
+	Material* AssetManager::getMaterial(Handle<Material> handle) const
+	{
+		if (!handle.valid() || handle.index >= _materials.assets.size()) return nullptr;
+		return _materials.assets[handle.index].get();
+	}
+
+	Material* AssetManager::getMaterial(const std::string& name) const
+	{
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return nullptr;
+		return getMaterial(it->second);
+	}
+
+	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
+	{
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+	std::string AssetManager::getMaterialName(Handle<Material> handle) const
+	{
+		if (!handle.valid()) return "";
+		for (const auto& entry : _materials.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
+	}
+
 	Skeleton* AssetManager::getSkeleton(Handle<Skeleton> handle) const
 	{
 		if (!handle.valid() || handle.index >= _skeletons.assets.size()) return nullptr;
@@ -983,8 +1051,8 @@ namespace engine
 
 	Handle<AnimationClip> AssetManager::getAnimationClipHandle(const std::string& name) const
 	{
-		auto it = _textures.nameToHandle.find(name);
-		if (it == _textures.nameToHandle.end()) return {};
+		auto it = _animationClips.nameToHandle.find(name);
+		if (it == _animationClips.nameToHandle.end()) return {};
 		return it->second;
 	}
 
@@ -999,85 +1067,6 @@ namespace engine
 			}
 		}
 		return "";
-	}
-
-	Cubemap* AssetManager::getCubemap(Handle<Cubemap> handle) const
-	{
-		if (!handle.valid() || handle.index >= _cubemaps.assets.size()) return nullptr;
-		return _cubemaps.assets[handle.index].get();
-	}
-
-	Cubemap* AssetManager::getCubemap(const std::string& name) const
-	{
-		auto it = _cubemaps.nameToHandle.find(name);
-		if (it == _cubemaps.nameToHandle.end()) return nullptr;
-		return getCubemap(it->second);
-	}
-
-	Handle<Cubemap> AssetManager::getCubemapHandle(const std::string& name) const
-	{
-		auto it = _cubemaps.nameToHandle.find(name);
-		if (it == _cubemaps.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	Mesh* AssetManager::getMesh(Handle<Mesh> handle) const
-	{
-		if (!handle.valid() || handle.index >= _meshes.assets.size()) return nullptr;
-		return _meshes.assets[handle.index].get();
-	}
-
-	Mesh* AssetManager::getMesh(const std::string& name) const
-	{
-		auto it = _meshes.nameToHandle.find(name);
-		if (it == _meshes.nameToHandle.end()) return nullptr;
-		return getMesh(it->second);
-	}
-
-	Handle<Mesh> AssetManager::getMeshHandle(const std::string& name) const
-	{
-		auto it = _meshes.nameToHandle.find(name);
-		if (it == _meshes.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	Material* AssetManager::getMaterial(Handle<Material> handle) const
-	{
-		if (!handle.valid() || handle.index >= _materials.assets.size()) return nullptr;
-		return _materials.assets[handle.index].get();
-	}
-
-	Material* AssetManager::getMaterial(const std::string& name) const
-	{
-		auto it = _materials.nameToHandle.find(name);
-		if (it == _materials.nameToHandle.end()) return nullptr;
-		return getMaterial(it->second);
-	}
-
-	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
-	{
-		auto it = _materials.nameToHandle.find(name);
-		if (it == _materials.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-	std::string AssetManager::getMaterialName(Handle<Material> handle) const
-	{
-		if (!handle.valid()) return "";
-		for (const auto& entry : _materials.nameToHandle)
-		{
-			if (entry.second.index == handle.index)
-			{
-				return entry.first;
-			}
-		}
-		return "";
-	}
-
-	Heightmap* AssetManager::getHeightmap(Handle<Heightmap> handle) const
-	{
-		if (!handle.valid() || handle.index >= _heightmaps.assets.size()) return nullptr;
-		return _heightmaps.assets[handle.index].get();
 	}
 
 }
