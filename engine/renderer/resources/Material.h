@@ -22,5 +22,16 @@ namespace engine
 		glm::vec3 ambient = glm::vec3(0.0f);
 		glm::vec3 diffuse = glm::vec3(0.0f);
 		glm::vec3 specular = glm::vec3(0.0f);
+
+		bool isTerrain = false;
+
+		Handle<Texture> splat0;
+
+		Handle<Texture> terrainGrass;
+		Handle<Texture> terrainSand;
+		Handle<Texture> terrainRock;
+		Handle<Texture> terrainSnow;
+
+		float terrainTextureTiling = 32.0f;
 	};
 }

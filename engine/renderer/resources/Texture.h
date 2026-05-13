@@ -12,7 +12,9 @@ namespace engine
 
 		void setUnit(GLint unit) { _unit = unit; }
 		GLint getUnit() const { return _unit; }
-
+		void bindToUnit(GLint handle, GLint unit) const;
+		void unbindFromUnit(GLint unit) const;
+		
 		void bind(GLint handle) const;
 		void unbind() const;
 

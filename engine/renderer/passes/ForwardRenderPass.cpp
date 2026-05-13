@@ -93,11 +93,39 @@ namespace engine
 
 			// Bind textures
 			// All materials have a default texture so no need for null check
-			auto* difTex = assets.getTexture(mat->difTex);
-			difTex->bind(shader->getUniform("mat.difTex"));
+			Texture* terrainSplat0 = nullptr;
+			Texture* terrainGrass = nullptr;
+			Texture* terrainSand = nullptr;
+			Texture* terrainRock = nullptr;
+			Texture* terrainSnow = nullptr;
 
-			auto* specTex = assets.getTexture(mat->specTex);
-			specTex->bind(shader->getUniform("mat.specTex"));
+			Texture* difTex = nullptr;
+			Texture* specTex = nullptr;
+
+			if (mat->isTerrain)
+			{
+				terrainSplat0 = assets.getTexture(mat->splat0);
+				terrainGrass  = assets.getTexture(mat->terrainGrass);
+				terrainSand   = assets.getTexture(mat->terrainSand);
+				terrainRock   = assets.getTexture(mat->terrainRock);
+				terrainSnow   = assets.getTexture(mat->terrainSnow);
+
+				if (terrainSplat0) terrainSplat0->bindToUnit(shader->getUniform("splat0"), 0);
+				if (terrainGrass)  terrainGrass->bindToUnit(shader->getUniform("terrainGrass"), 1);
+				if (terrainSand)   terrainSand->bindToUnit(shader->getUniform("terrainSand"), 2);
+				if (terrainRock)   terrainRock->bindToUnit(shader->getUniform("terrainRock"), 3);
+				if (terrainSnow)   terrainSnow->bindToUnit(shader->getUniform("terrainSnow"), 4);
+
+				shader->setFloat("terrainTextureTiling", mat->terrainTextureTiling);
+			}
+			else
+			{
+				difTex = assets.getTexture(mat->difTex);
+				specTex = assets.getTexture(mat->specTex);
+
+				if (difTex)  difTex->bind(shader->getUniform("mat.difTex"));
+				if (specTex) specTex->bind(shader->getUniform("mat.specTex"));
+			}
 
 			Animator* animator;
 			if (mesh->isSkinned() && (animator = object->getComponent<Animator>()))
@@ -115,9 +143,21 @@ namespace engine
 
 			mesh->draw();
 
+			if (mat->isTerrain)
+			{
+				if (terrainSplat0) terrainSplat0->unbindFromUnit(0);
+				if (terrainGrass)  terrainGrass->unbindFromUnit(1);
+				if (terrainSand)   terrainSand->unbindFromUnit(2);
+				if (terrainRock)   terrainRock->unbindFromUnit(3);
+				if (terrainSnow)   terrainSnow->unbindFromUnit(4);
+			}
+			else
+			{
+				if (difTex)  difTex->unbind();
+				if (specTex) specTex->unbind();
+			}
+
 			shader->unbind();
-			difTex->unbind();
-			specTex->unbind();
 
 			// Show skeleton visualizer
 			Skeleton* skeleton;
