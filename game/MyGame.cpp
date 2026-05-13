@@ -39,7 +39,7 @@ void MyGame::init(engine::AssetManager& assets,
 	std::cout << "Loading textures...\n";
 
 	// Heighmap Texture
-	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/unityterrain04.png", 600.0f);
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/unityterrain04.png", 400.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 	// Splatmap Texture
 	Handle<engine::Texture> terrainSplat0 =
