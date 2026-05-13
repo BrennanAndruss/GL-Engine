@@ -64,14 +64,17 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Skeleton> sprintSkeleton;
 	Handle<engine::AnimationClip> idleClip;
 	Handle<engine::AnimationClip> sprintClip;
+	//still trying to find a good jumping animation
+	//Handle<engine::AnimationClip> jumpClip;
 
 	try
 	{
-		sprintMesh = assets.loadMeshAssimp("playerMesh", "models/sprint.fbx");
-		sprintSkeleton = assets.loadSkeletonAssimp("playerSkeleton", "models/sprint.fbx");
+		sprintMesh = assets.loadMeshAssimp("playerMesh", "models/Run.fbx");
+		sprintSkeleton = assets.loadSkeletonAssimp("playerSkeleton", "models/Run.fbx");
 
 		idleClip = assets.loadAnimationClipAssimp("playerIdleAnimation", "models/Idle.fbx");
-		sprintClip = assets.loadAnimationClipAssimp("playerSprintAnimation", "models/sprint.fbx");
+		sprintClip = assets.loadAnimationClipAssimp("playerSprintAnimation", "models/walking.fbx");
+		//jumpClip = assets.loadAnimationClipAssimp("playerJumpAnimation", "models/jump.fbx");
 	}
 	catch (const std::exception& e)
 	{
@@ -161,26 +164,39 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-		cube = &scene.createObject("Player");
-		cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
-		cube->transform.setScale(glm::vec3(0.5f));
+	cube = &scene.createObject("Player");
+	cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
 
-	auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
+	auto& visual = scene.createObject("PlayerVisual");
+	visual.transform.setParent(&cube->transform);
+
+	auto& meshRenderer = visual.addComponent<engine::MeshRenderer>();
 	meshRenderer.mesh = sprintMesh;
 	meshRenderer.material = charTex;
-	auto& animator = cube->addComponent<engine::Animator>();
+
+	auto& animator = visual.addComponent<engine::Animator>();
 	animator.skeleton = sprintSkeleton;
 	animator.clip = idleClip;
-	cube->addComponent<engine::CharacterController>();
+
+	auto& characterController = cube->addComponent<engine::CharacterController>();
+	characterController.targetHeight = 1.0f;
+	characterController.radiusScale = 0.95f;
+	characterController.visualTransform = &visual.transform;
+
+	if (auto* mesh = assets.getMesh(sprintMesh))
+	{
+		characterController.fitToMesh(*mesh);
+	}
 
 	auto& playerController = cube->addComponent<PlayerController>();
-	playerController.moveSpeed = 20.0f;
-	playerController.eyeHeight = 1.5f;
-	playerController.cameraDistance = 7.0f;
+	playerController.moveSpeed = 10.0f;
+	playerController.eyeHeight = 0.3f;
+	playerController.cameraDistance = 3.0f;
 
 	playerController.animator = &animator;
 	playerController.idleClip = idleClip;
 	playerController.sprintClip = sprintClip;
+	//playerController.jumpClip = jumpClip;
 }
 
 	pointLightCenter = &scene.createObject("PointLightCenter");

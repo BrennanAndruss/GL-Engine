@@ -4,6 +4,8 @@
 #include "scene/Scene.h"
 #include "scene/Object.h"
 
+
+
 namespace engine
 {
 	void CharacterController::start()
@@ -39,6 +41,30 @@ namespace engine
 
 		physics->addCollisionObject(_ghostObject, group, mask);
 		physics->addAction(_controller);
+	}
+
+	void CharacterController::fitToMesh(const engine::Mesh& mesh)
+	{
+		auto bbox = mesh.getBBox();
+
+		float modelHeight = bbox.max.y - bbox.min.y;
+		float modelWidth = bbox.max.x - bbox.min.x;
+
+		if (modelHeight > 0.0001f)
+		{
+			float scale = targetHeight / modelHeight;
+
+			owner->transform.setScale(glm::vec3(scale));
+
+			height = targetHeight;
+			radius = modelWidth * scale * radiusScale;
+
+			if (visualTransform)
+			{
+				float localOffsetY = (-height * 0.5f / scale) - bbox.min.y;
+				visualTransform->setPosition(glm::vec3(0.0f, localOffsetY, 0.0f));
+			}
+		}
 	}
 
 	void CharacterController::update(float deltaTime)
