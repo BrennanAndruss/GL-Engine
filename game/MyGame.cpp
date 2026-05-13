@@ -29,7 +29,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	//loading textures
 	std::cout << "Loading textures...\n";
-	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/E3EEDCB3-C8AE-4191-AE13-47F0A66B584C.png", 256.0f);
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/unityterrain04.png", 600.0f);
 	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
@@ -79,8 +79,8 @@ void MyGame::init(engine::AssetManager& assets,
 		sprintMesh = cubeMesh;
 	}
 
-	int planeRes = heightmap->getWidth() - 1; // 256x256 vertices (half-resolution)
-	float planeLen = 256.0f;
+	int planeRes = heightmap->getWidth() - 1;
+	float planeLen = 500.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
