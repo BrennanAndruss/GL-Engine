@@ -229,7 +229,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	auto& characterController = cube->addComponent<engine::CharacterController>();
 	characterController.targetHeight = 1.0f;
-	characterController.radiusScale = 0.95f;
+	characterController.radiusScale = 2.0f;
 	characterController.visualTransform = &visual.transform;
 
 	if (auto* mesh = assets.getMesh(sprintMesh))
@@ -310,6 +310,24 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.mesh = terrainMesh;
 		meshRenderer.material = terrainMat;
 	}
+
+	{
+	auto& testCube = scene.createObject("TerrainColliderTestCube");
+
+	testCube.transform.setPosition(glm::vec3(20.0f, 110.0f, 20.0f));
+	testCube.transform.setScale(glm::vec3(3.0f));
+
+	auto& meshRenderer = testCube.addComponent<engine::MeshRenderer>();
+	meshRenderer.mesh = cubeMesh;
+	meshRenderer.material = defaultMat;
+
+	auto& collider = testCube.addComponent<engine::BoxCollider>();
+	collider.size = glm::vec3(1.0f);
+
+	auto& rigidBody = testCube.addComponent<engine::RigidBody>();
+	rigidBody.mass = 1.0f;
+	rigidBody.bodyType = engine::RigidBody::BodyType::Dynamic;
+}
 
 	// Initialize player and main camera
 	{
