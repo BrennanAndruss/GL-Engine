@@ -26,8 +26,10 @@ namespace engine
 
 		// Generate mipmaps and set texture parameters
 		glGenerateMipmap(GL_TEXTURE_2D);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
@@ -50,9 +52,28 @@ namespace engine
 		glUniform1i(handle, _unit);
 	}
 
+	void Texture::bindToUnit(GLint handle, GLint unit) const
+	{
+		if (handle < 0)
+		{
+			return;
+		}
+
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, _tid);
+		glUniform1i(handle, unit);
+	}
+
 	void Texture::unbind() const
 	{
 		glActiveTexture(GL_TEXTURE0 + _unit);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+	
+	void Texture::unbindFromUnit(GLint unit) const
+	{
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	
 }

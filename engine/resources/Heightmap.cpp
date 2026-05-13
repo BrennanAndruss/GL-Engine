@@ -58,7 +58,7 @@ namespace engine
 				float top = temp[static_cast<std::size_t>(ym1) * _width + static_cast<std::size_t>(x)];
 				float center = temp[static_cast<std::size_t>(y) * _width + static_cast<std::size_t>(x)];
 				float bottom = temp[static_cast<std::size_t>(yp1) * _width + static_cast<std::size_t>(x)];
-				norm[static_cast<std::size_t>(y) * _width + static_cast<std::size_t>(x)] = (top + 2.0f * center + bottom) * 0.25f;
+				//norm[static_cast<std::size_t>(y) * _width + static_cast<std::size_t>(x)] = (top + 2.0f * center + bottom) * 0.25f;
 			}
 		}
 
@@ -78,7 +78,7 @@ namespace engine
 		x = std::clamp(x, 0, _width - 1);
 		y = std::clamp(y, 0, _length - 1);
 
-		// Read from precomputed (and blurred) normalized height data
+		// Read from precomputed (normalized) height data
 		std::size_t index = static_cast<std::size_t>(y) * static_cast<std::size_t>(_width) + static_cast<std::size_t>(x);
 		if (index >= _heightData.size()) return 0.0f;
 		return _heightData[index];

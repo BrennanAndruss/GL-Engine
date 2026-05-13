@@ -496,7 +496,14 @@ namespace engine
 		std::string absPath = resolvePath(path).string();
 
 		int width, height, nrChannels;
-		unsigned char* textureData = stbi_load(absPath.c_str(), &width, &height, &nrChannels, 0);
+		int desiredChannels = alpha ? 4 : 0;
+		unsigned char* textureData = stbi_load(absPath.c_str(), &width, &height, &nrChannels, desiredChannels);
+
+		if (alpha)
+		{
+			nrChannels = 4;
+		}
+
 		if (!textureData)
 		{
 			throw std::runtime_error("Failed to load texture: " + absPath);
