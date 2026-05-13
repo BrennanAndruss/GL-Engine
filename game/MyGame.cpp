@@ -26,12 +26,37 @@ void MyGame::init(engine::AssetManager& assets,
 		"colorRestoreShader", "shaders/colorRestore.vert", "shaders/colorRestore.frag");
 	Handle<engine::Shader> skinnedShader = assets.loadShader(
 		"skinned", "shaders/skinned.vert", "shaders/simple.frag");
+	
+	// terrain shader
+	Handle<engine::Shader> terrainShader = assets.loadShader(
+    "terrainShader",
+    "shaders/terrain.vert",
+    "shaders/terrain.frag"
+	);	
+
 
 	//loading textures
 	std::cout << "Loading textures...\n";
-	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/E3EEDCB3-C8AE-4191-AE13-47F0A66B584C.png", 256.0f);
-	auto* heightmap = assets.getHeightmap(terrainHeightmap);
 
+	// Heighmap Texture
+	Handle<engine::Heightmap> terrainHeightmap = assets.loadHeightmap("terrainHM", "textures/heightmaps/unityterrain04.png", 400.0f);
+	auto* heightmap = assets.getHeightmap(terrainHeightmap);
+	// Splatmap Texture
+	Handle<engine::Texture> terrainSplat0 =
+    assets.loadTexture("terrainSplat0", "textures/splatmaps/splatmap0.png", true); 
+	Handle<engine::Texture> terrainGrass =
+		assets.loadTexture("terrainGrass", "textures/terrain/grass.png", true);
+		std::cout << "terrainGrass handle index: " << terrainGrass.index << "\n";
+
+	Handle<engine::Texture> terrainSand =
+		assets.loadTexture("terrainSand", "textures/terrain/sand.png", true);
+
+	Handle<engine::Texture> terrainRock =
+		assets.loadTexture("terrainRock", "textures/terrain/rock.png", true);
+
+	Handle<engine::Texture> terrainSnow =
+		assets.loadTexture("terrainSnow", "textures/terrain/snow.png", true); 
+	
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
 		"textures/px.png",
 		"textures/nx.png",
@@ -41,6 +66,8 @@ void MyGame::init(engine::AssetManager& assets,
 		"textures/nz.png"
 	});
 	scene.setSkybox(skyboxCubemap);
+
+
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuseTex", "textures/cyan_gem_texture.png", true);
@@ -82,8 +109,8 @@ void MyGame::init(engine::AssetManager& assets,
 		sprintMesh = cubeMesh;
 	}
 
-	int planeRes = heightmap->getWidth() - 1; // 256x256 vertices (half-resolution)
-	float planeLen = 256.0f;
+	int planeRes = heightmap->getWidth() - 1;
+	float planeLen = 500.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
 	std::cout << "Loading materials...\n";
@@ -153,6 +180,28 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->shininess = 20.0f;
 	mat->difTex = charBaseTex;
 	mat->specTex = charBaseTex;
+
+	// Terrain Material
+	Handle<engine::Material> terrainMat = assets.loadMaterial("terrainMat");
+	mat = assets.getMaterial(terrainMat);
+
+	mat->shader = terrainShader;
+	mat->isTerrain = true;
+
+	mat->splat0 = terrainSplat0;
+
+	mat->terrainGrass = terrainGrass;
+	mat->terrainSand = terrainSand;
+	mat->terrainRock = terrainRock;
+	mat->terrainSnow = terrainSnow;
+	mat->ambient = glm::vec3(0.25f);
+	mat->diffuse = glm::vec3(1.0f);
+	mat->specular = glm::vec3(0.05f);
+	mat->shininess = 8.0f;
+
+	mat->terrainTextureTiling = 32.0f;
+
+
 
 	// Initialize scene
 	{
@@ -256,9 +305,10 @@ void MyGame::init(engine::AssetManager& assets,
 		collider.heightmap = heightmap;
 		collider.planeLen = planeLen;
 
+		// TERRAIN MATERIAL
 		auto& meshRenderer = terrain.addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = terrainMesh;
-		meshRenderer.material = grassMat;
+		meshRenderer.material = terrainMat;
 	}
 
 	// Initialize player and main camera
