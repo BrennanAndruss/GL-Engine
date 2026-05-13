@@ -27,5 +27,6 @@ namespace engine
 
     private:
         std::unique_ptr<btHeightfieldTerrainShape> _shape;
+        std::vector<float> _scaledHeightData;        
     };
 }
