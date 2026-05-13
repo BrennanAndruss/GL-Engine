@@ -191,6 +191,10 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->terrainSand = terrainSand;
 	mat->terrainRock = terrainRock;
 	mat->terrainSnow = terrainSnow;
+	mat->ambient = glm::vec3(0.25f);
+	mat->diffuse = glm::vec3(1.0f);
+	mat->specular = glm::vec3(0.05f);
+	mat->shininess = 8.0f;
 
 	mat->terrainTextureTiling = 32.0f;
 
