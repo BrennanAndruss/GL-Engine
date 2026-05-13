@@ -526,17 +526,29 @@ namespace engine
 		return handle;
 	}
 
-	Handle<Texture> AssetManager::loadTexture(const std::string& name, 
-		unsigned char* data, int width, int height)
+	Handle<Texture> AssetManager::createSolidTexture(const std::string& name,
+		const std::array<unsigned char, 4>& rgba)
 	{
-		GLint format = GL_RGBA;
-		auto& texture = std::make_unique<Texture>(width, height, format, data);
+		auto texture = std::make_unique<Texture>(1, 1, GL_RGBA, rgba.data());
 
-		// Set unique texture unit
 		std::size_t id = _textures.assets.size();
 		texture->setUnit(static_cast<GLint>(id));
 
-		// Store asset in texture pool
+		Handle<Texture> handle = { id };
+		_textures.assets.push_back(std::move(texture));
+		_textures.nameToHandle[name] = handle;
+
+		return handle;
+	}
+
+	Handle<Texture> AssetManager::loadTexture(const std::string& name,
+		unsigned char* data, int width, int height)
+	{
+		auto texture = std::make_unique<Texture>(width, height, GL_RGBA, data);
+
+		std::size_t id = _textures.assets.size();
+		texture->setUnit(static_cast<GLint>(id));
+
 		Handle<Texture> handle = { id };
 		_textures.assets.push_back(std::move(texture));
 		_textures.nameToHandle[name] = handle;
@@ -563,10 +575,6 @@ namespace engine
 		if (it == _textures.nameToHandle.end()) return {};
 		return it->second;
 	}
-
-#pragma endregion
-
-#pragma region Cubemaps
 
 	Handle<Cubemap> AssetManager::loadCubemap(const std::string& name,
 		const std::array<std::string, 6>& facePaths)
@@ -975,6 +983,39 @@ namespace engine
 		return handle;
 	}
 
+	Material* AssetManager::getMaterial(Handle<Material> handle) const
+	{
+		if (!handle.valid() || handle.index >= _materials.assets.size()) return nullptr;
+		return _materials.assets[handle.index].get();
+	}
+
+	Material* AssetManager::getMaterial(const std::string& name) const
+	{
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return nullptr;
+		return getMaterial(it->second);
+	}
+
+	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
+	{
+		auto it = _materials.nameToHandle.find(name);
+		if (it == _materials.nameToHandle.end()) return {};
+		return it->second;
+	}
+
+	std::string AssetManager::getMaterialName(Handle<Material> handle) const
+	{
+		if (!handle.valid()) return "";
+		for (const auto& entry : _materials.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
+	}
+
 	Skeleton* AssetManager::getSkeleton(Handle<Skeleton> handle) const
 	{
 		if (!handle.valid() || handle.index >= _skeletons.assets.size()) return nullptr;
@@ -1015,26 +1056,17 @@ namespace engine
 		return it->second;
 	}
 
-	Material* AssetManager::getMaterial(Handle<Material> handle) const
+	std::string AssetManager::getTextureName(Handle<Texture> handle) const
 	{
-		if (!handle.valid() || handle.index >= _materials.assets.size()) return nullptr;
-		return _materials.assets[handle.index].get();
+		if (!handle.valid()) return "";
+		for (const auto& entry : _textures.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
 	}
-
-	Material* AssetManager::getMaterial(const std::string& name) const
-	{
-		auto it = _materials.nameToHandle.find(name);
-		if (it == _materials.nameToHandle.end()) return nullptr;
-		return getMaterial(it->second);
-	}
-
-	Handle<Material> AssetManager::getMaterialHandle(const std::string& name) const
-	{
-		auto it = _materials.nameToHandle.find(name);
-		if (it == _materials.nameToHandle.end()) return {};
-		return it->second;
-	}
-
-#pragma endregion
 
 }

@@ -39,6 +39,10 @@ namespace engine
 		_game->setEditorMode(_editorActive, _scene);
         _scene.start();
 
+        // Initialize camera aspect ratio on startup
+        if (auto* camera = _scene.getMainCamera())
+            camera->setAspect(static_cast<float>(_config.width) / static_cast<float>(_config.height));
+
         while (!_window.shouldClose())
         {
             Time::update();
@@ -98,6 +102,15 @@ namespace engine
 				_game->setEditorMode(_editorActive, _scene);
                 _game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
 			}
+        }
+
+        if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        if (key == GLFW_KEY_Z && action == GLFW_RELEASE)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
 

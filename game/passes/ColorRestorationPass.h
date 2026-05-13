@@ -12,7 +12,7 @@ class ColorRestorationPass : public engine::RenderPass
 public:
 	ColorRestorationPass(int width, int height, Handle<engine::Shader> shader);
 
-	void resize(int width, int height);
+	void resize(int width, int height) override;
 	void execute(const engine::Scene& scene, const engine::AssetManager& assets,
 		engine::RenderContext& ctx) override;
 

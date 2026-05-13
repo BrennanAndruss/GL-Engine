@@ -27,10 +27,11 @@ namespace engine
 		_ghostObject->setActivationState(DISABLE_DEACTIVATION);
 
 		// Configure controller logic
-		float stepHeight = 0.45f;
+		float stepHeight = 0.15f;
 		_controller = new btKinematicCharacterController(_ghostObject, _shape.get(), stepHeight);
 		_controller->setUp(btVector3(0, 1, 0));
-		_controller->setGravity(btVector3(0, -9.81f, 0));
+		_controller->setGravity(btVector3(0, -gravity, 0));
+		_controller->setFallSpeed(fallSpeed);
 
 		// Add to world with filters
 		int group = btBroadphaseProxy::CharacterFilter;
