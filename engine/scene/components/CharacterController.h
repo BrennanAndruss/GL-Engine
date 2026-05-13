@@ -6,6 +6,10 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include "scene/components/Component.h"
+#include "scene/Transform.h"
+#include "renderer/resources/Mesh.h"
+
+
 
 namespace engine
 {
@@ -14,10 +18,14 @@ namespace engine
 	public:
 		float height = 1.0f;
 		float radius = 0.5f;
-		float gravity = 36.0f;
-		float fallSpeed = 60.0f;
-	
+		float gravity = 35.0f;
+		float fallSpeed = 65.0f;
+		float radiusScale = 0.95f;
+		float targetHeight = 1.0f;
 
+		engine::Transform* visualTransform = nullptr;
+
+		void fitToMesh(const engine::Mesh& mesh);
 		void start() override;
 		void update(float deltaTime) override;
 

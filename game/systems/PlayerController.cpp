@@ -58,9 +58,16 @@ void PlayerController::update(float deltaTime)
 	if (engine::Input::isKeyDown(GLFW_KEY_A)) input.x -= 1.0f;
 	if (engine::Input::isKeyDown(GLFW_KEY_D)) input.x += 1.0f;
 
+	bool isGrounded = _characterController->isOnGround();
+bool isMoving = input.x != 0.0f || input.z != 0.0f;
+
 	if (animator)
 	{
-		if (input.z != 0.0f && sprintClip.valid())
+		if (!isGrounded && idleClip.valid())
+		{
+			animator->clip = idleClip;
+		}
+		else if (isMoving && sprintClip.valid())
 		{
 			animator->clip = sprintClip;
 		}
@@ -70,7 +77,8 @@ void PlayerController::update(float deltaTime)
 		}
 	}
 
-	if (_characterController->isOnGround()) {
+	if (isGrounded)
+	{
 		hasJumped = false;
 	}
 
@@ -78,6 +86,11 @@ void PlayerController::update(float deltaTime)
 	{
 		hasJumped = true;
 		_characterController->jump(glm::vec3(0.0f, jumpForce, 0.0f));
+
+		if (animator && idleClip.valid())
+		{
+			animator->clip = idleClip;
+		}
 	}
 	
 	// Normalize input and transform to camera space
