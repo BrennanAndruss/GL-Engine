@@ -30,6 +30,7 @@ namespace engine
 		void setLinearVelocity(glm::vec3 velocity);
 		glm::vec3 getLinearVelocity() const;
 		btRigidBody* getBody() const { return _body; }
+		void disablePhysics();
 
 	private:
 		bool initializeBody();
@@ -38,5 +39,6 @@ namespace engine
 		Collider* _collider = nullptr;
 		btRigidBody* _body = nullptr;
 		bool _bodyDirty = true;
+		bool _physicsDisabled = false;
 	};
 }

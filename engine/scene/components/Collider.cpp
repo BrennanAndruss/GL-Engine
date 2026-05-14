@@ -38,12 +38,13 @@ namespace engine
 
 		glm::vec3 worldScale = owner->transform.getWorldScale();
 		_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+		const glm::vec3 worldCenter = center * worldScale;
 
 		// If object doesn't have a RigidBody, register as static collision object
 		if (!owner->getComponent<RigidBody>())
 		{
 			_object = physics->createCollisionObject(
-				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+				_shape.get(), owner->transform.getWorldPosition() + worldCenter, isTrigger);
 			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
@@ -58,10 +59,49 @@ namespace engine
 	{
 		if (_shape)
 		{
-			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+			const glm::vec3 worldScale = owner->transform.getWorldScale();
+			_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+			if (_object)
+			{
+				btTransform t;
+				t.setIdentity();
+				t.setOrigin(PhysicsSystem::toBullet(owner->transform.getWorldPosition() + (center * worldScale)));
+				t.setRotation(PhysicsSystem::toBullet(owner->transform.getWorldRotation()));
+				_object->setWorldTransform(t);
+			}
 		}
+	}
 
-		Collider::update(deltaTime);
+	void BoxCollider::rebuild()
+	{
+		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
+		
+		// Recreate the shape with the new size
+		_shape = std::make_unique<btBoxShape>(PhysicsSystem::toBullet(size));
+		
+		glm::vec3 worldScale = owner->transform.getWorldScale();
+		_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+		const glm::vec3 worldCenter = center * worldScale;
+		
+		// Remove the old collision object from physics system
+		if (_object)
+		{
+			physics->removeCollisionObject(_object);
+			_object = nullptr;
+		}
+		
+		// Create new collision object if no RigidBody
+		if (!owner->getComponent<RigidBody>())
+		{
+			_object = physics->createCollisionObject(
+				_shape.get(), owner->transform.getWorldPosition() + worldCenter, isTrigger);
+			_object->setUserPointer(owner);
+			
+			if (isTrigger)
+			{
+				_object->setActivationState(DISABLE_DEACTIVATION);
+			}
+		}
 	}
 
 	SphereCollider::SphereCollider() = default;
@@ -79,12 +119,13 @@ namespace engine
 
 		glm::vec3 worldScale = owner->transform.getWorldScale();
 		_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+		const glm::vec3 worldCenter = center * worldScale;
 
 		// If object doesn't have a RigidBody, register as static collision object
 		if (!owner->getComponent<RigidBody>())
 		{
 			_object = physics->createCollisionObject(
-				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+				_shape.get(), owner->transform.getWorldPosition() + worldCenter, isTrigger);
 			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
@@ -99,10 +140,17 @@ namespace engine
 	{
 		if (_shape)
 		{
-			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+			const glm::vec3 worldScale = owner->transform.getWorldScale();
+			_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+			if (_object)
+			{
+				btTransform t;
+				t.setIdentity();
+				t.setOrigin(PhysicsSystem::toBullet(owner->transform.getWorldPosition() + (center * worldScale)));
+				t.setRotation(PhysicsSystem::toBullet(owner->transform.getWorldRotation()));
+				_object->setWorldTransform(t);
+			}
 		}
-
-		Collider::update(deltaTime);
 	}
 
 	CapsuleCollider::CapsuleCollider() = default;
@@ -136,12 +184,13 @@ namespace engine
 
 		glm::vec3 worldScale = owner->transform.getWorldScale();
 		_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+		const glm::vec3 worldCenter = center * worldScale;
 
 		// If object doesn't have a RigidBody, register as static collision object
 		if (!owner->getComponent<RigidBody>())
 		{
 			_object = physics->createCollisionObject(
-				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+				_shape.get(), owner->transform.getWorldPosition() + worldCenter, isTrigger);
 			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
@@ -156,9 +205,16 @@ namespace engine
 	{
 		if (_shape)
 		{
-			_shape->setLocalScaling(PhysicsSystem::toBullet(owner->transform.getWorldScale()));
+			const glm::vec3 worldScale = owner->transform.getWorldScale();
+			_shape->setLocalScaling(PhysicsSystem::toBullet(worldScale));
+			if (_object)
+			{
+				btTransform t;
+				t.setIdentity();
+				t.setOrigin(PhysicsSystem::toBullet(owner->transform.getWorldPosition() + (center * worldScale)));
+				t.setRotation(PhysicsSystem::toBullet(owner->transform.getWorldRotation()));
+				_object->setWorldTransform(t);
+			}
 		}
-
-		Collider::update(deltaTime);
 	}
 }

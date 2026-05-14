@@ -14,6 +14,7 @@
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
+#include <stdio.h>
 
 MyGame* MyGame::_activeGame = nullptr;
 
@@ -89,6 +90,16 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuseTex", "textures/cyan_gem_texture.png", true);
 	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBaseTex", "textures/char_Base_color.png", true);
+	
+	// Load CMYK platform texture
+	Handle<engine::Texture> platformCMYKTex = assets.loadTexture("platformCMYKTex", "textures/heightmaps/cmyk_platform_openPBR_shader1_BaseMap.png", true);
+	
+	// Create CMYK platform material
+	platformMaterial = assets.loadMaterial("platformCMYKMaterial");
+	if (auto* mat = assets.getMaterial(platformMaterial))
+	{
+		mat->difTex = platformCMYKTex;
+	}
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -104,6 +115,7 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	platformMesh = assets.loadMeshAssimp("square-platform", "models/square-platform.fbx");
 	Handle<engine::Mesh> sprintMesh;
 	Handle<engine::Skeleton> sprintSkeleton;
 	Handle<engine::AnimationClip> idleClip;
@@ -230,14 +242,10 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-<<<<<<< HEAD
 		cube = &scene.createObject("Player");
 		cube->transform.setPosition(glm::vec3(-200.0f, 15.0f, -8.0f));
 		cube->transform.setScale(glm::vec3(0.5f));
-=======
-	cube = &scene.createObject("Player");
-	cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
->>>>>>> main
+		
 
 	auto& visual = scene.createObject("PlayerVisual");
 	visual.transform.setParent(&cube->transform);
@@ -251,8 +259,11 @@ void MyGame::init(engine::AssetManager& assets,
 	animator.clip = idleClip;
 
 	auto& characterController = cube->addComponent<engine::CharacterController>();
+	characterController.gravity = 9.81f;
+	characterController.mass = 8.0f;
 	characterController.targetHeight = 1.0f;
 	characterController.radiusScale = 0.95f;
+
 	characterController.visualTransform = &visual.transform;
 
 	if (auto* mesh = assets.getMesh(sprintMesh))
@@ -261,9 +272,10 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	auto& playerController = cube->addComponent<PlayerController>();
-	playerController.moveSpeed = 10.0f;
+	playerController.moveSpeed = 0.1f;
 	playerController.eyeHeight = 0.3f;
-	playerController.cameraDistance = 3.0f;
+	playerController.cameraDistance = 4.0f;
+	playerController.jumpForce = 48.0f;
 
 	playerController.animator = &animator;
 	playerController.idleClip = idleClip;
@@ -416,6 +428,23 @@ void MyGame::init(engine::AssetManager& assets,
 void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+
+	if (cube)
+	{
+		glm::vec3 playerPos = cube->transform.getPosition();
+		std::cout << "Player Y Position: " << playerPos.y << "\n";
+
+		if (playerPos.y < 9.0f)
+		{
+			glm::vec3 respawnPos(-200.0f, 17.0f, -8.0f);
+			// Teleport back to spawn
+			if (auto* controller = cube->getComponent<engine::CharacterController>())
+			{
+				controller->teleport(respawnPos);
+			}
+			
+		}
+	}
 
 	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;
 	if (engine::Input::isKeyDown(GLFW_KEY_M)) _collectedMagenta += 0.002f;

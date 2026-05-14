@@ -21,6 +21,11 @@ namespace engine
 
         int framebufferWidth = 0, framebufferHeight = 0;
         glfwGetFramebufferSize(_window.getHandle(), &framebufferWidth, &framebufferHeight);
+        if (framebufferWidth > 0 && framebufferHeight > 0)
+        {
+            _config.width = framebufferWidth;
+            _config.height = framebufferHeight;
+        }
         _renderer.resize(framebufferWidth, framebufferHeight);
         glViewport(0, 0, framebufferWidth, framebufferHeight);
 

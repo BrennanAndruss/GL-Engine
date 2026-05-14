@@ -17,6 +17,7 @@
 #include "resources/AssetManager.h"
 #include "scene/Scene.h"
 #include "scene/components/Components.h"
+#include "systems/Collectable.h"
 
 namespace
 {
@@ -213,6 +214,52 @@ namespace
         }
         return baseName + suffix + std::to_string(index);
     }
+
+    void deleteObject(engine::Scene& scene, engine::Object* objectToDelete)
+    {
+        if (!objectToDelete)
+        {
+            return;
+        }
+
+        // Clean up physics
+        if (auto* physics = scene.getPhysicsSystem())
+        {
+            if (auto* rigidBody = objectToDelete->getComponent<engine::RigidBody>())
+            {
+                rigidBody->disablePhysics();
+            }
+
+            if (auto* collider = objectToDelete->getComponent<engine::BoxCollider>())
+            {
+                auto* collisionObject = collider->releaseCollisionObject();
+                if (collisionObject)
+                {
+                    physics->removeCollisionObject(collisionObject);
+                }
+            }
+
+            if (auto* collider = objectToDelete->getComponent<engine::SphereCollider>())
+            {
+                auto* collisionObject = collider->releaseCollisionObject();
+                if (collisionObject)
+                {
+                    physics->removeCollisionObject(collisionObject);
+                }
+            }
+        }
+
+        // Remove from scene
+        auto& objects = scene.getObjects();
+        for (auto it = objects.begin(); it != objects.end(); ++it)
+        {
+            if (it->get() == objectToDelete)
+            {
+                objects.erase(it);
+                break;
+            }
+        }
+    }
 }
 
 namespace engine
@@ -240,6 +287,62 @@ namespace engine
             meshRenderer.mesh = assets.getMeshHandle("cube");
             meshRenderer.material = assets.getDefaultMaterial();
             selectedObject = &cube;
+        }
+
+        if (ImGui::Button("Create Star"))
+        {
+            const std::string starName = makeUniqueName(scene, "Star", "");
+            auto& star = scene.createObject(starName);
+            star.transform.setScale(glm::vec3(0.5f));
+
+            auto& meshRenderer = star.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("gem");
+            meshRenderer.material = assets.getDefaultMaterial();
+
+            auto& collider = star.addComponent<BoxCollider>();
+            collider.size = glm::vec3(1.0f);
+            collider.isTrigger = true;
+
+            auto& collectable = star.addComponent<Collectable>();
+            collectable.defaultMat = assets.getDefaultMaterial();
+            collectable.collectedMat = assets.getDefaultMaterial();
+
+            selectedObject = &star;
+        }
+
+        if (ImGui::Button("Create Platform"))
+        {
+            const std::string platformName = makeUniqueName(scene, "Platform", "");
+            auto& platform = scene.createObject(platformName);
+            platform.transform.setScale(glm::vec3(5.0f, 2.0f, 5.0f));
+
+            auto& meshRenderer = platform.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("square-platform");
+            if (!meshRenderer.mesh.valid())
+            {
+                meshRenderer.mesh = assets.getMeshHandle("cube");
+            }
+            
+            // Use CMYK platform material if available, otherwise use default
+            auto platformMat = assets.getMaterialHandle("platformCMYKMaterial");
+            meshRenderer.material = platformMat.valid() ? platformMat : assets.getDefaultMaterial();
+
+            auto& collider = platform.addComponent<BoxCollider>();
+            
+            if (auto* mesh = assets.getMesh(meshRenderer.mesh))
+            {
+                const auto bounds = mesh->getBBox();
+                collider.center = 0.5f * (bounds.max + bounds.min);
+                collider.size = 0.5f * (bounds.max - bounds.min);
+            }
+            else
+            {
+                collider.center = glm::vec3(0.0f);
+                collider.size = glm::vec3(1.0f);
+            }
+            collider.rebuild();
+
+            selectedObject = &platform;
         }
 
         ImGui::Separator();
@@ -272,6 +375,7 @@ namespace engine
                     newBoxCollider.center = boxCollider->center;
                     newBoxCollider.size = boxCollider->size;
                     newBoxCollider.isTrigger = boxCollider->isTrigger;
+                    newBoxCollider.rebuild();
                 }
 
                 if (auto* sphereCollider = selectedObject->getComponent<SphereCollider>())
@@ -282,7 +386,21 @@ namespace engine
                     newSphereCollider.isTrigger = sphereCollider->isTrigger;
                 }
 
+                if (auto* collectable = selectedObject->getComponent<Collectable>())
+                {
+                    auto& newCollectable = newObject.addComponent<Collectable>();
+                    newCollectable.defaultMat = collectable->defaultMat;
+                    newCollectable.collectedMat = collectable->collectedMat;
+                }
+
                 selectedObject = &newObject;
+            }
+
+            if (ImGui::Button("Delete Object"))
+            {
+                Object* toDelete = selectedObject;
+                selectedObject = nullptr;
+                deleteObject(scene, toDelete);
             }
         }
 

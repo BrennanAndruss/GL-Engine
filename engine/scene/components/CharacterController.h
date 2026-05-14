@@ -16,10 +16,11 @@ namespace engine
 	class CharacterController : public Component
 	{
 	public:
+	
 		float height = 1.0f;
 		float radius = 0.5f;
-		float gravity = 35.0f;
-		float fallSpeed = 65.0f;
+		float gravity = 9.81f;
+		float mass = 1.0f;
 		float radiusScale = 0.95f;
 		float targetHeight = 1.0f;
 
@@ -33,6 +34,7 @@ namespace engine
 		bool isOnGround() const;
 		bool canJump() const;
 		void jump(glm::vec3 direction = glm::vec3(0.0f, 1.0f, 0.0f));
+		void teleport(const glm::vec3& position);
 
 	private:
 		btPairCachingGhostObject* _ghostObject = nullptr;

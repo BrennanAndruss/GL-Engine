@@ -90,7 +90,20 @@ namespace engine
 
         updateEditorSelectionFromMouse(scene, _initialObjectCount, _selectedObject);
         ImGui::Begin("Editor");
+            
+        if (ImGui::Button("Save Scene"))
+        {
+            writeObjectsToFile(scene.getObjects(), getSceneFilePath(config), _initialObjectCount, assets);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load Scene"))
+        {
+            readObjectsFromFile(getSceneFilePath(config), scene, assets);
+        }
+        ImGui::Separator();
         drawEditorObjectControls(scene, assets, _initialObjectCount, _selectedObject);
+
+    
 
         ImGui::End();
 
@@ -263,6 +276,10 @@ namespace engine
                 {
                     file << "  RigidBody: type=" << static_cast<int>(rigidBody->getBodyType()) << " mass=" << rigidBody->mass << "\n";
                 }
+                if (auto* collectable = object->getComponent<Collectable>())
+                {
+                    file << "  Collectable: \n";
+                }
                 file << "\n";
                 if (!file.good())
                 {
@@ -344,6 +361,8 @@ namespace engine
                 bool hasRigidBody = false;
                 RigidBody::BodyType rigidBodyType = RigidBody::BodyType::Static;
                 float rigidBodyMass = 1.0f;
+
+                bool isCollectable = false;
             };
 
             auto flushObject = [&](const LoadedObject& data)
@@ -375,6 +394,7 @@ namespace engine
                     auto& collider = object.addComponent<BoxCollider>();
                     collider.size = data.boxColliderSize;
                     collider.isTrigger = data.boxColliderIsTrigger;
+                    collider.rebuild();
                 }
 
                 if (data.hasRigidBody)
@@ -382,6 +402,10 @@ namespace engine
                     auto& rigidBody = object.addComponent<RigidBody>();
                     rigidBody.setBodyType(data.rigidBodyType);
                     rigidBody.mass = data.rigidBodyMass;
+                }
+                if (data.isCollectable)
+                {
+                    object.addComponent<Collectable>();
                 }
             };
 
@@ -502,6 +526,9 @@ namespace engine
                     currentObject->hasRigidBody = true;
                     currentObject->rigidBodyType = static_cast<RigidBody::BodyType>(bodyType);
                     currentObject->rigidBodyMass = mass;
+                } else if (line.rfind("  Collectable: ", 0) == 0)
+                {
+                    currentObject->isCollectable = true;
                 }
             }
 

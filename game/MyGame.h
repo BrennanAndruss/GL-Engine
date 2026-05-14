@@ -37,6 +37,8 @@ private:
 	engine::Object* editorCameraObject = nullptr;
 	engine::Object* pointLightCenter = nullptr;
 	Handle<engine::Mesh> cubeMesh;
+	Handle<engine::Mesh> platformMesh;
+	Handle<engine::Material> platformMaterial;
 	PlayerController* gameplayController = nullptr;
 	FreeCameraController* editorController = nullptr;
 	bool editorModeActive = false;

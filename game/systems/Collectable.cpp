@@ -90,10 +90,32 @@ void Collectable::onCollected()
 		game->onCollectableCollected();
 	}
 
-
-	auto* meshRenderer = owner->getComponent<engine::MeshRenderer>();
-	if (meshRenderer)
+	// Clean up physics before deletion
+	if (auto* physics = owner->getScene()->getPhysicsSystem())
 	{
-		meshRenderer->material = collectedMat;
+		if (auto* rigidBody = owner->getComponent<engine::RigidBody>())
+		{
+			rigidBody->disablePhysics();
+		}
+
+		if (auto* collider = owner->getComponent<engine::Collider>())
+		{
+			auto* collisionObject = collider->releaseCollisionObject();
+			if (collisionObject)
+			{
+				physics->removeCollisionObject(collisionObject);
+			}
+		}
+	}
+
+	// Delete the object from the scene
+	auto& objects = owner->getScene()->getObjects();
+	for (auto it = objects.begin(); it != objects.end(); ++it)
+	{
+		if (it->get() == owner)
+		{
+			objects.erase(it);
+			break;
+		}
 	}
 }
