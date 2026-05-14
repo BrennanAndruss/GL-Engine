@@ -70,9 +70,17 @@ namespace engine
 	{
 		_controller->setWalkDirection(PhysicsSystem::toBullet(_walkDirection));
 
-		// Sync the engine transform with the physics world transform
-		btTransform t = _ghostObject->getWorldTransform();
-		owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
+		// Skip syncing position for one frame after teleport to let physics settle
+		if (!_justTeleported)
+		{
+			// Sync the engine transform with the physics world transform
+			btTransform t = _ghostObject->getWorldTransform();
+			owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
+		}
+		else
+		{
+			_justTeleported = false;
+		}
 
 		_walkDirection = glm::vec3(0.0f);
 	}
@@ -124,13 +132,16 @@ void CharacterController::teleport(const glm::vec3& position)
 	_ghostObject->setInterpolationWorldTransform(transform);
 
 	// Clear velocities/motion
-	_controller->setWalkDirection(btVector3(0,0,0));
-	_controller->setVelocityForTimeInterval(btVector3(0,0,0), 0.0f);
+	_controller->setWalkDirection(btVector3(0, 0, 0));
+	_controller->setVelocityForTimeInterval(btVector3(0, 0, 0), 0.0f);
 
 	_walkDirection = glm::vec3(0.0f);
 
 	// Sync engine transform
 	owner->transform.setPosition(adjustedPos);
+
+	// Flag to skip physics sync for one frame to let it settle
+	_justTeleported = true;
 }
 
 		

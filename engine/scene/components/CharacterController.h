@@ -42,5 +42,6 @@ namespace engine
 		std::unique_ptr<btCapsuleShape> _shape;
 
 		glm::vec3 _walkDirection = glm::vec3(0.0f);
+		bool _justTeleported = false;
 	};
 }

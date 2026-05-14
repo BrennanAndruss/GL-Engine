@@ -66,6 +66,11 @@ void Collectable::tryRegisterCallback()
 
 void Collectable::start()
 {
+	if (auto* meshRenderer = owner ? owner->getComponent<engine::MeshRenderer>() : nullptr)
+	{
+		meshRenderer->writeStencil = true;
+	}
+
 	tryRegisterCallback();
 }
 
@@ -87,7 +92,7 @@ void Collectable::onCollected()
 
 	if (auto* game = MyGame::getActiveGame())
 	{
-		game->onCollectableCollected();
+		game->onCollectableCollected(static_cast<int>(type));
 	}
 
 	// Clean up physics before deletion

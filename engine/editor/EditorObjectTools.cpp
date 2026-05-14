@@ -303,10 +303,6 @@ namespace engine
             collider.size = glm::vec3(1.0f);
             collider.isTrigger = true;
 
-            auto& collectable = star.addComponent<Collectable>();
-            collectable.defaultMat = assets.getDefaultMaterial();
-            collectable.collectedMat = assets.getDefaultMaterial();
-
             selectedObject = &star;
         }
 

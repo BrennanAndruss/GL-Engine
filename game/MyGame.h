@@ -29,6 +29,7 @@ public:
 	void setEditorMode(bool editorActive, engine::Scene& scene) override;
 	void setEditorSelectionLock(bool locked, engine::Scene& scene) override;
 	void onCollectableCollected();
+	void onCollectableCollected(int type);
 
 private:
 	engine::Object* gem = nullptr;
@@ -47,6 +48,7 @@ private:
 
 	ColorRestorationPass* _colorRestorePass = nullptr;
 	float _collectedCyan = 0.0f, _collectedMagenta = 0.0f, _collectedYellow = 0.0f;
+	float _teleportCooldown = 0.0f;
 	static MyGame* _activeGame;
 
 	void refreshEditorCameraState(engine::Scene& scene);
