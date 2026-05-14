@@ -22,9 +22,21 @@ namespace engine
 		_object->setWorldTransform(t);
 	}
 
+	void Collider::releaseCollisionObject()
+	{
+		auto* collisionObject = _object;
+		_object = nullptr;
+		owner->getScene()->getPhysicsSystem()->removeCollisionObject(collisionObject);
+	}
+
+#pragma region BoxCollider
+
 	// Constructors defined in implementation where classes are included
 	BoxCollider::BoxCollider() = default;
-	BoxCollider::~BoxCollider() = default;
+	BoxCollider::~BoxCollider()
+	{
+		releaseCollisionObject();
+	}
 
 	btCollisionShape* BoxCollider::getShape() const
 	{
@@ -104,8 +116,15 @@ namespace engine
 		}
 	}
 
+#pragma endregion
+
+#pragma region SphereCollider
+
 	SphereCollider::SphereCollider() = default;
-	SphereCollider::~SphereCollider() = default;
+	SphereCollider::~SphereCollider()
+	{
+		releaseCollisionObject();
+	}
 
 	btCollisionShape* SphereCollider::getShape() const
 	{
@@ -153,8 +172,15 @@ namespace engine
 		}
 	}
 
+#pragma endregion
+
+#pragma region CapsuleCollider
+
 	CapsuleCollider::CapsuleCollider() = default;
-	CapsuleCollider::~CapsuleCollider() = default;
+	CapsuleCollider::~CapsuleCollider()
+	{
+		releaseCollisionObject();
+	}
 
 	btCollisionShape* CapsuleCollider::getShape() const
 	{
@@ -217,4 +243,6 @@ namespace engine
 			}
 		}
 	}
+
+#pragma endregion
 }

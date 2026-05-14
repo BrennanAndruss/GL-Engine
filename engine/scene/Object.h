@@ -20,6 +20,7 @@ namespace engine
 	public:
 		std::string name;
 		Transform transform;
+		bool markedForDeletion = false;
 
 		Object() = default;
 		Object(const std::string& name);

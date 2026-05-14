@@ -85,37 +85,16 @@ void Collectable::onCollected()
 	std::cout << "collected" << std::endl;
 	isCollected = true;
 
+	// Trigger game effects
 	if (auto* game = MyGame::getActiveGame())
 	{
 		game->onCollectableCollected();
 	}
 
-	// Clean up physics before deletion
-	if (auto* physics = owner->getScene()->getPhysicsSystem())
-	{
-		if (auto* rigidBody = owner->getComponent<engine::RigidBody>())
-		{
-			rigidBody->disablePhysics();
-		}
+	// to-do: hide collectable
+	// (add enable/disable to components + disable MeshRenderer)
+	// (update loop deletion happens constantly so the difference prob isn't noticable)
 
-		if (auto* collider = owner->getComponent<engine::Collider>())
-		{
-			auto* collisionObject = collider->releaseCollisionObject();
-			if (collisionObject)
-			{
-				physics->removeCollisionObject(collisionObject);
-			}
-		}
-	}
-
-	// Delete the object from the scene
-	auto& objects = owner->getScene()->getObjects();
-	for (auto it = objects.begin(); it != objects.end(); ++it)
-	{
-		if (it->get() == owner)
-		{
-			objects.erase(it);
-			break;
-		}
-	}
+	// Mark object for deletion
+	owner->markedForDeletion = true;
 }

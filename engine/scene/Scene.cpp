@@ -1,5 +1,6 @@
 #include "scene/Scene.h"
 
+#include <iostream>
 #include "resources/AssetManager.h"
 
 namespace engine
@@ -33,6 +34,9 @@ namespace engine
 			_physics->update(deltaTime);
 		}
 
+		// Delete objects marked for deletion
+		cleanupDeleted();
+
 		// Resolve all dirty transforms recursively once per frame
 		for (auto* root : getRootObjects())
 		{
@@ -55,12 +59,45 @@ namespace engine
 			_physics->update(deltaTime);
 		}
 
+		cleanupDeleted();
+
 		for (auto* root : getRootObjects())
 		{
 			resolveTransforms(root->transform, glm::mat4(1.0f));
 		}
 
 		if (_mainCamera) _mainCamera->updateViewMatrix();
+	}
+
+	void Scene::cleanupDeleted()
+	{
+		bool objectsToErase = false;
+		for (auto& object : _objects)
+		{
+			if (object->markedForDeletion)
+			{
+				objectsToErase = true;
+
+				// Unparent object and its children
+				object->transform.setParent(nullptr);
+				for (auto* child : object->transform.getChildren())
+				{
+					child->setParent(nullptr);
+				}
+			}
+		}
+		
+		if (!objectsToErase) return;
+		std::cout << "size before: " << _objects.size() << std::endl;
+		_objects.erase(
+			std::remove_if(_objects.begin(), _objects.end(),
+				[](const std::unique_ptr<Object>& object)
+				{
+					return object->markedForDeletion;
+				}),
+			_objects.end()
+		);
+		std::cout << "size after: " << _objects.size() << std::endl;
 	}
 
 	void Scene::resolveTransforms(Transform& t, const glm::mat4& parentWorld)

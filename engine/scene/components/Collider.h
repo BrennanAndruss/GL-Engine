@@ -29,12 +29,7 @@ namespace engine
 		virtual btCollisionShape* getShape() const = 0;
 		void update(float deltaTime) override;
 		btCollisionObject* getCollisionObject() const { return _object; }
-		btCollisionObject* releaseCollisionObject()
-		{
-			auto* object = _object;
-			_object = nullptr;
-			return object;
-		}
+		void releaseCollisionObject();
 
 	protected:
 		btCollisionObject* _object = nullptr;
