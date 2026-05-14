@@ -253,6 +253,7 @@ void MyGame::init(engine::AssetManager& assets,
 	auto& meshRenderer = visual.addComponent<engine::MeshRenderer>();
 	meshRenderer.mesh = sprintMesh;
 	meshRenderer.material = charTex;
+	meshRenderer.writeStencil = true;
 
 	auto& animator = visual.addComponent<engine::Animator>();
 	animator.skeleton = sprintSkeleton;
@@ -321,17 +322,17 @@ void MyGame::init(engine::AssetManager& assets,
 	
 	{
 		gem = &scene.createObject("Gem");
-		gem->transform.setPosition(glm::vec3(0.0f, 4.0f, 0.0f));
+		gem->transform.setPosition(glm::vec3(-50.0f, 4.0f, 50.0f));
 		gem->transform.setScale(glm::vec3(0.5f));
 
 		auto& meshRenderer = gem->addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = gemMesh;
-		meshRenderer.material = defaultMat;
+		meshRenderer.material = redMat;
+		meshRenderer.writeStencil = true;
 
-		//cube->addComponent<engine::BoxCollider>();
-		//cube->addComponent<engine::RigidBody>();
+		//gem->addComponent<engine::BoxCollider>();
+		//gem->addComponent<engine::RigidBody>();
 	}
-
 
 	{
 		auto& terrain = scene.createObject("Floor");
