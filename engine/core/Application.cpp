@@ -106,10 +106,13 @@ namespace engine
 
         if (key == GLFW_KEY_Z && action == GLFW_PRESS)
         {
+            // Hide fullscreen quad geometry
+            _renderer.enablePostProcessing(false);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         if (key == GLFW_KEY_Z && action == GLFW_RELEASE)
         {
+            _renderer.enablePostProcessing(true);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }

@@ -73,6 +73,14 @@ namespace engine
 			pass->execute(scene, assets, _ctx);
 		}
 
+		if (_postProcessEnabled)
+		{
+			for (const auto& pass : _postProcessPasses)
+			{
+				pass->execute(scene, assets, _ctx);
+			}
+		}
+
 		// Blit processed frame to screen
 		_blitPass->execute(scene, assets, _ctx);
 	}
@@ -86,6 +94,6 @@ namespace engine
 	RenderPass& Renderer::addPostProcessPass(std::unique_ptr<RenderPass> pass)
 	{
 		assert(pass != nullptr && "Null post process pass.");
-		return *_renderPasses.emplace_back(std::move(pass));
+		return *_postProcessPasses.emplace_back(std::move(pass));
 	}
 }

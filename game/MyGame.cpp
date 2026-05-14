@@ -361,9 +361,9 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Add post-processing render passes
-	// _colorRestorePass = static_cast<ColorRestorationPass*>(
-	// 	&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
-	// 		config.width, config.height, colorRestoreShader)));
+	_colorRestorePass = static_cast<ColorRestorationPass*>(
+		&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
+			config.width, config.height, colorRestoreShader)));
 
 	engine::Input::setMouseTrapped(true);
 
