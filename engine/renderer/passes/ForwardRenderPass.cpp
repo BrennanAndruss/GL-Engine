@@ -29,7 +29,7 @@ namespace engine
 		_shader(shader),
 		_framebuffer(width, height, {
 			{ AttachmentFormat::RGBA8 },
-			{ AttachmentFormat::Depth24 }
+			{ AttachmentFormat::Depth24Stencil8 }
 		}) 
 	{
 		// Create debug line shader for skeletal animation
@@ -61,15 +61,16 @@ namespace engine
 	void ForwardRenderPass::execute(const Scene& scene, const AssetManager& assets, RenderContext& ctx)
 	{
 		static bool showSkeletonVisualizer;
-		// if (Input::isKeyPressed(GLFW_KEY_F3))
-		// {
-		// 	showSkeletonVisualizer = !showSkeletonVisualizer;
-		// 	std::cout << "[ForwardRenderPass] Skeleton visualizer "
-		// 		<< (showSkeletonVisualizer ? "enabled" : "disabled") << " (F3)\n";
-		// }
+		if (Input::isKeyPressed(GLFW_KEY_F3))
+		{
+			showSkeletonVisualizer = !showSkeletonVisualizer;
+			std::cout << "[ForwardRenderPass] Skeleton visualizer "
+		 		<< (showSkeletonVisualizer ? "enabled" : "disabled") << " (F3)\n";
+		}
 
 		_framebuffer.bind();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glStencilMask(0xFF);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		for (const auto& object : scene.getObjects())
 		{
@@ -90,6 +91,18 @@ namespace engine
 			shader->setVec3("mat.specular", mat->specular);
 			shader->setFloat("mat.shininess", mat->shininess);
 			shader->setInt("numLights", scene.getLights().size());
+
+			if (meshRenderer->writeStencil)
+			{
+				glEnable(GL_STENCIL_TEST);
+				glStencilFunc(GL_ALWAYS, 1, 0xFF);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+				glStencilMask(0xFF);
+			}
+			else
+			{
+				glStencilMask(0x00);
+			}
 
 			// Bind textures
 			// All materials have a default texture so no need for null check
@@ -161,7 +174,7 @@ namespace engine
 
 			// Show skeleton visualizer
 			Skeleton* skeleton;
-			if (showSkeletonVisualizer && mesh->isSkinned() && animator->hasPose() &&
+			if (showSkeletonVisualizer && mesh->isSkinned() && animator && animator->hasPose() &&
 				(skeleton = assets.getSkeleton(animator->skeleton)))
 			{
 				const auto& globals = animator->getGlobalMatrices();
@@ -215,10 +228,13 @@ namespace engine
 			}
 		}
 
+		// Cleanup state for next pass
+		glDisable(GL_STENCIL_TEST);
+		glStencilMask(0x00);
 		_framebuffer.unbind();
 
 		ctx.setBuffer(BufferNames::SceneColor, _framebuffer.getAttachment(AttachmentFormat::RGBA8));
-		ctx.setBuffer(BufferNames::SceneDepth, _framebuffer.getAttachment(AttachmentFormat::Depth24));
+		ctx.setBuffer(BufferNames::SceneDepth, _framebuffer.getAttachment(AttachmentFormat::Depth24Stencil8));
 		ctx.sceneFramebuffer = &_framebuffer;
 	}
 }
