@@ -42,6 +42,11 @@ namespace engine
 		{
 			pass->resize(width, height);
 		}
+
+		for (auto& pass : _postProcessPasses)
+		{
+			pass->resize(width, height);
+		}
 	}
 
 	void Renderer::render(const Scene& scene, const AssetManager& assets)
