@@ -85,7 +85,8 @@ bool isMoving = input.x != 0.0f || input.z != 0.0f;
 	if (engine::Input::isKeyDown(GLFW_KEY_SPACE) && !hasJumped && _characterController->canJump())
 	{
 		hasJumped = true;
-		_characterController->jump(glm::vec3(0.0f, jumpForce, 0.0f));
+		const float effectiveMass = glm::max(_characterController->mass, 0.001f);
+		_characterController->jump(glm::vec3(0.0f, jumpForce / effectiveMass, 0.0f));
 
 		if (animator && idleClip.valid())
 		{
@@ -117,5 +118,5 @@ bool isMoving = input.x != 0.0f || input.z != 0.0f;
 	}
 	
 	// Apply horizontal movement through character controller
-	_characterController->move(walkDir * moveSpeed * deltaTime);
+	_characterController->move(walkDir * moveSpeed);
 }

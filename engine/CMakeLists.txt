@@ -27,6 +27,10 @@ target_include_directories(engine PUBLIC
     ${bullet_SOURCE_DIR}/src
 )
 
+target_include_directories(engine PRIVATE
+    ${CMAKE_SOURCE_DIR}/game
+)
+
 set(ASSIMP_LINK_TARGET assimp)
 if (TARGET assimp::assimp)
     set(ASSIMP_LINK_TARGET assimp::assimp)

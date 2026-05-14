@@ -15,5 +15,6 @@ namespace engine
 	{
 		Handle<Mesh> mesh;
 		Handle<Material> material;
+		bool writeStencil = false;
 	};
 }

@@ -53,6 +53,7 @@ namespace engine
 		void start() override;
 		btCollisionShape* getShape() const override;
 		void update(float deltaTime) override;
+		void rebuild();
 
 	private:
 		std::unique_ptr<btBoxShape> _shape;

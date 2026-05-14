@@ -21,6 +21,11 @@ namespace engine
 
         int framebufferWidth = 0, framebufferHeight = 0;
         glfwGetFramebufferSize(_window.getHandle(), &framebufferWidth, &framebufferHeight);
+        if (framebufferWidth > 0 && framebufferHeight > 0)
+        {
+            _config.width = framebufferWidth;
+            _config.height = framebufferHeight;
+        }
         _renderer.resize(framebufferWidth, framebufferHeight);
         glViewport(0, 0, framebufferWidth, framebufferHeight);
 
@@ -69,7 +74,7 @@ namespace engine
 
             if (editorEnabledThisFrame)
             {
-                _editor.draw(_scene, _assets);
+                _editor.draw(_scene, _assets, _config);
                 _editor.endFrame();
             }
             
@@ -106,10 +111,13 @@ namespace engine
 
         if (key == GLFW_KEY_Z && action == GLFW_PRESS)
         {
+            // Hide fullscreen quad geometry
+            _renderer.enablePostProcessing(false);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         if (key == GLFW_KEY_Z && action == GLFW_RELEASE)
         {
+            _renderer.enablePostProcessing(true);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
@@ -126,7 +134,7 @@ namespace engine
         _config.height = height;
 
         _renderer.resize(width, height);
-        if (auto* camera = _scene.getMainCamera())
+        for (auto* camera : _scene.getCameras())
             camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
     }
 
