@@ -183,6 +183,42 @@ namespace engine
             }
             ImGui::EndDisabled();
 
+            // Collectable color selection (available when object has collectable component)
+            if (auto* collectable = _selectedObject->getComponent<Collectable>())
+            {
+                ImGui::Indent();
+                int selectedType = static_cast<int>(collectable->type);
+                const char* collectableTypes[] = { "Cyan", "Magenta", "Yellow" };
+                if (ImGui::Combo("Collectable Color", &selectedType, collectableTypes, IM_ARRAYSIZE(collectableTypes)))
+                {
+                    collectable->type = static_cast<Collectable::Type>(selectedType);
+                    Handle<engine::Material> colorMat = assets.getDefaultMaterial();
+                    if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+                    {
+                        switch (selectedType)
+                        {
+                        case 0: // Cyan
+                            colorMat = assets.getMaterialHandle("cyanMat");
+                            break;
+                        case 1: // Magenta
+                            colorMat = assets.getMaterialHandle("magentaMat");
+                            break;
+                        case 2: // Yellow
+                            colorMat = assets.getMaterialHandle("yellowMat");
+                            break;
+                        default:
+                            break;
+                        }
+                        
+                        collectable->defaultMat = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
+                        meshRenderer->material = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
+                    }
+                }
+                ImGui::Unindent();
+            }
+
+            
+
             if (auto* rigidBody = _selectedObject->getComponent<RigidBody>())
             {
                 const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
@@ -278,7 +314,7 @@ namespace engine
                 }
                 if (auto* collectable = object->getComponent<Collectable>())
                 {
-                    file << "  Collectable: \n";
+                    file << "  Collectable: type=" << static_cast<int>(collectable->type) << "\n";
                 }
                 file << "\n";
                 if (!file.good())
@@ -363,6 +399,7 @@ namespace engine
                 float rigidBodyMass = 1.0f;
 
                 bool isCollectable = false;
+                int collectableType = 0;
             };
 
             auto flushObject = [&](const LoadedObject& data)
@@ -371,6 +408,21 @@ namespace engine
                 object.transform.setPosition(data.position);
                 object.transform.setEulerAngles(data.rotation);
                 object.transform.setScale(data.scale);
+
+                auto getCollectableMaterial = [&assets](int collectableType) -> Handle<Material>
+                {
+                    switch (collectableType)
+                    {
+                    case 0:
+                        return assets.getMaterialHandle("cyanMat");
+                    case 1:
+                        return assets.getMaterialHandle("magentaMat");
+                    case 2:
+                        return assets.getMaterialHandle("yellowMat");
+                    default:
+                        return assets.getDefaultMaterial();
+                    }
+                };
 
                 if (data.hasMesh || data.hasMaterial)
                 {
@@ -405,7 +457,17 @@ namespace engine
                 }
                 if (data.isCollectable)
                 {
-                    object.addComponent<Collectable>();
+                    auto& collectable = object.addComponent<Collectable>();
+                    collectable.type = static_cast<Collectable::Type>(data.collectableType);
+
+                    if (auto* meshRenderer = object.getComponent<MeshRenderer>())
+                    {
+                        const Handle<Material> collectableMaterial = getCollectableMaterial(data.collectableType);
+                        if (collectableMaterial.valid())
+                        {
+                            meshRenderer->material = collectableMaterial;
+                        }
+                    }
                 }
             };
 
@@ -528,6 +590,20 @@ namespace engine
                     currentObject->rigidBodyMass = mass;
                 } else if (line.rfind("  Collectable: ", 0) == 0)
                 {
+                    const std::string value = line.substr(15);
+                    const std::size_t typePrefix = value.find("type=");
+                    if (typePrefix != std::string::npos)
+                    {
+                        const std::string typeValue = value.substr(typePrefix + 5);
+                        try
+                        {
+                            currentObject->collectableType = std::stoi(typeValue);
+                        }
+                        catch (const std::exception&)
+                        {
+                            currentObject->collectableType = 0;
+                        }
+                    }
                     currentObject->isCollectable = true;
                 }
             }

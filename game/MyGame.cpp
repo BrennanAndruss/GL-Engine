@@ -30,6 +30,23 @@ void MyGame::onCollectableCollected()
 	_collectedYellow = std::min(_collectedYellow + 0.2f, 1.0f);
 }
 
+void MyGame::onCollectableCollected(int type)
+{
+	// Only increment the color corresponding to the collectable type
+	if (type == 0) // Cyan
+	{
+		_collectedCyan = std::min(_collectedCyan + 0.2f, 1.0f);
+	}
+	else if (type == 1) // Magenta
+	{
+		_collectedMagenta = std::min(_collectedMagenta + 0.2f, 1.0f);
+	}
+	else if (type == 2) // Yellow
+	{
+		_collectedYellow = std::min(_collectedYellow + 0.2f, 1.0f);
+	}
+}
+
 
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
@@ -162,23 +179,34 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->difTex = defaultGrayTex;
 	mat->specTex = defaultGrayTex;
 
-	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
-	mat = assets.getMaterial(redMat);
-	mat->ambient = glm::vec3(0.2f, 0.0f, 0.0f);
-	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.0f);
+	Handle<engine::Material> cyanMat = assets.loadMaterial("cyanMat");
+	mat = assets.getMaterial(cyanMat);
+	mat->ambient = glm::vec3(0.2f, 0.0f, 0.2f);
+	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.8f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	mat->shininess = 32.0f;
 	mat->difTex = defaultGrayTex;
 	mat->specTex = defaultGrayTex;
 
-	Handle<engine::Material> greenMat = assets.loadMaterial("greenMat");
-	mat = assets.getMaterial(greenMat);
-	mat->ambient = glm::vec3(0.0f, 0.2f, 0.0f);
-	mat->diffuse = glm::vec3(0.0f, 0.8f, 0.0f);
+	Handle<engine::Material> magentaMat = assets.loadMaterial("magentaMat");
+	mat = assets.getMaterial(magentaMat);
+	mat->ambient = glm::vec3(0.2f, 0.0f, 0.2f);
+	mat->diffuse = glm::vec3(0.8f, 0.0f, 0.8f);
 	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	mat->shininess = 32.0f;
 	mat->difTex = defaultGrayTex;
 	mat->specTex = defaultGrayTex;
+
+	Handle<engine::Material> yellowMat = assets.loadMaterial("yellowMat");
+	mat = assets.getMaterial(yellowMat);
+	mat->ambient = glm::vec3(0.2f, 0.2f, 0.0f);
+	mat->diffuse = glm::vec3(0.8f, 0.8f, 0.0f);
+	mat->specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat->shininess = 32.0f;
+	mat->difTex = defaultGrayTex;
+	mat->specTex = defaultGrayTex;
+
+
 
 	Handle<engine::Material> gemMat = assets.loadMaterial("gemMat");
 	mat = assets.getMaterial(gemMat);
@@ -287,6 +315,7 @@ void MyGame::init(engine::AssetManager& assets,
 	pointLightCenter = &scene.createObject("PointLightCenter");
 	pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
 
+	/*
 	{
 		auto& obj = scene.createObject("PointLight1");
 		obj.transform.setParent(&pointLightCenter->transform);
@@ -297,42 +326,9 @@ void MyGame::init(engine::AssetManager& assets,
 		pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 		pointLight1.setIntensity(1.0f);
 	}
+	*/
 
-	{
-		auto& obj = scene.createObject("PointLight2");
-		obj.transform.setParent(&pointLightCenter->transform);
-		obj.transform.setPosition(glm::vec3(0.0f, -2.5f, 0.0f));
-
-		auto& pointLight2 = obj.addComponent<engine::PointLight>();
-		pointLight2.setRange(10.0f);
-		pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
-		pointLight2.setIntensity(1.0f);
-	}
-
-	{
-		auto& obj = scene.createObject("PointLight3");
-		obj.transform.setParent(&pointLightCenter->transform);
-		obj.transform.setPosition(glm::vec3(0.0f, 0.0f, 2.5f));
-
-		auto& pointLight3 = obj.addComponent<engine::PointLight>();
-		pointLight3.setRange(10.0f);
-		pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
-		pointLight3.setIntensity(1.0f);
-	}
 	
-	{
-		gem = &scene.createObject("Gem");
-		gem->transform.setPosition(glm::vec3(-50.0f, 4.0f, 50.0f));
-		gem->transform.setScale(glm::vec3(0.5f));
-
-		auto& meshRenderer = gem->addComponent<engine::MeshRenderer>();
-		meshRenderer.mesh = gemMesh;
-		meshRenderer.material = redMat;
-		meshRenderer.writeStencil = true;
-
-		//gem->addComponent<engine::BoxCollider>();
-		//gem->addComponent<engine::RigidBody>();
-	}
 
 	{
 		auto& terrain = scene.createObject("Floor");
@@ -396,25 +392,7 @@ void MyGame::init(engine::AssetManager& assets,
 		editorController->enabled = false;
 	}
 
-	// Initialize collectables
-	for (int i = 0; i < 0; i++)
-	{
-		auto& obj = scene.createObject("Collectable" + std::to_string(i));
-		obj.transform.setPosition(glm::vec3(i * 2.0f - 20.0f, 1.0f, -5.0f));
-		obj.transform.setScale(glm::vec3(0.25f));
-
-		auto& mr = obj.addComponent<engine::MeshRenderer>();
-		mr.mesh = gemMesh;
-		mr.material = redMat;
-
-		auto& collider = obj.addComponent<engine::BoxCollider>();
-		collider.size = obj.transform.getScale();
-		collider.isTrigger = true;
-
-		auto& collectable = obj.addComponent<Collectable>();
-		collectable.defaultMat = redMat; 
-		collectable.collectedMat = gemMat;
-	}
+	
 
 	// Add post-processing render passes
 	_colorRestorePass = static_cast<ColorRestorationPass*>(
@@ -428,20 +406,24 @@ void MyGame::init(engine::AssetManager& assets,
 
 void MyGame::update(float deltaTime)
 {
-	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
+	
+
+	// Update teleport cooldown
+	_teleportCooldown -= deltaTime;
 
 	if (cube)
 	{
 		glm::vec3 playerPos = cube->transform.getPosition();
-		std::cout << "Player Y Position: " << playerPos.y << "\n";
+		//std::cout << "Player Y Position: " << playerPos.y << "\n";
 
-		if (playerPos.y < 9.0f)
+		if (playerPos.y < 9.0f && _teleportCooldown <= 0.0f)
 		{
 			glm::vec3 respawnPos(-200.0f, 17.0f, -8.0f);
 			// Teleport back to spawn
 			if (auto* controller = cube->getComponent<engine::CharacterController>())
 			{
 				controller->teleport(respawnPos);
+				_teleportCooldown = 0.5f; // 0.5 second cooldown before next teleport
 			}
 			
 		}
