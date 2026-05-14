@@ -76,15 +76,23 @@ void MyGame::init(engine::AssetManager& assets,
 		assets.loadTexture("terrainSnow", "textures/terrain/snow.png", true); 
 	
 	Handle<engine::Cubemap> skyboxCubemap = assets.loadCubemap("daySkybox", {
-		"textures/px.png",
-		"textures/nx.png",
-		"textures/py.png",
-		"textures/ny.png",
-		"textures/pz.png",
-		"textures/nz.png"
+		"textures/skybox/px.png",
+		"textures/skybox/nx.png",
+		"textures/skybox/py.png",
+		"textures/skybox/ny.png",
+		"textures/skybox/pz.png",
+		"textures/skybox/nz.png"
 	});
 	scene.setSkybox(skyboxCubemap);
-
+	Handle<engine::Cubemap> irradianceCubemap = assets.loadCubemap("dayIrradiance", {
+		"textures/irradiance/ipx.png",
+		"textures/irradiance/inx.png",
+		"textures/irradiance/ipy.png",
+		"textures/irradiance/iny.png",
+		"textures/irradiance/ipz.png",
+		"textures/irradiance/inz.png"
+	});
+	scene.setIrradianceMap(irradianceCubemap);
 
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
@@ -238,7 +246,7 @@ void MyGame::init(engine::AssetManager& assets,
 		auto& dirLight = obj.addComponent<engine::DirectionalLight>();
 		obj.transform.lookAt(glm::vec3(0.8f, -1.0f, 0.6f));
 		dirLight.setColor(glm::vec3(1.0f));
-		dirLight.setIntensity(1.0f);
+		dirLight.setIntensity(0.3f);
 	}
 
 	{
@@ -284,41 +292,41 @@ void MyGame::init(engine::AssetManager& assets,
 	//playerController.jumpClip = jumpClip;
 }
 
-	pointLightCenter = &scene.createObject("PointLightCenter");
-	pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
+	// pointLightCenter = &scene.createObject("PointLightCenter");
+	// pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
 
-	{
-		auto& obj = scene.createObject("PointLight1");
-		obj.transform.setParent(&pointLightCenter->transform);
-		obj.transform.setPosition(glm::vec3(2.5f, 0.0f, 0.0f));
+	// {
+	// 	auto& obj = scene.createObject("PointLight1");
+	// 	obj.transform.setParent(&pointLightCenter->transform);
+	// 	obj.transform.setPosition(glm::vec3(2.5f, 0.0f, 0.0f));
 
-		auto& pointLight1 = obj.addComponent<engine::PointLight>();
-		pointLight1.setRange(10.0f);
-		pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
-		pointLight1.setIntensity(1.0f);
-	}
+	// 	auto& pointLight1 = obj.addComponent<engine::PointLight>();
+	// 	pointLight1.setRange(50.0f);
+	// 	pointLight1.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+	// 	pointLight1.setIntensity(1.0f);
+	// }
 
-	{
-		auto& obj = scene.createObject("PointLight2");
-		obj.transform.setParent(&pointLightCenter->transform);
-		obj.transform.setPosition(glm::vec3(0.0f, -2.5f, 0.0f));
+	// {
+	// 	auto& obj = scene.createObject("PointLight2");
+	// 	obj.transform.setParent(&pointLightCenter->transform);
+	// 	obj.transform.setPosition(glm::vec3(0.0f, -2.5f, 0.0f));
 
-		auto& pointLight2 = obj.addComponent<engine::PointLight>();
-		pointLight2.setRange(10.0f);
-		pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
-		pointLight2.setIntensity(1.0f);
-	}
+	// 	auto& pointLight2 = obj.addComponent<engine::PointLight>();
+	// 	pointLight2.setRange(10.0f);
+	// 	pointLight2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+	// 	pointLight2.setIntensity(1.0f);
+	// }
 
-	{
-		auto& obj = scene.createObject("PointLight3");
-		obj.transform.setParent(&pointLightCenter->transform);
-		obj.transform.setPosition(glm::vec3(0.0f, 0.0f, 2.5f));
+	// {
+	// 	auto& obj = scene.createObject("PointLight3");
+	// 	obj.transform.setParent(&pointLightCenter->transform);
+	// 	obj.transform.setPosition(glm::vec3(0.0f, 0.0f, 2.5f));
 
-		auto& pointLight3 = obj.addComponent<engine::PointLight>();
-		pointLight3.setRange(10.0f);
-		pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
-		pointLight3.setIntensity(1.0f);
-	}
+	// 	auto& pointLight3 = obj.addComponent<engine::PointLight>();
+	// 	pointLight3.setRange(10.0f);
+	// 	pointLight3.setColor(glm::vec3(0.0f, 1.0f, 0.0f));
+	// 	pointLight3.setIntensity(1.0f);
+	// }
 	
 	{
 		gem = &scene.createObject("Gem");
