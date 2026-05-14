@@ -84,6 +84,24 @@ namespace engine
 			if (!shader) continue;
 
 			shader->bind();
+			
+			Cubemap* irradianceMap = nullptr;
+			if (scene.hasIrradianceMap())
+			{
+			irradianceMap = assets.getCubemap(scene.getIrradianceMap());
+				if (irradianceMap)
+				{
+					irradianceMap->bindToUnit(shader->getUniform("irradianceMap"), 10);
+					shader->setInt("useIrradianceMap", 1);
+				shader->setFloat("irradianceStrength", 1.2f);
+				}
+			}	
+			else
+			{
+				shader->setInt("useIrradianceMap", 0);
+			}
+
+
 			shader->setMat4("model", object->transform.getWorldMatrix());
 			shader->setVec3("mat.ambient", mat->ambient);
 			shader->setVec3("mat.diffuse", mat->diffuse);
@@ -156,6 +174,11 @@ namespace engine
 				if (difTex)  difTex->unbind();
 				if (specTex) specTex->unbind();
 			}
+
+			if (irradianceMap)
+			{
+				irradianceMap->unbindFromUnit(10);
+			}			
 
 			shader->unbind();
 
