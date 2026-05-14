@@ -19,6 +19,18 @@ _deps
 CMakeUserPresets.json
 CMakeSettings.json
 
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+!*.code-workspace
+
+# Built Visual Studio Code Extensions
+*.vsix
+
 # Visual Studio solution and project files
 *.sln
 *.vcxproj
