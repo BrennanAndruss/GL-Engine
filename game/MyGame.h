@@ -19,6 +19,8 @@ public:
 	MyGame() = default;
 	~MyGame() = default;
 
+	static MyGame* getActiveGame();
+
 	void init(engine::AssetManager& assets, 
 			  engine::Renderer& renderer, 
 			  engine::Scene& scene, 
@@ -26,6 +28,7 @@ public:
 	void update(float deltaTime) override;
 	void setEditorMode(bool editorActive, engine::Scene& scene) override;
 	void setEditorSelectionLock(bool locked, engine::Scene& scene) override;
+	void onCollectableCollected();
 
 private:
 	engine::Object* gem = nullptr;
@@ -40,8 +43,9 @@ private:
 	bool editorCameraLocked = false;
 	std::vector<engine::Object*> objects;
 
-	ColorRestorationPass* _colorRestorePass;
+	ColorRestorationPass* _colorRestorePass = nullptr;
 	float _collectedCyan = 0.0f, _collectedMagenta = 0.0f, _collectedYellow = 0.0f;
+	static MyGame* _activeGame;
 
 	void refreshEditorCameraState(engine::Scene& scene);
 };

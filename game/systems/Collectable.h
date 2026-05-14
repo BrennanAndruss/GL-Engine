@@ -16,5 +16,10 @@ public:
 	bool isCollected = false;
 
 	void start() override;
+	void update(float deltaTime) override;
 	void onCollected();
+
+private:
+	void tryRegisterCallback();
+	bool _callbackRegistered = false;
 };

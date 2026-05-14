@@ -1,5 +1,6 @@
 #include "MyGame.h"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
@@ -14,12 +15,28 @@
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
 
+MyGame* MyGame::_activeGame = nullptr;
+
+MyGame* MyGame::getActiveGame()
+{
+	return _activeGame;
+}
+
+void MyGame::onCollectableCollected()
+{
+	_collectedCyan = std::min(_collectedCyan + 0.2f, 1.0f);
+	_collectedMagenta = std::min(_collectedMagenta + 0.2f, 1.0f);
+	_collectedYellow = std::min(_collectedYellow + 0.2f, 1.0f);
+}
+
 
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
 				  engine::Scene& scene,
 				  const engine::AppConfig& config)
 {
+	_activeGame = this;
+
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
@@ -211,7 +228,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	{
 		cube = &scene.createObject("Player");
-		cube->transform.setPosition(glm::vec3(-38.0f, 100.0f, 37.0f));
+		cube->transform.setPosition(glm::vec3(-200.0f, 15.0f, -8.0f));
 		cube->transform.setScale(glm::vec3(0.5f));
 
 	auto& meshRenderer = cube->addComponent<engine::MeshRenderer>();
@@ -295,6 +312,27 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.material = terrainMat;
 	}
 
+	{
+		auto& tempWaterPlane = scene.createObject("TempWaterPlane");
+		tempWaterPlane.transform.setPosition(glm::vec3(0.0f, 8.0f, 0.0f));
+		tempWaterPlane.transform.setScale(glm::vec3(5000.0f, 1.0f, 5000.0f));
+
+		auto& mr = tempWaterPlane.addComponent<engine::MeshRenderer>();
+		mr.mesh = assets.loadMesh("waterPlane", "models/cube.obj");
+		
+		Handle<engine::Material> waterMat = assets.loadMaterial("waterMat");
+		auto* matPtr = assets.getMaterial(waterMat);
+		matPtr->ambient = glm::vec3(0.15f, 0.25f, 0.35f);
+		matPtr->diffuse = glm::vec3(0.45f, 0.70f, 0.90f);
+		matPtr->specular = glm::vec3(0.85f, 0.90f, 1.0f);
+		matPtr->shininess = 64.0f;
+		matPtr->difTex = defaultGrayTex;
+		matPtr->specTex = defaultGrayTex;
+		mr.material = waterMat;
+
+
+	}
+
 	// Initialize player and main camera
 	{
 		auto& camObj = scene.createObject("MainCamera");
@@ -344,9 +382,9 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	// Add post-processing render passes
-	// _colorRestorePass = static_cast<ColorRestorationPass*>(
-	// 	&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
-	// 		config.width, config.height, colorRestoreShader)));
+	_colorRestorePass = static_cast<ColorRestorationPass*>(
+		&renderer.addPostProcessPass(std::make_unique<ColorRestorationPass>(
+			config.width, config.height, colorRestoreShader)));
 
 	engine::Input::setMouseTrapped(true);
 
@@ -370,8 +408,8 @@ void MyGame::update(float deltaTime)
 		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
 		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
 		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
-		_colorRestorePass->key = 
-			1.0f - ((_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f);
+		const float restoredAmount = (_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f;
+		_colorRestorePass->key = std::max(0.0f, std::min(1.0f, 1.0f - restoredAmount));
 	}
 }
 

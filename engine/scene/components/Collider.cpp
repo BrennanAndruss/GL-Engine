@@ -44,6 +44,7 @@ namespace engine
 		{
 			_object = physics->createCollisionObject(
 				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
 			if (isTrigger)
@@ -84,6 +85,7 @@ namespace engine
 		{
 			_object = physics->createCollisionObject(
 				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
 			if (isTrigger)
@@ -140,6 +142,7 @@ namespace engine
 		{
 			_object = physics->createCollisionObject(
 				_shape.get(), owner->transform.getWorldPosition(), isTrigger);
+			_object->setUserPointer(owner);
 
 			// Keep trigger objects active
 			if (isTrigger)

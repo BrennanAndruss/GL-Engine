@@ -69,7 +69,7 @@ namespace engine
 
             if (editorEnabledThisFrame)
             {
-                _editor.draw(_scene, _assets);
+                _editor.draw(_scene, _assets, _config);
                 _editor.endFrame();
             }
             

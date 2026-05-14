@@ -6,6 +6,7 @@ namespace engine
 {
     class Scene;
     class AssetManager;
+    struct AppConfig;
     class Object;
 }
 
@@ -26,7 +27,7 @@ namespace engine
         void shutdown();
 
         void beginFrame();
-        void draw(Scene& scene, AssetManager& assets);
+        void draw(Scene& scene, AssetManager& assets, const AppConfig& config);
         void endFrame();
         bool writeObjectsToFile(const std::vector<std::unique_ptr<Object>>& objects,
                     const std::string& filename,
