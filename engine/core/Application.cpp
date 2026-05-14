@@ -129,7 +129,7 @@ namespace engine
         _config.height = height;
 
         _renderer.resize(width, height);
-        if (auto* camera = _scene.getMainCamera())
+        for (auto* camera : _scene.getCameras())
             camera->setAspect(static_cast<float>(width) / static_cast<float>(height));
     }
 

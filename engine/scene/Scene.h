@@ -36,6 +36,9 @@ namespace engine
 		void setPhysicsSystem(PhysicsSystem* physics) { _physics = physics; }
 		PhysicsSystem* getPhysicsSystem() const { return _physics; }
 
+		void addCamera(Camera* camera) { _cameras.push_back(camera); }
+		const std::vector<Camera*>& getCameras() const { return _cameras; }
+
 		void setMainCamera(Camera* camera) { _mainCamera = camera; }
 		Camera* getMainCamera() const { return _mainCamera; }
 
@@ -56,6 +59,7 @@ namespace engine
 
 		PhysicsSystem* _physics = nullptr;
 		Camera* _mainCamera = nullptr;
+		std::vector<Camera*> _cameras;
 		std::vector<Light*> _lights;
 
 		Handle<Cubemap> _skybox;

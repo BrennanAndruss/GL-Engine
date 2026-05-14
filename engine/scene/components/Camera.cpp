@@ -1,5 +1,8 @@
 #include "scene/components/Camera.h"
 
+#include "scene/Scene.h"
+#include "scene/Object.h"
+
 namespace engine
 {
 	Camera::Camera(float fov, float aspect, float near, float far) :
@@ -7,6 +10,7 @@ namespace engine
 
 	void Camera::start()
 	{
+		owner->getScene()->addCamera(this);
 		updateViewMatrix();
 		updateProjectionMatrix();
 	}
