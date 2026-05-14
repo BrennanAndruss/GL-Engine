@@ -7,7 +7,7 @@
 class FreeCameraController : public engine::Component
 {
 public:
-	float moveSpeed = 12.0f;
+	float moveSpeed = 36.0f;
 	float sensitivity = 1.0f;
 	bool invertMouseMove = false;
 	bool enabled = false;

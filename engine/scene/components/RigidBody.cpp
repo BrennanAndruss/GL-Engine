@@ -27,8 +27,19 @@ namespace engine
 		_body = nullptr;
 	}
 
+	void RigidBody::disablePhysics()
+	{
+		_physicsDisabled = true;
+		destroyBody();
+	}
+
 	bool RigidBody::initializeBody()
 		{
+			if (_physicsDisabled)
+			{
+				return false;
+			}
+
 			if (_body && !_bodyDirty)
 			{
 				return true;
@@ -99,6 +110,11 @@ namespace engine
 
 	void RigidBody::update(float deltaTime)
 	{
+		if (_physicsDisabled)
+		{
+			return;
+		}
+
 		if (!initializeBody())
 		{
 			return;

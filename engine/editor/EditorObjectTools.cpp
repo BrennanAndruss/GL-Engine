@@ -1,0 +1,439 @@
+#include "editor/EditorObjectTools.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <string>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#include <imgui.h>
+
+#include "core/Input.h"
+#include "renderer/resources/Material.h"
+#include "resources/AssetManager.h"
+#include "scene/Scene.h"
+#include "scene/components/Components.h"
+#include "systems/Collectable.h"
+
+namespace
+{
+    bool rayIntersectsAabb(const glm::vec3& rayOrigin,
+        const glm::vec3& rayDirection,
+        const glm::vec3& boundsMin,
+        const glm::vec3& boundsMax,
+        float& outDistance)
+    {
+        float tMin = 0.0f;
+        float tMax = std::numeric_limits<float>::max();
+
+        for (int i = 0; i < 3; ++i)
+        {
+            if (std::fabs(rayDirection[i]) < 1e-6f)
+            {
+                if (rayOrigin[i] < boundsMin[i] || rayOrigin[i] > boundsMax[i])
+                {
+                    return false;
+                }
+                continue;
+            }
+
+            const float invDirection = 1.0f / rayDirection[i];
+            float t1 = (boundsMin[i] - rayOrigin[i]) * invDirection;
+            float t2 = (boundsMax[i] - rayOrigin[i]) * invDirection;
+            if (t1 > t2)
+            {
+                std::swap(t1, t2);
+            }
+
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
+            if (tMax < tMin)
+            {
+                return false;
+            }
+        }
+
+        outDistance = (tMin >= 0.0f) ? tMin : tMax;
+        return outDistance >= 0.0f;
+    }
+
+    bool rayIntersectsSphere(const glm::vec3& rayOrigin,
+        const glm::vec3& rayDirection,
+        const glm::vec3& center,
+        float radius,
+        float& outDistance)
+    {
+        const glm::vec3 toCenter = rayOrigin - center;
+        const float a = glm::dot(rayDirection, rayDirection);
+        const float b = 2.0f * glm::dot(toCenter, rayDirection);
+        const float c = glm::dot(toCenter, toCenter) - (radius * radius);
+        const float discriminant = b * b - 4.0f * a * c;
+        if (discriminant < 0.0f)
+        {
+            return false;
+        }
+
+        const float sqrtDiscriminant = std::sqrt(discriminant);
+        const float t0 = (-b - sqrtDiscriminant) / (2.0f * a);
+        const float t1 = (-b + sqrtDiscriminant) / (2.0f * a);
+        outDistance = (t0 >= 0.0f) ? t0 : t1;
+        return outDistance >= 0.0f;
+    }
+
+    bool rayIntersectsObject(const engine::Object& object,
+        const glm::vec3& rayOrigin,
+        const glm::vec3& rayDirection,
+        float& outDistance)
+    {
+        const glm::vec3 worldPos = object.transform.getWorldPosition();
+        const glm::vec3 worldScale = glm::abs(object.transform.getWorldScale());
+
+        if (const auto* box = object.getComponent<engine::BoxCollider>())
+        {
+            const glm::vec3 center = worldPos + box->center;
+            const glm::vec3 halfExtents = box->size * worldScale;
+            return rayIntersectsAabb(
+                rayOrigin,
+                rayDirection,
+                center - halfExtents,
+                center + halfExtents,
+                outDistance
+            );
+        }
+
+        if (const auto* sphere = object.getComponent<engine::SphereCollider>())
+        {
+            const float radiusScale = std::max(worldScale.x, std::max(worldScale.y, worldScale.z));
+            const float radius = sphere->radius * radiusScale;
+            return rayIntersectsSphere(rayOrigin, rayDirection, worldPos + sphere->center, radius, outDistance);
+        }
+
+        const glm::vec3 fallbackHalfExtents = glm::max(worldScale * 0.5f, glm::vec3(0.25f));
+        return rayIntersectsAabb(
+            rayOrigin,
+            rayDirection,
+            worldPos - fallbackHalfExtents,
+            worldPos + fallbackHalfExtents,
+            outDistance
+        );
+    }
+
+    engine::Object* pickObjectAtMouse(engine::Scene& scene, std::size_t startIndex)
+    {
+        engine::Camera* camera = scene.getMainCamera();
+        if (!camera)
+        {
+            return nullptr;
+        }
+
+        int windowWidth = 0;
+        int windowHeight = 0;
+        if (GLFWwindow* window = glfwGetCurrentContext())
+        {
+            glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        }
+
+        if (windowWidth <= 0 || windowHeight <= 0)
+        {
+            const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+            windowWidth = static_cast<int>(displaySize.x);
+            windowHeight = static_cast<int>(displaySize.y);
+        }
+
+        if (windowWidth <= 0 || windowHeight <= 0)
+        {
+            return nullptr;
+        }
+
+        const glm::vec2 mousePos = engine::Input::getMousePos();
+        const float ndcX = (2.0f * mousePos.x) / static_cast<float>(windowWidth) - 1.0f;
+        const float ndcY = 1.0f - (2.0f * mousePos.y) / static_cast<float>(windowHeight);
+
+        camera->updateViewMatrix();
+        const auto& cameraData = camera->getCameraData();
+        const glm::mat4 inverseViewProjection = glm::inverse(cameraData.projection * cameraData.view);
+
+        glm::vec4 nearPoint = inverseViewProjection * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
+        glm::vec4 farPoint = inverseViewProjection * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
+        if (std::fabs(nearPoint.w) < 1e-6f || std::fabs(farPoint.w) < 1e-6f)
+        {
+            return nullptr;
+        }
+
+        nearPoint /= nearPoint.w;
+        farPoint /= farPoint.w;
+
+        const glm::vec3 rayOrigin = glm::vec3(nearPoint);
+        const glm::vec3 rayDirection = glm::normalize(glm::vec3(farPoint - nearPoint));
+
+        engine::Object* closestObject = nullptr;
+        float closestDistance = std::numeric_limits<float>::max();
+
+        const auto& objects = scene.getObjects();
+        for (std::size_t i = startIndex; i < objects.size(); ++i)
+        {
+            const auto& object = objects[i];
+            if (object->getComponent<engine::Camera>())
+            {
+                continue;
+            }
+
+            float hitDistance = 0.0f;
+            if (rayIntersectsObject(*object, rayOrigin, rayDirection, hitDistance) && hitDistance < closestDistance)
+            {
+                closestDistance = hitDistance;
+                closestObject = object.get();
+            }
+        }
+
+        return closestObject;
+    }
+
+    bool isNameInUse(const engine::Scene& scene, const std::string& name)
+    {
+        for (const auto& object : scene.getObjects())
+        {
+            if (object->name == name)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string makeUniqueName(const engine::Scene& scene, const std::string& baseName, const std::string& suffix)
+    {
+        int index = 0;
+        while (isNameInUse(scene, baseName + suffix + std::to_string(index)))
+        {
+            ++index;
+        }
+        return baseName + suffix + std::to_string(index);
+    }
+
+    void deleteObject(engine::Scene& scene, engine::Object* objectToDelete)
+    {
+        if (!objectToDelete)
+        {
+            return;
+        }
+
+        // Clean up physics
+        if (auto* physics = scene.getPhysicsSystem())
+        {
+            if (auto* rigidBody = objectToDelete->getComponent<engine::RigidBody>())
+            {
+                rigidBody->disablePhysics();
+            }
+
+            if (auto* collider = objectToDelete->getComponent<engine::BoxCollider>())
+            {
+                auto* collisionObject = collider->releaseCollisionObject();
+                if (collisionObject)
+                {
+                    physics->removeCollisionObject(collisionObject);
+                }
+            }
+
+            if (auto* collider = objectToDelete->getComponent<engine::SphereCollider>())
+            {
+                auto* collisionObject = collider->releaseCollisionObject();
+                if (collisionObject)
+                {
+                    physics->removeCollisionObject(collisionObject);
+                }
+            }
+        }
+
+        // Remove from scene
+        auto& objects = scene.getObjects();
+        for (auto it = objects.begin(); it != objects.end(); ++it)
+        {
+            if (it->get() == objectToDelete)
+            {
+                objects.erase(it);
+                break;
+            }
+        }
+    }
+}
+
+namespace engine
+{
+    void updateEditorSelectionFromMouse(Scene& scene, std::size_t startIndex, Object*& selectedObject)
+    {
+        const bool mouseOverUi = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsAnyItemHovered();
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !mouseOverUi)
+        {
+            if (Object* pickedObject = pickObjectAtMouse(scene, startIndex))
+            {
+                selectedObject = pickedObject;
+            }
+        }
+    }
+
+    void drawEditorObjectControls(Scene& scene, AssetManager& assets, std::size_t initialObjectCount, Object*& selectedObject)
+    {
+        ImGui::Text("Create object:");
+        if (ImGui::Button("Create Cube"))
+        {
+            const std::string cubeName = makeUniqueName(scene, "Cube", "");
+            auto& cube = scene.createObject(cubeName);
+            auto& meshRenderer = cube.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("cube");
+            meshRenderer.material = assets.getDefaultMaterial();
+            selectedObject = &cube;
+        }
+
+        if (ImGui::Button("Create Star"))
+        {
+            const std::string starName = makeUniqueName(scene, "Star", "");
+            auto& star = scene.createObject(starName);
+            star.transform.setScale(glm::vec3(0.5f));
+
+            auto& meshRenderer = star.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("gem");
+            meshRenderer.material = assets.getDefaultMaterial();
+
+            auto& collider = star.addComponent<BoxCollider>();
+            collider.size = glm::vec3(1.0f);
+            collider.isTrigger = true;
+
+            auto& collectable = star.addComponent<Collectable>();
+            collectable.defaultMat = assets.getDefaultMaterial();
+            collectable.collectedMat = assets.getDefaultMaterial();
+
+            selectedObject = &star;
+        }
+
+        if (ImGui::Button("Create Platform"))
+        {
+            const std::string platformName = makeUniqueName(scene, "Platform", "");
+            auto& platform = scene.createObject(platformName);
+            platform.transform.setScale(glm::vec3(5.0f, 2.0f, 5.0f));
+
+            auto& meshRenderer = platform.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("square-platform");
+            if (!meshRenderer.mesh.valid())
+            {
+                meshRenderer.mesh = assets.getMeshHandle("cube");
+            }
+            
+            // Use CMYK platform material if available, otherwise use default
+            auto platformMat = assets.getMaterialHandle("platformCMYKMaterial");
+            meshRenderer.material = platformMat.valid() ? platformMat : assets.getDefaultMaterial();
+
+            auto& collider = platform.addComponent<BoxCollider>();
+            
+            if (auto* mesh = assets.getMesh(meshRenderer.mesh))
+            {
+                const auto bounds = mesh->getBBox();
+                collider.center = 0.5f * (bounds.max + bounds.min);
+                collider.size = 0.5f * (bounds.max - bounds.min);
+            }
+            else
+            {
+                collider.center = glm::vec3(0.0f);
+                collider.size = glm::vec3(1.0f);
+            }
+            collider.rebuild();
+
+            selectedObject = &platform;
+        }
+
+        ImGui::Separator();
+
+        if (selectedObject)
+        {
+            if (ImGui::Button("Clear Selection"))
+            {
+                selectedObject = nullptr;
+            }
+
+            if (ImGui::Button("Duplicate Selection"))
+            {
+                const std::string copyName = makeUniqueName(scene, selectedObject->name, "_Copy");
+                auto& newObject = scene.createObject(copyName);
+                newObject.transform.setPosition(selectedObject->transform.getPosition() + glm::vec3(1.0f, 0.0f, 0.0f));
+                newObject.transform.setRotation(selectedObject->transform.getRotation());
+                newObject.transform.setScale(selectedObject->transform.getScale());
+
+                if (auto* meshRenderer = selectedObject->getComponent<MeshRenderer>())
+                {
+                    auto& newMeshRenderer = newObject.addComponent<MeshRenderer>();
+                    newMeshRenderer.mesh = meshRenderer->mesh;
+                    newMeshRenderer.material = meshRenderer->material;
+                }
+
+                if (auto* boxCollider = selectedObject->getComponent<BoxCollider>())
+                {
+                    auto& newBoxCollider = newObject.addComponent<BoxCollider>();
+                    newBoxCollider.center = boxCollider->center;
+                    newBoxCollider.size = boxCollider->size;
+                    newBoxCollider.isTrigger = boxCollider->isTrigger;
+                    newBoxCollider.rebuild();
+                }
+
+                if (auto* sphereCollider = selectedObject->getComponent<SphereCollider>())
+                {
+                    auto& newSphereCollider = newObject.addComponent<SphereCollider>();
+                    newSphereCollider.center = sphereCollider->center;
+                    newSphereCollider.radius = sphereCollider->radius;
+                    newSphereCollider.isTrigger = sphereCollider->isTrigger;
+                }
+
+                if (auto* collectable = selectedObject->getComponent<Collectable>())
+                {
+                    auto& newCollectable = newObject.addComponent<Collectable>();
+                    newCollectable.defaultMat = collectable->defaultMat;
+                    newCollectable.collectedMat = collectable->collectedMat;
+                }
+
+                selectedObject = &newObject;
+            }
+
+            if (ImGui::Button("Delete Object"))
+            {
+                Object* toDelete = selectedObject;
+                selectedObject = nullptr;
+                deleteObject(scene, toDelete);
+            }
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Objects:");
+
+        const auto& objects = scene.getObjects();
+        if (selectedObject)
+        {
+            bool selectedStillListed = false;
+            for (std::size_t i = initialObjectCount; i < objects.size(); ++i)
+            {
+                if (objects[i].get() == selectedObject)
+                {
+                    selectedStillListed = true;
+                    break;
+                }
+            }
+
+            if (!selectedStillListed)
+            {
+                selectedObject = nullptr;
+            }
+        }
+
+        for (std::size_t i = initialObjectCount; i < objects.size(); ++i)
+        {
+            const auto& object = objects[i];
+            const bool isSelected = selectedObject == object.get();
+            if (ImGui::Selectable(object->name.c_str(), isSelected))
+            {
+                selectedObject = object.get();
+            }
+        }
+    }
+}

@@ -1,5 +1,6 @@
 #include "MyGame.h"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
@@ -13,6 +14,21 @@
 #include "scene/components/Components.h"
 #include "systems/PlayerController.h"
 #include "systems/Collectable.h"
+#include <stdio.h>
+
+MyGame* MyGame::_activeGame = nullptr;
+
+MyGame* MyGame::getActiveGame()
+{
+	return _activeGame;
+}
+
+void MyGame::onCollectableCollected()
+{
+	_collectedCyan = std::min(_collectedCyan + 0.2f, 1.0f);
+	_collectedMagenta = std::min(_collectedMagenta + 0.2f, 1.0f);
+	_collectedYellow = std::min(_collectedYellow + 0.2f, 1.0f);
+}
 
 
 void MyGame::init(engine::AssetManager& assets, 
@@ -20,6 +36,8 @@ void MyGame::init(engine::AssetManager& assets,
 				  engine::Scene& scene,
 				  const engine::AppConfig& config)
 {
+	_activeGame = this;
+
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
@@ -72,6 +90,16 @@ void MyGame::init(engine::AssetManager& assets,
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
 	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuseTex", "textures/cyan_gem_texture.png", true);
 	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBaseTex", "textures/char_Base_color.png", true);
+	
+	// Load CMYK platform texture
+	Handle<engine::Texture> platformCMYKTex = assets.loadTexture("platformCMYKTex", "textures/heightmaps/cmyk_platform_openPBR_shader1_BaseMap.png", true);
+	
+	// Create CMYK platform material
+	platformMaterial = assets.loadMaterial("platformCMYKMaterial");
+	if (auto* mat = assets.getMaterial(platformMaterial))
+	{
+		mat->difTex = platformCMYKTex;
+	}
 
 	std::cout << "Loading models...\n";
 	Handle<engine::Mesh> gemMesh;
@@ -87,6 +115,7 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
+	platformMesh = assets.loadMeshAssimp("square-platform", "models/square-platform.fbx");
 	Handle<engine::Mesh> sprintMesh;
 	Handle<engine::Skeleton> sprintSkeleton;
 	Handle<engine::AnimationClip> idleClip;
@@ -213,8 +242,10 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	{
-	cube = &scene.createObject("Player");
-	cube->transform.setPosition(glm::vec3(-38.0f, 40.0f, 37.0f));
+		cube = &scene.createObject("Player");
+		cube->transform.setPosition(glm::vec3(-200.0f, 15.0f, -8.0f));
+		cube->transform.setScale(glm::vec3(0.5f));
+		
 
 	auto& visual = scene.createObject("PlayerVisual");
 	visual.transform.setParent(&cube->transform);
@@ -229,8 +260,11 @@ void MyGame::init(engine::AssetManager& assets,
 	animator.clip = idleClip;
 
 	auto& characterController = cube->addComponent<engine::CharacterController>();
+	characterController.gravity = 9.81f;
+	characterController.mass = 8.0f;
 	characterController.targetHeight = 1.0f;
 	characterController.radiusScale = 0.95f;
+
 	characterController.visualTransform = &visual.transform;
 
 	if (auto* mesh = assets.getMesh(sprintMesh))
@@ -239,9 +273,10 @@ void MyGame::init(engine::AssetManager& assets,
 	}
 
 	auto& playerController = cube->addComponent<PlayerController>();
-	playerController.moveSpeed = 10.0f;
+	playerController.moveSpeed = 0.1f;
 	playerController.eyeHeight = 0.3f;
-	playerController.cameraDistance = 3.0f;
+	playerController.cameraDistance = 4.0f;
+	playerController.jumpForce = 48.0f;
 
 	playerController.animator = &animator;
 	playerController.idleClip = idleClip;
@@ -312,6 +347,27 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.material = terrainMat;
 	}
 
+	{
+		auto& tempWaterPlane = scene.createObject("TempWaterPlane");
+		tempWaterPlane.transform.setPosition(glm::vec3(0.0f, 8.0f, 0.0f));
+		tempWaterPlane.transform.setScale(glm::vec3(5000.0f, 1.0f, 5000.0f));
+
+		auto& mr = tempWaterPlane.addComponent<engine::MeshRenderer>();
+		mr.mesh = assets.loadMesh("waterPlane", "models/cube.obj");
+		
+		Handle<engine::Material> waterMat = assets.loadMaterial("waterMat");
+		auto* matPtr = assets.getMaterial(waterMat);
+		matPtr->ambient = glm::vec3(0.15f, 0.25f, 0.35f);
+		matPtr->diffuse = glm::vec3(0.45f, 0.70f, 0.90f);
+		matPtr->specular = glm::vec3(0.85f, 0.90f, 1.0f);
+		matPtr->shininess = 64.0f;
+		matPtr->difTex = defaultGrayTex;
+		matPtr->specTex = defaultGrayTex;
+		mr.material = waterMat;
+
+
+	}
+
 	// Initialize player and main camera
 	{
 		auto& camObj = scene.createObject("MainCamera");
@@ -374,6 +430,23 @@ void MyGame::update(float deltaTime)
 {
 	gem->transform.rotate(glm::vec3(1.0f, 0.0f, 1.0f) * (deltaTime * 5.0f));
 
+	if (cube)
+	{
+		glm::vec3 playerPos = cube->transform.getPosition();
+		std::cout << "Player Y Position: " << playerPos.y << "\n";
+
+		if (playerPos.y < 9.0f)
+		{
+			glm::vec3 respawnPos(-200.0f, 17.0f, -8.0f);
+			// Teleport back to spawn
+			if (auto* controller = cube->getComponent<engine::CharacterController>())
+			{
+				controller->teleport(respawnPos);
+			}
+			
+		}
+	}
+
 	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;
 	if (engine::Input::isKeyDown(GLFW_KEY_M)) _collectedMagenta += 0.002f;
 	if (engine::Input::isKeyDown(GLFW_KEY_Y)) _collectedYellow += 0.002f;
@@ -387,8 +460,8 @@ void MyGame::update(float deltaTime)
 		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
 		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
 		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
-		_colorRestorePass->key = 
-			1.0f - ((_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f);
+		const float restoredAmount = (_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f;
+		_colorRestorePass->key = std::max(0.0f, std::min(1.0f, 1.0f - restoredAmount));
 	}
 }
 

@@ -1,207 +1,38 @@
 #include "editor/Editor.h"
+#include "editor/EditorObjectTools.h"
 
-#include <algorithm>
-#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
-#include <limits>
 #include <memory>
+#include <sys/stat.h>
 #include <string>
 #include <sstream>
 #include <vector>
-#include <glm/gtc/matrix_inverse.hpp>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "core/Input.h"
+#include "core/AppConfig.h"
 #include "core/Time.h"
 #include "renderer/resources/Material.h"
 #include "resources/AssetManager.h"
 #include "scene/Scene.h"
 #include "scene/components/Components.h"
-
-namespace
-{
-    bool rayIntersectsAabb(const glm::vec3& rayOrigin,
-        const glm::vec3& rayDirection,
-        const glm::vec3& boundsMin,
-        const glm::vec3& boundsMax,
-        float& outDistance)
-    {
-        float tMin = 0.0f;
-        float tMax = std::numeric_limits<float>::max();
-
-        for (int i = 0; i < 3; ++i)
-        {
-            if (std::fabs(rayDirection[i]) < 1e-6f)
-            {
-                if (rayOrigin[i] < boundsMin[i] || rayOrigin[i] > boundsMax[i])
-                {
-                    return false;
-                }
-                continue;
-            }
-
-            const float invDirection = 1.0f / rayDirection[i];
-            float t1 = (boundsMin[i] - rayOrigin[i]) * invDirection;
-            float t2 = (boundsMax[i] - rayOrigin[i]) * invDirection;
-            if (t1 > t2)
-            {
-                std::swap(t1, t2);
-            }
-
-            tMin = std::max(tMin, t1);
-            tMax = std::min(tMax, t2);
-            if (tMax < tMin)
-            {
-                return false;
-            }
-        }
-
-        outDistance = (tMin >= 0.0f) ? tMin : tMax;
-        return outDistance >= 0.0f;
-    }
-
-    bool rayIntersectsSphere(const glm::vec3& rayOrigin,
-        const glm::vec3& rayDirection,
-        const glm::vec3& center,
-        float radius,
-        float& outDistance)
-    {
-        const glm::vec3 toCenter = rayOrigin - center;
-        const float a = glm::dot(rayDirection, rayDirection);
-        const float b = 2.0f * glm::dot(toCenter, rayDirection);
-        const float c = glm::dot(toCenter, toCenter) - (radius * radius);
-        const float discriminant = b * b - 4.0f * a * c;
-        if (discriminant < 0.0f)
-        {
-            return false;
-        }
-
-        const float sqrtDiscriminant = std::sqrt(discriminant);
-        const float t0 = (-b - sqrtDiscriminant) / (2.0f * a);
-        const float t1 = (-b + sqrtDiscriminant) / (2.0f * a);
-        outDistance = (t0 >= 0.0f) ? t0 : t1;
-        return outDistance >= 0.0f;
-    }
-
-    bool rayIntersectsObject(const engine::Object& object,
-        const glm::vec3& rayOrigin,
-        const glm::vec3& rayDirection,
-        float& outDistance)
-    {
-        const glm::vec3 worldPos = object.transform.getWorldPosition();
-        const glm::vec3 worldScale = glm::abs(object.transform.getWorldScale());
-
-        if (const auto* box = object.getComponent<engine::BoxCollider>())
-        {
-            const glm::vec3 center = worldPos + box->center;
-            const glm::vec3 halfExtents = box->size * worldScale;
-            return rayIntersectsAabb(
-                rayOrigin,
-                rayDirection,
-                center - halfExtents,
-                center + halfExtents,
-                outDistance
-            );
-        }
-
-        if (const auto* sphere = object.getComponent<engine::SphereCollider>())
-        {
-            const float radiusScale = std::max(worldScale.x, std::max(worldScale.y, worldScale.z));
-            const float radius = sphere->radius * radiusScale;
-            return rayIntersectsSphere(rayOrigin, rayDirection, worldPos + sphere->center, radius, outDistance);
-        }
-
-        // Fallback to a small transform-based AABB so mesh-only objects are still pickable.
-        const glm::vec3 fallbackHalfExtents = glm::max(worldScale * 0.5f, glm::vec3(0.25f));
-        return rayIntersectsAabb(
-            rayOrigin,
-            rayDirection,
-            worldPos - fallbackHalfExtents,
-            worldPos + fallbackHalfExtents,
-            outDistance
-        );
-    }
-
-    engine::Object* pickObjectAtMouse(engine::Scene& scene, std::size_t startIndex)
-    {
-        engine::Camera* camera = scene.getMainCamera();
-        if (!camera)
-        {
-            return nullptr;
-        }
-
-        int windowWidth = 0;
-        int windowHeight = 0;
-        if (GLFWwindow* window = glfwGetCurrentContext())
-        {
-            glfwGetWindowSize(window, &windowWidth, &windowHeight);
-        }
-
-        if (windowWidth <= 0 || windowHeight <= 0)
-        {
-            const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-            windowWidth = static_cast<int>(displaySize.x);
-            windowHeight = static_cast<int>(displaySize.y);
-        }
-
-        if (windowWidth <= 0 || windowHeight <= 0)
-        {
-            return nullptr;
-        }
-
-        const glm::vec2 mousePos = engine::Input::getMousePos();
-        const float ndcX = (2.0f * mousePos.x) / static_cast<float>(windowWidth) - 1.0f;
-        const float ndcY = 1.0f - (2.0f * mousePos.y) / static_cast<float>(windowHeight);
-
-        camera->updateViewMatrix();
-        const auto& cameraData = camera->getCameraData();
-        const glm::mat4 inverseViewProjection = glm::inverse(cameraData.projection * cameraData.view);
-
-        glm::vec4 nearPoint = inverseViewProjection * glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
-        glm::vec4 farPoint = inverseViewProjection * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
-        if (std::fabs(nearPoint.w) < 1e-6f || std::fabs(farPoint.w) < 1e-6f)
-        {
-            return nullptr;
-        }
-
-        nearPoint /= nearPoint.w;
-        farPoint /= farPoint.w;
-
-        const glm::vec3 rayOrigin = glm::vec3(nearPoint);
-        const glm::vec3 rayDirection = glm::normalize(glm::vec3(farPoint - nearPoint));
-
-        engine::Object* closestObject = nullptr;
-        float closestDistance = std::numeric_limits<float>::max();
-
-        const auto& objects = scene.getObjects();
-        for (std::size_t i = startIndex; i < objects.size(); ++i)
-        {
-            const auto& object = objects[i];
-            if (object->getComponent<engine::Camera>())
-            {
-                continue;
-            }
-
-            float hitDistance = 0.0f;
-            if (rayIntersectsObject(*object, rayOrigin, rayDirection, hitDistance) && hitDistance < closestDistance)
-            {
-                closestDistance = hitDistance;
-                closestObject = object.get();
-            }
-        }
-
-        return closestObject;
-    }
-}
+#include "systems/Collectable.h"
 
 namespace engine
 {
+    namespace
+    {
+        std::string getSceneFilePath(const engine::AppConfig& config)
+        {
+            return config.assetsDir + "scenes/scene_objects.txt";
+        }
+    }
+
     void Editor::initialize(GLFWwindow* windowHandle)
     {
         if (_initialized)
@@ -244,7 +75,7 @@ namespace engine
         ImGui::NewFrame();
     }
 
-    void Editor::draw(Scene& scene, AssetManager& assets)
+    void Editor::draw(Scene& scene, AssetManager& assets, const AppConfig& config)
     {
         if (!_initialized)
         {
@@ -257,172 +88,22 @@ namespace engine
             _capturedInitialSceneState = true;
         }
 
-        const bool mouseOverUi = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsAnyItemHovered();
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !mouseOverUi)
-        {
-            if (Object* pickedObject = pickObjectAtMouse(scene, _initialObjectCount))
-            {
-                _selectedObject = pickedObject;
-            }
-        }
-
+        updateEditorSelectionFromMouse(scene, _initialObjectCount, _selectedObject);
         ImGui::Begin("Editor");
-
+            
         if (ImGui::Button("Save Scene"))
         {
-            const std::string filename = "scene_objects.txt";
-            bool ok = writeObjectsToFile(scene.getObjects(), filename, _initialObjectCount, assets);
-            if (ok)
-            {
-                std::cout << "Saved scene to " << filename << std::endl;
-            }
-            else
-            {
-                std::cerr << "Failed to save scene to " << filename << std::endl;
-            }
+            writeObjectsToFile(scene.getObjects(), getSceneFilePath(config), _initialObjectCount, assets);
         }
-
+        ImGui::SameLine();
         if (ImGui::Button("Load Scene"))
         {
-            const std::string filename = "scene_objects.txt";
-            bool ok = readObjectsFromFile(filename, scene, assets);
-            if (ok)
-            {
-                std::cout << "Loaded scene from " << filename << std::endl;
-            }
-            else
-            {
-                std::cerr << "Failed to load scene from " << filename << std::endl;
-            }
+            readObjectsFromFile(getSceneFilePath(config), scene, assets);
         }
-
-       
-
-        ImGui::Text("Create object:");
-        if (ImGui::Button("Create Cube"))
-        {
-            int nextCubeIndex = 0;
-            while (true)            {
-                std::string cubeName = "Cube" + std::to_string(nextCubeIndex);
-                bool nameExists = false;
-                for (const auto& object : scene.getObjects())
-                { 
-                    if (object->name == cubeName)
-                    {                        
-                        nameExists = true;
-                        break;
-                    }
-                }
-                if (!nameExists) break;
-                nextCubeIndex++;
-            }
-            auto& cube = scene.createObject("Cube" + std::to_string(nextCubeIndex));
-            auto& meshRenderer = cube.addComponent<MeshRenderer>();
-            meshRenderer.mesh = assets.getMeshHandle("cube");
-            meshRenderer.material = assets.getMaterialHandle("defaultMat");
-
-            _selectedObject = &cube;
-
-
-        }
-
         ImGui::Separator();
+        drawEditorObjectControls(scene, assets, _initialObjectCount, _selectedObject);
 
-        if (_selectedObject) {
-            if (ImGui::Button("Clear Selection"))
-            {
-                _selectedObject = nullptr;
-            }
-
-            if (ImGui::Button("Duplicate Selection") && _selectedObject)
-            {
-                int nextCopyIndex = 0;
-                while (true)
-                {
-                    std::string copyName = _selectedObject->name + "_Copy" + std::to_string(nextCopyIndex);
-                    bool nameExists = false;
-                    for (const auto& object : scene.getObjects())
-                    {
-                        if (object->name == copyName)
-                        {
-                            nameExists = true;
-                            break;
-                        }
-                    }
-                    if (!nameExists) break;
-                    nextCopyIndex++;
-                }
-
-                auto& newObject = scene.createObject(_selectedObject->name + "_Copy" + std::to_string(nextCopyIndex));
-                newObject.transform.setPosition(_selectedObject->transform.getPosition() + glm::vec3(1.0f, 0.0f, 0.0f));
-                newObject.transform.setRotation(_selectedObject->transform.getRotation());
-                newObject.transform.setScale(_selectedObject->transform.getScale());
-
-                // Copy MeshRenderer if exists
-                if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
-                {
-                    auto& newMeshRenderer = newObject.addComponent<MeshRenderer>();
-                    newMeshRenderer.mesh = meshRenderer->mesh;
-                    newMeshRenderer.material = meshRenderer->material;
-                }
-
-                // Copy BoxCollider if exists
-                if (auto* boxCollider = _selectedObject->getComponent<BoxCollider>())
-                {
-                    auto& newBoxCollider = newObject.addComponent<BoxCollider>();
-                    newBoxCollider.center = boxCollider->center;
-                    newBoxCollider.size = boxCollider->size;
-                    newBoxCollider.isTrigger = boxCollider->isTrigger;
-                }
-
-                // Copy SphereCollider if exists
-                if (auto* sphereCollider = _selectedObject->getComponent<SphereCollider>())
-                {
-                    auto& newSphereCollider = newObject.addComponent<SphereCollider>();
-                    newSphereCollider.center = sphereCollider->center;
-                    newSphereCollider.radius = sphereCollider->radius;
-                    newSphereCollider.isTrigger = sphereCollider->isTrigger;
-                }
-
-                _selectedObject = &newObject;
-            }
-
-        }
-
-        ImGui::Separator();
-
-        ImGui::Text("Objects:");
-        
-
-
-        const auto& objects = scene.getObjects();
-        if (_selectedObject)
-        {
-            bool selectedStillListed = false;
-            for (std::size_t i = _initialObjectCount; i < objects.size(); ++i)
-            {
-                if (objects[i].get() == _selectedObject)
-                {
-                    selectedStillListed = true;
-                    break;
-                }
-            }
-
-            if (!selectedStillListed)
-            {
-                _selectedObject = nullptr;
-            }
-        }
-
-        for (std::size_t i = _initialObjectCount; i < objects.size(); ++i)
-        {
-            const auto& object = objects[i];
-            const bool isSelected = _selectedObject == object.get();
-            if (ImGui::Selectable(object->name.c_str(), isSelected))
-            {
-                _selectedObject = object.get();
-            }
-        }
+    
 
         ImGui::End();
 
@@ -431,6 +112,14 @@ namespace engine
         {
             ImGui::Text("Selected: %s", _selectedObject->name.c_str());
             ImGui::Separator();
+
+            if (auto* editorCamera = scene.getMainCamera())
+            {
+                if (editorCamera->owner && ImGui::Button("Move To Editor Camera"))
+                {
+                    _selectedObject->transform.setPosition(editorCamera->owner->transform.getPosition());
+                }
+            }
 
             glm::vec3 position = _selectedObject->transform.getPosition();
             glm::vec3 rotation = _selectedObject->transform.getEulerAngles();
@@ -451,25 +140,48 @@ namespace engine
                 _selectedObject->transform.setScale(scale);
             }
 
-            // add component button
-
             const bool hasCollider = _selectedObject->getComponent<BoxCollider>() != nullptr;
             const bool hasRigidBody = _selectedObject->getComponent<RigidBody>() != nullptr;
-            if (!hasCollider || !hasRigidBody)
+            bool physicsCollisionChecked = hasCollider && hasRigidBody;
+            ImGui::BeginDisabled(physicsCollisionChecked);
+            if (ImGui::Checkbox("Physics Collision", &physicsCollisionChecked) && physicsCollisionChecked)
             {
-                if (ImGui::Button("Add Physics Collision"))
+                if (!hasCollider)
                 {
-                    if (!hasCollider)
-                    {
-                        _selectedObject->addComponent<BoxCollider>();
-                    }
+                    _selectedObject->addComponent<BoxCollider>();
+                }
 
-                    if (!hasRigidBody)
-                    {
-                        _selectedObject->addComponent<RigidBody>();
-                    }
+                if (!hasRigidBody)
+                {
+                    _selectedObject->addComponent<RigidBody>();
                 }
             }
+            ImGui::EndDisabled();
+
+            const bool hasCollectable = _selectedObject->getComponent<Collectable>() != nullptr;
+            bool collectableChecked = hasCollectable;
+            ImGui::BeginDisabled(hasCollectable);
+            if (ImGui::Checkbox("Collectable", &collectableChecked) && collectableChecked)
+            {
+                if (!hasCollider)
+                {
+                    auto& collider = _selectedObject->addComponent<BoxCollider>();
+                    collider.isTrigger = true;
+                }
+
+                auto& collectable = _selectedObject->addComponent<Collectable>();
+                if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+                {
+                    collectable.defaultMat = meshRenderer->material;
+                    collectable.collectedMat = assets.getDefaultMaterial();
+                }
+                else
+                {
+                    collectable.defaultMat = assets.getDefaultMaterial();
+                    collectable.collectedMat = assets.getDefaultMaterial();
+                }
+            }
+            ImGui::EndDisabled();
 
             if (auto* rigidBody = _selectedObject->getComponent<RigidBody>())
             {
@@ -564,6 +276,10 @@ namespace engine
                 {
                     file << "  RigidBody: type=" << static_cast<int>(rigidBody->getBodyType()) << " mass=" << rigidBody->mass << "\n";
                 }
+                if (auto* collectable = object->getComponent<Collectable>())
+                {
+                    file << "  Collectable: \n";
+                }
                 file << "\n";
                 if (!file.good())
                 {
@@ -624,7 +340,7 @@ namespace engine
             };
 
             std::string line;
-            const Handle<Material> defaultMaterial = assets.getMaterialHandle("defaultMat");
+            const Handle<Material> defaultMaterial = assets.getDefaultMaterial();
             struct LoadedObject
             {
                 std::string name;
@@ -645,6 +361,8 @@ namespace engine
                 bool hasRigidBody = false;
                 RigidBody::BodyType rigidBodyType = RigidBody::BodyType::Static;
                 float rigidBodyMass = 1.0f;
+
+                bool isCollectable = false;
             };
 
             auto flushObject = [&](const LoadedObject& data)
@@ -676,6 +394,7 @@ namespace engine
                     auto& collider = object.addComponent<BoxCollider>();
                     collider.size = data.boxColliderSize;
                     collider.isTrigger = data.boxColliderIsTrigger;
+                    collider.rebuild();
                 }
 
                 if (data.hasRigidBody)
@@ -683,6 +402,10 @@ namespace engine
                     auto& rigidBody = object.addComponent<RigidBody>();
                     rigidBody.setBodyType(data.rigidBodyType);
                     rigidBody.mass = data.rigidBodyMass;
+                }
+                if (data.isCollectable)
+                {
+                    object.addComponent<Collectable>();
                 }
             };
 
@@ -803,6 +526,9 @@ namespace engine
                     currentObject->hasRigidBody = true;
                     currentObject->rigidBodyType = static_cast<RigidBody::BodyType>(bodyType);
                     currentObject->rigidBodyMass = mass;
+                } else if (line.rfind("  Collectable: ", 0) == 0)
+                {
+                    currentObject->isCollectable = true;
                 }
             }
 

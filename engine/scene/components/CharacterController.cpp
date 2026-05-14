@@ -33,7 +33,6 @@ namespace engine
 		_controller = new btKinematicCharacterController(_ghostObject, _shape.get(), stepHeight);
 		_controller->setUp(btVector3(0, 1, 0));
 		_controller->setGravity(btVector3(0, -gravity, 0));
-		_controller->setFallSpeed(fallSpeed);
 
 		// Add to world with filters
 		int group = btBroadphaseProxy::CharacterFilter;
@@ -100,4 +99,39 @@ namespace engine
 			_controller->jump(btVector3(direction.x, direction.y, direction.z));
 		}
 	}
+
+	
+
+void CharacterController::teleport(const glm::vec3& position)
+{
+	if (!_ghostObject || !_controller)
+		return;
+
+	glm::vec3 adjustedPos = position;
+	adjustedPos.y += (height * 0.5f) + 0.25f;
+
+	btVector3 bulletPos = PhysicsSystem::toBullet(adjustedPos);
+
+	// Warp character controller
+	_controller->warp(bulletPos);
+
+	// Hard sync ghost transform
+	btTransform transform;
+	transform.setIdentity();
+	transform.setOrigin(bulletPos);
+
+	_ghostObject->setWorldTransform(transform);
+	_ghostObject->setInterpolationWorldTransform(transform);
+
+	// Clear velocities/motion
+	_controller->setWalkDirection(btVector3(0,0,0));
+	_controller->setVelocityForTimeInterval(btVector3(0,0,0), 0.0f);
+
+	_walkDirection = glm::vec3(0.0f);
+
+	// Sync engine transform
+	owner->transform.setPosition(adjustedPos);
+}
+
+		
 }
