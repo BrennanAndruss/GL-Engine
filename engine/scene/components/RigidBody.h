@@ -19,6 +19,9 @@ namespace engine
 			Dynamic,
 		};
 
+		RigidBody() = default;
+		~RigidBody();
+
 		float mass = 1.0f;
 		BodyType bodyType = BodyType::Static;
 

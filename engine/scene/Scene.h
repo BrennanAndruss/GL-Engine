@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <type_traits>
+#include <cassert>
 #include <glm/glm.hpp>
 #include "physics/PhysicsSystem.h"
 #include "scene/Object.h"
@@ -34,13 +35,19 @@ namespace engine
 		std::vector<Object*> getRootObjects() const;
 
 		void setPhysicsSystem(PhysicsSystem* physics) { _physics = physics; }
-		PhysicsSystem* getPhysicsSystem() const { return _physics; }
+		PhysicsSystem* getPhysicsSystem() const {
+			assert(_physics && "PhysicsSystem not set in scene");
+			return _physics; 
+		}
 
 		void addCamera(Camera* camera) { _cameras.push_back(camera); }
 		const std::vector<Camera*>& getCameras() const { return _cameras; }
 
 		void setMainCamera(Camera* camera) { _mainCamera = camera; }
-		Camera* getMainCamera() const { return _mainCamera; }
+		Camera* getMainCamera() const {
+			assert(_mainCamera && "Main camera not set in scene");
+			return _mainCamera;
+		}
 
 		void addLight(Light* light) { _lights.push_back(light); }
 		const std::vector<Light*>& getLights() const { return _lights; }
@@ -73,6 +80,7 @@ namespace engine
 		Handle<Cubemap> _skybox;
 		Handle<Cubemap> _irradianceMap;
 
+		void cleanupDeleted();
 		void resolveTransforms(Transform& t, const glm::mat4& parentWorld);
 	};
 }

@@ -87,28 +87,18 @@ void Collectable::onCollected()
         return;
     }
 
-    std::cout << "collected" << std::endl;
-
     isCollected = true;
 
-    if (auto* game = MyGame::getActiveGame())
-    {
-        game->onCollectableCollected(static_cast<int>(type));
-    }
+	// Trigger game effects
+	if (auto* game = MyGame::getActiveGame())
+	{
+		game->onCollectableCollected();
+	}
 
-    if (auto* collider = owner->getComponent<engine::Collider>())
-    {
-        if (auto* physics = owner->getScene()->getPhysicsSystem())
-        {
-            physics->unregisterCallback(collider->getCollisionObject());
-        }
-    }
+	// to-do: hide collectable
+	// (add enable/disable to components + disable MeshRenderer)
+	// (update loop deletion happens constantly so the difference prob isn't noticable)
 
-    owner->transform.setPosition(glm::vec3(0.0f, -10000.0f, 0.0f));
-
-    if (auto* renderer = owner->getComponent<engine::MeshRenderer>())
-    {
-        renderer->material = collectedMat;
-    }
+	// Mark object for deletion
+	owner->markedForDeletion = true;
 }
-

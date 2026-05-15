@@ -217,48 +217,8 @@ namespace
 
     void deleteObject(engine::Scene& scene, engine::Object* objectToDelete)
     {
-        if (!objectToDelete)
-        {
-            return;
-        }
-
-        // Clean up physics
-        if (auto* physics = scene.getPhysicsSystem())
-        {
-            if (auto* rigidBody = objectToDelete->getComponent<engine::RigidBody>())
-            {
-                rigidBody->disablePhysics();
-            }
-
-            if (auto* collider = objectToDelete->getComponent<engine::BoxCollider>())
-            {
-                auto* collisionObject = collider->releaseCollisionObject();
-                if (collisionObject)
-                {
-                    physics->removeCollisionObject(collisionObject);
-                }
-            }
-
-            if (auto* collider = objectToDelete->getComponent<engine::SphereCollider>())
-            {
-                auto* collisionObject = collider->releaseCollisionObject();
-                if (collisionObject)
-                {
-                    physics->removeCollisionObject(collisionObject);
-                }
-            }
-        }
-
-        // Remove from scene
-        auto& objects = scene.getObjects();
-        for (auto it = objects.begin(); it != objects.end(); ++it)
-        {
-            if (it->get() == objectToDelete)
-            {
-                objects.erase(it);
-                break;
-            }
-        }
+        if (objectToDelete)
+            objectToDelete->markedForDeletion = true;
     }
 }
 

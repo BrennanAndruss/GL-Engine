@@ -8,6 +8,11 @@
 
 namespace engine
 {
+	RigidBody::~RigidBody()
+	{
+		destroyBody();
+	}
+
 	void RigidBody::destroyBody()
 	{
 		if (!_body)
@@ -34,62 +39,59 @@ namespace engine
 	}
 
 	bool RigidBody::initializeBody()
+	{
+		if (_physicsDisabled)
 		{
-			if (_physicsDisabled)
-			{
-				return false;
-			}
+			return false;
+		}
 
-			if (_body && !_bodyDirty)
-			{
-				return true;
-			}
-
-			PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
-			if (!physics)
-			{
-				return false;
-			}
-
-			if (_body)
-			{
-				destroyBody();
-			}
-
-			if (!_collider)
-			{
-				_collider = owner->getComponent<Collider>();
-			}
-
-			if (!_collider)
-			{
-				return false;
-			}
-
-			if (auto* collisionObject = _collider->releaseCollisionObject())
-			{
-				physics->removeCollisionObject(collisionObject);
-			}
-
-			const float effectiveMass = bodyType == BodyType::Dynamic ? mass : 0.0f;
-			_body = physics->createBody(
-				_collider->getShape(), owner->transform.getWorldPosition(), 
-				effectiveMass, _collider->isTrigger
-			);
-
-			if (bodyType == BodyType::Kinematic)
-			{
-				_body->setCollisionFlags(
-					_body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT
-				);
-				_body->setActivationState(DISABLE_DEACTIVATION);
-			}
-
-			// Set user pointer for callbacks
-			_body->setUserPointer(owner);
-			_bodyDirty = false;
+		if (_body && !_bodyDirty)
+		{
 			return true;
 		}
+
+		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
+		if (!physics)
+		{
+			return false;
+		}
+
+		if (_body)
+		{
+			destroyBody();
+		}
+
+		if (!_collider)
+		{
+			_collider = owner->getComponent<Collider>();
+		}
+
+		if (!_collider)
+		{
+			return false;
+		}
+
+		_collider->releaseCollisionObject();
+
+		const float effectiveMass = bodyType == BodyType::Dynamic ? mass : 0.0f;
+		_body = physics->createBody(
+			_collider->getShape(), owner->transform.getWorldPosition(), 
+			effectiveMass, _collider->isTrigger
+		);
+
+		if (bodyType == BodyType::Kinematic)
+		{
+			_body->setCollisionFlags(
+				_body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT
+			);
+			_body->setActivationState(DISABLE_DEACTIVATION);
+		}
+
+		// Set user pointer for callbacks
+		_body->setUserPointer(owner);
+		_bodyDirty = false;
+		return true;
+	}
 
 	void RigidBody::setBodyType(BodyType type)
 	{
