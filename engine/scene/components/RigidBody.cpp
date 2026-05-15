@@ -15,20 +15,15 @@ namespace engine
 
 	void RigidBody::destroyBody()
 	{
-		if (!_body)
-		{
-			return;
-		}
+		if (!_body) return;
 
-		if (PhysicsSystem* physics = owner->getScene()->getPhysicsSystem())
+		if (auto* physics = owner->getScene()->getPhysicsSystem())
 		{
+			// Unregister callback and remove from physics world
 			physics->removeBody(_body);
 		}
-		else
-		{
-			delete _body;
-		}
 
+		delete _body;
 		_body = nullptr;
 	}
 
@@ -40,21 +35,11 @@ namespace engine
 
 	bool RigidBody::initializeBody()
 	{
-		if (_physicsDisabled)
-		{
-			return false;
-		}
-
-		if (_body && !_bodyDirty)
-		{
-			return true;
-		}
+		if (_physicsDisabled) return false;
+		if (_body && !_bodyDirty) return true;
 
 		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
-		if (!physics)
-		{
-			return false;
-		}
+		if (!physics) return false;
 
 		if (_body)
 		{
@@ -65,13 +50,9 @@ namespace engine
 		{
 			_collider = owner->getComponent<Collider>();
 		}
+		if (!_collider) return false;
 
-		if (!_collider)
-		{
-			return false;
-		}
-
-		_collider->releaseCollisionObject();
+		_collider->destroyCollisionObject();
 
 		const float effectiveMass = bodyType == BodyType::Dynamic ? mass : 0.0f;
 		_body = physics->createBody(
@@ -95,10 +76,7 @@ namespace engine
 
 	void RigidBody::setBodyType(BodyType type)
 	{
-		if (bodyType == type)
-		{
-			return;
-		}
+		if (bodyType == type) return;
 
 		bodyType = type;
 		_bodyDirty = true;
@@ -112,15 +90,7 @@ namespace engine
 
 	void RigidBody::update(float deltaTime)
 	{
-		if (_physicsDisabled)
-		{
-			return;
-		}
-
-		if (!initializeBody())
-		{
-			return;
-		}
+		if (_physicsDisabled || !_body) return;
 
 		if (bodyType == BodyType::Static || bodyType == BodyType::Kinematic)
 		{

@@ -22,13 +22,13 @@ namespace engine
 		_object->setWorldTransform(t);
 	}
 
-	void Collider::releaseCollisionObject()
+	void Collider::destroyCollisionObject()
 	{
 		if (!_object) return;
 		
 		if (auto* physics = owner->getScene()->getPhysicsSystem())
 		{
-			physics->unregisterCallback(_object);
+			// Unregister callback and remove from physics world
 			physics->removeCollisionObject(_object);
 		}
 
@@ -42,7 +42,7 @@ namespace engine
 	BoxCollider::BoxCollider() = default;
 	BoxCollider::~BoxCollider()
 	{
-		releaseCollisionObject();
+		destroyCollisionObject();
 	}
 
 	btCollisionShape* BoxCollider::getShape() const
@@ -130,7 +130,7 @@ namespace engine
 	SphereCollider::SphereCollider() = default;
 	SphereCollider::~SphereCollider()
 	{
-		releaseCollisionObject();
+		destroyCollisionObject();
 	}
 
 	btCollisionShape* SphereCollider::getShape() const
@@ -186,7 +186,7 @@ namespace engine
 	CapsuleCollider::CapsuleCollider() = default;
 	CapsuleCollider::~CapsuleCollider()
 	{
-		releaseCollisionObject();
+		destroyCollisionObject();
 	}
 
 	btCollisionShape* CapsuleCollider::getShape() const

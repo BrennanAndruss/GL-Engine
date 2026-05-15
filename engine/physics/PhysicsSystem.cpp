@@ -107,7 +107,6 @@ namespace engine
         if (!body) return;
         unregisterCallback(body);
         _world->removeRigidBody(body);
-        delete body;
     }
 
     void PhysicsSystem::removeCollisionObject(btCollisionObject* object)
@@ -115,7 +114,6 @@ namespace engine
         if (!object) return;
         unregisterCallback(object);
         _world->removeCollisionObject(object);
-        delete object;
     }
 
     void PhysicsSystem::registerCallback(btCollisionObject* object, CollisionCallback callback)
