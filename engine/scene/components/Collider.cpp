@@ -24,9 +24,16 @@ namespace engine
 
 	void Collider::releaseCollisionObject()
 	{
-		auto* collisionObject = _object;
+		if (!_object) return;
+		
+		if (auto* physics = owner->getScene()->getPhysicsSystem())
+		{
+			physics->unregisterCallback(_object);
+			physics->removeCollisionObject(_object);
+		}
+
+		delete _object;
 		_object = nullptr;
-		owner->getScene()->getPhysicsSystem()->removeCollisionObject(collisionObject);
 	}
 
 #pragma region BoxCollider

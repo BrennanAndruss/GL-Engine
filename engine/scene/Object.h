@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <type_traits>
+#include <cassert>
 #include "scene/Transform.h"
 #include "scene/components/Component.h"
 
@@ -58,7 +59,10 @@ namespace engine
 		}
 
 		void setScene(Scene* scene) { _scene = scene; }
-		Scene* getScene() const { return _scene; }
+		Scene* getScene() const {
+			assert(_scene && "Scene not set in object");
+			return _scene;
+		}
 
 	private:
 		Scene* _scene = nullptr;

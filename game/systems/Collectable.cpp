@@ -66,6 +66,11 @@ void Collectable::tryRegisterCallback()
 
 void Collectable::start()
 {
+	if (auto* meshRenderer = owner ? owner->getComponent<engine::MeshRenderer>() : nullptr)
+	{
+		meshRenderer->writeStencil = true;
+	}
+
 	tryRegisterCallback();
 }
 
@@ -77,13 +82,12 @@ void Collectable::update(float deltaTime)
 
 void Collectable::onCollected()
 {
-	if (isCollected)
-	{
-		return;
-	}
+    if (isCollected)
+    {
+        return;
+    }
 
-	std::cout << "collected" << std::endl;
-	isCollected = true;
+    isCollected = true;
 
 	// Trigger game effects
 	if (auto* game = MyGame::getActiveGame())
