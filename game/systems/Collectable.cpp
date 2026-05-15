@@ -82,45 +82,33 @@ void Collectable::update(float deltaTime)
 
 void Collectable::onCollected()
 {
-	if (isCollected)
-	{
-		return;
-	}
+    if (isCollected)
+    {
+        return;
+    }
 
-	std::cout << "collected" << std::endl;
-	isCollected = true;
+    std::cout << "collected" << std::endl;
 
-	if (auto* game = MyGame::getActiveGame())
-	{
-		game->onCollectableCollected(static_cast<int>(type));
-	}
+    isCollected = true;
 
-	// Clean up physics before deletion
-	if (auto* physics = owner->getScene()->getPhysicsSystem())
-	{
-		if (auto* rigidBody = owner->getComponent<engine::RigidBody>())
-		{
-			rigidBody->disablePhysics();
-		}
+    if (auto* game = MyGame::getActiveGame())
+    {
+        game->onCollectableCollected(static_cast<int>(type));
+    }
 
-		if (auto* collider = owner->getComponent<engine::Collider>())
-		{
-			auto* collisionObject = collider->releaseCollisionObject();
-			if (collisionObject)
-			{
-				physics->removeCollisionObject(collisionObject);
-			}
-		}
-	}
+    if (auto* collider = owner->getComponent<engine::Collider>())
+    {
+        if (auto* physics = owner->getScene()->getPhysicsSystem())
+        {
+            physics->unregisterCallback(collider->getCollisionObject());
+        }
+    }
 
-	// Delete the object from the scene
-	auto& objects = owner->getScene()->getObjects();
-	for (auto it = objects.begin(); it != objects.end(); ++it)
-	{
-		if (it->get() == owner)
-		{
-			objects.erase(it);
-			break;
-		}
-	}
+    owner->transform.setPosition(glm::vec3(0.0f, -10000.0f, 0.0f));
+
+    if (auto* renderer = owner->getComponent<engine::MeshRenderer>())
+    {
+        renderer->material = collectedMat;
+    }
 }
+
