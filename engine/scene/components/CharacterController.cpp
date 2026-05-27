@@ -1,5 +1,7 @@
 #include "scene/components/CharacterController.h"
 
+#include <iostream>
+
 #include "physics/PhysicsSystem.h"
 #include "scene/Scene.h"
 #include "scene/Object.h"
@@ -11,6 +13,8 @@ namespace engine
 	void CharacterController::start()
 	{
 		PhysicsSystem* physics = owner->getScene()->getPhysicsSystem();
+		_currentSyncedWorldPosition = owner->transform.getWorldPosition();
+		_previousSyncedWorldPosition = _currentSyncedWorldPosition;
 		
 		_shape = std::make_unique<btCapsuleShape>(radius, height - (2.0f * radius));
 
@@ -70,24 +74,62 @@ namespace engine
 	{
 		_controller->setWalkDirection(PhysicsSystem::toBullet(_walkDirection));
 
-		// Skip syncing position for one frame after teleport to let physics settle
-		if (!_justTeleported)
+		_walkDirection = glm::vec3(0.0f);
+	}
+
+	void CharacterController::postPhysicsUpdate(float deltaTime)
+	{
+		if (!_ghostObject || !_controller)
 		{
-			// Sync the engine transform with the physics world transform
-			btTransform t = _ghostObject->getWorldTransform();
-			owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
-		}
-		else
-		{
-			_justTeleported = false;
+			return;
 		}
 
-		_walkDirection = glm::vec3(0.0f);
+		if (_justTeleported)
+		{
+			_justTeleported = false;
+			_previousSyncedWorldPosition = owner->transform.getPosition();
+			_currentSyncedWorldPosition = _previousSyncedWorldPosition;
+			_postPhysicsSyncedWorldPosition = _currentSyncedWorldPosition;
+			return;
+		}
+
+		btTransform t = _ghostObject->getWorldTransform();
+		_previousSyncedWorldPosition = _currentSyncedWorldPosition;
+		const glm::vec3 syncedPosition = PhysicsSystem::toGlm(t.getOrigin());
+		owner->transform.setPosition(syncedPosition);
+		_currentSyncedWorldPosition = syncedPosition;
+		_postPhysicsSyncedWorldPosition = _currentSyncedWorldPosition;
+	}
+
+	void CharacterController::moveWorldOffset(const glm::vec3& delta)
+	{
+		if (!_ghostObject || !_controller || glm::dot(delta, delta) <= 0.0f)
+		{
+			return;
+		}
+
+		const glm::vec3 newPosition = owner->transform.getPosition() + delta;
+		btVector3 bulletPos = PhysicsSystem::toBullet(newPosition);
+
+		btTransform transform;
+		transform.setIdentity();
+		transform.setOrigin(bulletPos);
+
+		_controller->warp(bulletPos);
+		_ghostObject->setWorldTransform(transform);
+		_ghostObject->setInterpolationWorldTransform(transform);
+		owner->transform.setPosition(newPosition);
+		_previousSyncedWorldPosition = newPosition;
+		_currentSyncedWorldPosition = newPosition;
 	}
 
 	void CharacterController::move(glm::vec3 direction)
 	{
 		_walkDirection = direction;
+		if (_controller)
+		{
+			_controller->setWalkDirection(PhysicsSystem::toBullet(_walkDirection));
+		}
 	}
 
 	bool CharacterController::isOnGround() const
@@ -136,8 +178,6 @@ void CharacterController::teleport(const glm::vec3& position)
 	_controller->setVelocityForTimeInterval(btVector3(0, 0, 0), 0.0f);
 
 	_walkDirection = glm::vec3(0.0f);
-
-	// Sync engine transform
 	owner->transform.setPosition(adjustedPos);
 
 	// Flag to skip physics sync for one frame to let it settle

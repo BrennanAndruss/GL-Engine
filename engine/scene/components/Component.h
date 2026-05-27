@@ -16,6 +16,7 @@ namespace engine
 		virtual ~Component() = default;
 		virtual void start() {}
 		virtual void update(float deltaTime) {}
+		virtual void postPhysicsUpdate(float deltaTime) {}
 		virtual void update(float deltaTime, AssetManager& assets)
 		{
 			update(deltaTime);

@@ -239,6 +239,7 @@ namespace engine
     void drawEditorObjectControls(Scene& scene, AssetManager& assets, std::size_t initialObjectCount, Object*& selectedObject)
     {
         ImGui::Text("Create object:");
+        /*
         if (ImGui::Button("Create Cube"))
         {
             const std::string cubeName = makeUniqueName(scene, "Cube", "");
@@ -248,25 +249,8 @@ namespace engine
             meshRenderer.material = assets.getDefaultMaterial();
             selectedObject = &cube;
         }
-
-        if (ImGui::Button("Create Star"))
-        {
-            const std::string starName = makeUniqueName(scene, "Star", "");
-            auto& star = scene.createObject(starName);
-            star.transform.setScale(glm::vec3(0.5f));
-
-            auto& meshRenderer = star.addComponent<MeshRenderer>();
-            meshRenderer.mesh = assets.getMeshHandle("gem");
-            meshRenderer.material = assets.getDefaultMaterial();
-
-            auto& collider = star.addComponent<BoxCollider>();
-            collider.size = glm::vec3(1.0f);
-            collider.isTrigger = true;
-
-            selectedObject = &star;
-        }
-
-        if (ImGui::Button("Create Platform"))
+        */
+       if (ImGui::Button("Platform"))
         {
             const std::string platformName = makeUniqueName(scene, "Platform", "");
             auto& platform = scene.createObject(platformName);
@@ -298,8 +282,42 @@ namespace engine
             }
             collider.rebuild();
 
+            auto& rigidBody = platform.addComponent<RigidBody>();
+            // Make platform kinematic so Bullet can resolve collisions and friction
+            rigidBody.setBodyType(RigidBody::BodyType::Kinematic);
+            rigidBody.friction = 1.0f;
+
             selectedObject = &platform;
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Star"))
+        {
+            const std::string starName = makeUniqueName(scene, "Star", "");
+            auto& star = scene.createObject(starName);
+            star.transform.setScale(glm::vec3(0.5f));
+
+            auto& meshRenderer = star.addComponent<MeshRenderer>();
+            meshRenderer.mesh = assets.getMeshHandle("gem");
+            meshRenderer.material = assets.getDefaultMaterial();
+
+            auto& collider = star.addComponent<BoxCollider>();
+            collider.size = glm::vec3(1.0f);
+            collider.isTrigger = true;
+
+            auto& collectable = star.addComponent<Collectable>();
+            collectable.type = Collectable::Type::Cyan;
+            Handle<engine::Material> cyanMat = assets.getMaterialHandle("cyanMat");
+            if (cyanMat.valid())
+            {
+                meshRenderer.material = cyanMat;
+            }
+            collectable.defaultMat = meshRenderer.material;
+            collectable.collectedMat = assets.getDefaultMaterial();
+
+            selectedObject = &star;
+        }
+
+        
 
         ImGui::Separator();
 
@@ -345,8 +363,24 @@ namespace engine
                 if (auto* collectable = selectedObject->getComponent<Collectable>())
                 {
                     auto& newCollectable = newObject.addComponent<Collectable>();
+                    newCollectable.type = collectable->type;
                     newCollectable.defaultMat = collectable->defaultMat;
                     newCollectable.collectedMat = collectable->collectedMat;
+                }
+
+                if (auto* animatedVelocity = selectedObject->getComponent<AnimatedVelocity>())
+                {
+                    auto& newAnimatedVelocity = newObject.addComponent<AnimatedVelocity>();
+                    newAnimatedVelocity.enabled = animatedVelocity->enabled;
+                    newAnimatedVelocity.useLocalSpace = animatedVelocity->useLocalSpace;
+                    newAnimatedVelocity.linearBase = animatedVelocity->linearBase;
+                    newAnimatedVelocity.linearAmplitude = animatedVelocity->linearAmplitude;
+                    newAnimatedVelocity.angularBase = animatedVelocity->angularBase;
+                    newAnimatedVelocity.angularAmplitude = animatedVelocity->angularAmplitude;
+                    newAnimatedVelocity.waveMode = animatedVelocity->waveMode;
+                    newAnimatedVelocity.frequency = animatedVelocity->frequency;
+                    newAnimatedVelocity.phase = animatedVelocity->phase;
+                    newAnimatedVelocity.timeScale = animatedVelocity->timeScale;
                 }
 
                 selectedObject = &newObject;

@@ -81,7 +81,7 @@ Object: Platform1_Copy0_Copy0
 
 Object: Platform1_Copy0_Copy0_Copy0
   Position: -115.174, 15.439, -0.293
-  Rotation: -3.34261e-07, 11, 15
+  Rotation: -4.4298e-07, 11, 15
   Scale: 7.8, 2, 5
   Mesh: square-platform
   Material: platformCMYKMaterial
@@ -298,7 +298,7 @@ Object: Star1_Copy0
 
 Object: Platform14
   Position: 9.866, 11.34, 10.36
-  Rotation: 0.000331327, 77.938, 3.002
+  Rotation: 0.000330189, 77.938, 3.002
   Scale: 5, 2, 10
   Mesh: square-platform
   Material: platformCMYKMaterial
@@ -419,7 +419,7 @@ Object: Star5_Copy0_Copy0
 
 Object: Star6
   Position: 183.547, 67.77, 18.299
-  Rotation: 8.08411e-09, -11, 9.99999
+  Rotation: 1.16803e-07, -11, 9.99999
   Scale: 3, 3, 3
   Mesh: gem
   Material: magentaMat
@@ -441,7 +441,7 @@ Object: Platform16
 
 Object: Platform16_Copy0
   Position: 13.004, 24.735, 36.634
-  Rotation: 8.55385e-08, 5, -11
+  Rotation: 1.39103e-07, 5, -11
   Scale: 5, 2, 8
   Mesh: square-platform
   Material: platformCMYKMaterial
@@ -452,7 +452,7 @@ Object: Platform16_Copy0
 
 Object: Platform16_Copy0_Copy0
   Position: 5.804, 27.535, 39.934
-  Rotation: -7.66846e-07, 28, -13
+  Rotation: -1.00859e-06, 28, -13
   Scale: 8, 2, 8
   Mesh: square-platform
   Material: platformCMYKMaterial
@@ -494,7 +494,7 @@ Object: Platform14_Copy0_Copy0
 
 Object: Platform16_Copy0_Copy0_Copy0_Copy0
   Position: -4.296, 36.535, 53.734
-  Rotation: -159.947, -1.981, 180
+  Rotation: -159.947, -1.981, -180
   Scale: 5, 2, 5
   Mesh: square-platform
   Material: platformCMYKMaterial

@@ -99,6 +99,7 @@ namespace engine
 		Mesh* getMesh(Handle<Mesh> handle) const;
 		Mesh* getMesh(const std::string& name) const;
 		Handle<Mesh> getMeshHandle(const std::string& name) const;
+		std::string getMeshName(Handle<Mesh> handle) const;
 
 		Skeleton* getSkeleton(Handle<Skeleton> handle) const;
 		Skeleton* getSkeleton(const std::string& name) const;

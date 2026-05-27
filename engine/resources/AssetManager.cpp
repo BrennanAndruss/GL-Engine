@@ -802,6 +802,19 @@ namespace engine
 		return it->second;
 	}
 
+	std::string AssetManager::getMeshName(Handle<Mesh> handle) const
+	{
+		if (!handle.valid()) return "";
+		for (const auto& entry : _meshes.nameToHandle)
+		{
+			if (entry.second.index == handle.index)
+			{
+				return entry.first;
+			}
+		}
+		return "";
+	}
+
 #pragma endregion
 
 #pragma region Heightmaps

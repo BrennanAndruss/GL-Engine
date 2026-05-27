@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "resources/AssetManager.h"
+#include "scene/components/Components.h"
 
 namespace engine
 {
@@ -29,6 +30,24 @@ namespace engine
 			object->update(deltaTime);
 		}
 
+		// Resolve transforms after component updates so world matrices are fresh
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
+		// Ensure collision objects are synced to the freshly-resolved transforms
+		for (size_t i = 0; i < _objects.size(); ++i)
+		{
+			engine::Object* obj = _objects[i].get();
+			if (!obj) continue;
+			engine::Collider* col = obj->getComponent<engine::Collider>();
+			if (col)
+			{
+				col->update(0.0f);
+			}
+		}
+
 		if (_physics)
 		{
 			_physics->update(deltaTime);
@@ -36,6 +55,11 @@ namespace engine
 
 		// Delete objects marked for deletion
 		cleanupDeleted();
+
+		for (auto& object : _objects)
+		{
+			object->postPhysicsUpdate(deltaTime);
+		}
 
 		// Resolve all dirty transforms recursively once per frame
 		for (auto* root : getRootObjects())
@@ -54,12 +78,23 @@ namespace engine
 			object->update(deltaTime, assets);
 		}
 
+		// Resolve transforms after component updates so world matrices are fresh
+		for (auto* root : getRootObjects())
+		{
+			resolveTransforms(root->transform, glm::mat4(1.0f));
+		}
+
 		if (_physics)
 		{
 			_physics->update(deltaTime);
 		}
 
 		cleanupDeleted();
+
+		for (auto& object : _objects)
+		{
+			object->postPhysicsUpdate(deltaTime);
+		}
 
 		for (auto* root : getRootObjects())
 		{
@@ -116,7 +151,8 @@ namespace engine
 
 	Object& Scene::createObject(const std::string& name)
 	{
-		auto& object = _objects.emplace_back(std::make_unique<Object>(name));
+		_objects.emplace_back(std::make_unique<Object>(name));
+		Object* object = _objects.back().get();
 		object->setScene(this);
 		if (_started)
 		{

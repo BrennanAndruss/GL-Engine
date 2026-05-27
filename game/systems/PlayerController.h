@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <string>
 #include "scene/Transform.h"
 #include "scene/components/Component.h"
 #include "scene/components/CharacterController.h"
@@ -17,6 +18,7 @@ public:
 	float cameraDistance = 4.5f;
 	float sensitivity = 0.1f;
 	float jumpForce = 32.0f;
+	float platformCarryFactor = 1.5f;
 	bool invertMouseMove = false;
 	bool enabled = true;
 	bool hasJumped = false;
@@ -25,6 +27,7 @@ public:
 	
 	void start() override;
 	void update(float deltaTime) override;
+	void postPhysicsUpdate(float deltaTime) override;
 	engine::Animator* animator = nullptr;
 	Handle<engine::AnimationClip> idleClip;
 	Handle<engine::AnimationClip> sprintClip;
@@ -32,6 +35,10 @@ public:
 
 private:
 	engine::CharacterController* _characterController = nullptr;
+	engine::Object* _groundCarrier = nullptr;
+	glm::vec3 _lastGroundCarrierWorldPosition = glm::vec3(0.0f);
+	glm::vec3 _pendingCarrierDelta = glm::vec3(0.0f);
+	std::string _pendingCarrierName;
 
 	float _yaw = 0.0f;
 	float _pitch = 0.0f;

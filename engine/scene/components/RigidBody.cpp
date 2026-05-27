@@ -60,6 +60,9 @@ namespace engine
 			effectiveMass, _collider->isTrigger
 		);
 
+			// Apply friction setting
+			_body->setFriction(friction);
+
 		if (bodyType == BodyType::Kinematic)
 		{
 			_body->setCollisionFlags(
@@ -86,11 +89,15 @@ namespace engine
 	void RigidBody::start()
 	{
 		initializeBody();
+		_lastWorldPosition = owner ? owner->transform.getWorldPosition() : glm::vec3(0.0f);
+		_lastFrameDisplacementWorld = glm::vec3(0.0f);
 	}
 
 	void RigidBody::update(float deltaTime)
 	{
 		if (_physicsDisabled || !_body) return;
+
+		const glm::vec3 previousWorldPosition = owner->transform.getWorldPosition();
 
 		if (bodyType == BodyType::Static || bodyType == BodyType::Kinematic)
 		{
@@ -107,6 +114,8 @@ namespace engine
 			{
 				_body->setActivationState(DISABLE_DEACTIVATION);
 			}
+			_lastFrameDisplacementWorld = owner->transform.getWorldPosition() - _lastWorldPosition;
+			_lastWorldPosition = owner->transform.getWorldPosition();
 			return;
 		}
 
@@ -116,6 +125,8 @@ namespace engine
 		// Sync the engine transform with the physics world transform
 		owner->transform.setPosition(PhysicsSystem::toGlm(t.getOrigin()));
 		owner->transform.setRotation(PhysicsSystem::toGlm(t.getRotation()));
+		_lastFrameDisplacementWorld = owner->transform.getWorldPosition() - previousWorldPosition;
+		_lastWorldPosition = owner->transform.getWorldPosition();
 	}
 
 	void RigidBody::setLinearVelocity(glm::vec3 velocity)

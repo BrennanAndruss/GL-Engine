@@ -12,6 +12,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -27,9 +28,9 @@ namespace engine
 {
     namespace
     {
-        std::string getSceneFilePath(const engine::AppConfig& config)
+        std::string getSceneFilePath(const engine::AppConfig& config, const std::string& sceneName = "scene_objects")
         {
-            return config.assetsDir + "scenes/scene_objects.txt";
+            return config.assetsDir + "scenes/" + sceneName + ".txt";
         }
     }
 
@@ -91,15 +92,25 @@ namespace engine
         updateEditorSelectionFromMouse(scene, _initialObjectCount, _selectedObject);
         ImGui::Begin("Editor");
             
+        
         if (ImGui::Button("Save Scene"))
         {
-            writeObjectsToFile(scene.getObjects(), getSceneFilePath(config), _initialObjectCount, assets);
+            writeObjectsToFile(scene.getObjects(), getSceneFilePath(config, currentSceneName), _initialObjectCount, assets);
         }
         ImGui::SameLine();
         if (ImGui::Button("Load Scene"))
         {
-            readObjectsFromFile(getSceneFilePath(config), scene, assets);
+            readObjectsFromFile(getSceneFilePath(config, currentSceneName), scene, assets);
         }
+
+        if (ImGui::InputText("Scene Name", &currentSceneName))
+        {
+            // Scene name updated, but we won't load until the user clicks "Load Scene"
+        }
+
+
+        
+
         ImGui::Separator();
         drawEditorObjectControls(scene, assets, _initialObjectCount, _selectedObject);
 
@@ -107,9 +118,10 @@ namespace engine
 
         ImGui::End();
 
+        // ----- TRANSFORMS -----
         ImGui::Begin("Transform");
-        if (_selectedObject)
-        {
+        ImGui::SeparatorText("Transform");
+        if (_selectedObject) {
             ImGui::Text("Selected: %s", _selectedObject->name.c_str());
             ImGui::Separator();
 
@@ -140,100 +152,128 @@ namespace engine
                 _selectedObject->transform.setScale(scale);
             }
 
+            ImGui::SeparatorText("Components");
+            // ----- COLLIDER & RIGIDBODY -----
             const bool hasCollider = _selectedObject->getComponent<BoxCollider>() != nullptr;
             const bool hasRigidBody = _selectedObject->getComponent<RigidBody>() != nullptr;
-            bool physicsCollisionChecked = hasCollider && hasRigidBody;
-            ImGui::BeginDisabled(physicsCollisionChecked);
-            if (ImGui::Checkbox("Physics Collision", &physicsCollisionChecked) && physicsCollisionChecked)
-            {
-                if (!hasCollider)
-                {
-                    _selectedObject->addComponent<BoxCollider>();
-                }
-
-                if (!hasRigidBody)
-                {
-                    _selectedObject->addComponent<RigidBody>();
-                }
-            }
-            ImGui::EndDisabled();
-
             const bool hasCollectable = _selectedObject->getComponent<Collectable>() != nullptr;
-            bool collectableChecked = hasCollectable;
-            ImGui::BeginDisabled(hasCollectable);
-            if (ImGui::Checkbox("Collectable", &collectableChecked) && collectableChecked)
-            {
-                if (!hasCollider)
-                {
-                    auto& collider = _selectedObject->addComponent<BoxCollider>();
-                    collider.isTrigger = true;
-                }
+            const bool hasAnimatedVelocity = _selectedObject->getComponent<AnimatedVelocity>() != nullptr;
 
-                auto& collectable = _selectedObject->addComponent<Collectable>();
-                if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+            if (!hasCollider || !hasRigidBody) {
+            
+                ImGui::BeginDisabled(hasCollectable);
+                if (ImGui::Button("Add Physics Collision"))
                 {
-                    collectable.defaultMat = meshRenderer->material;
-                    collectable.collectedMat = assets.getDefaultMaterial();
-                }
-                else
-                {
-                    collectable.defaultMat = assets.getDefaultMaterial();
-                    collectable.collectedMat = assets.getDefaultMaterial();
-                }
-            }
-            ImGui::EndDisabled();
-
-            // Collectable color selection (available when object has collectable component)
-            if (auto* collectable = _selectedObject->getComponent<Collectable>())
-            {
-                ImGui::Indent();
-                int selectedType = static_cast<int>(collectable->type);
-                const char* collectableTypes[] = { "Cyan", "Magenta", "Yellow" };
-                if (ImGui::Combo("Collectable Color", &selectedType, collectableTypes, IM_ARRAYSIZE(collectableTypes)))
-                {
-                    collectable->type = static_cast<Collectable::Type>(selectedType);
-                    Handle<engine::Material> colorMat = assets.getDefaultMaterial();
-                    if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+                    if (!hasCollider)
                     {
-                        switch (selectedType)
-                        {
-                        case 0: // Cyan
-                            colorMat = assets.getMaterialHandle("cyanMat");
-                            break;
-                        case 1: // Magenta
-                            colorMat = assets.getMaterialHandle("magentaMat");
-                            break;
-                        case 2: // Yellow
-                            colorMat = assets.getMaterialHandle("yellowMat");
-                            break;
-                        default:
-                            break;
-                        }
-                        
-                        collectable->defaultMat = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
-                        meshRenderer->material = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
+                        auto& collider = _selectedObject->addComponent<BoxCollider>();
+                        collider.center = glm::vec3(0.0f);
+                        collider.size = glm::vec3(1.0f);
+                        collider.isTrigger = false;
+                        collider.rebuild();
+                    }
+
+                    if (!hasRigidBody)
+                    {
+                        auto& rigidBody = _selectedObject->addComponent<RigidBody>();
+                        rigidBody.setBodyType(RigidBody::BodyType::Static);
                     }
                 }
-                ImGui::Unindent();
+                ImGui::EndDisabled();
+            }
+            if (!hasCollectable) {
+                if (ImGui::Button("Add Collectable"))
+                {
+                    _selectedObject->addComponent<Collectable>();
+                }
+            }
+            if (!hasAnimatedVelocity) {
+                if (ImGui::Button("Add Animated Velocity"))
+                {
+                    _selectedObject->addComponent<AnimatedVelocity>();
+                }
             }
 
-            
 
-            if (auto* rigidBody = _selectedObject->getComponent<RigidBody>())
+            if (hasCollider && hasRigidBody)
             {
-                const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
-                int selectedType = static_cast<int>(rigidBody->getBodyType());
-                if (ImGui::Combo("RigidBody Type", &selectedType, bodyTypes, IM_ARRAYSIZE(bodyTypes)))
+                ImGui::SeparatorText("Physics Collision");
+                if (auto* rigidBody = _selectedObject->getComponent<RigidBody>())
                 {
-                    rigidBody->setBodyType(static_cast<RigidBody::BodyType>(selectedType));
-                }
+                    const char* bodyTypes[] = { "Static", "Kinematic", "Dynamic" };
+                    int selectedType = static_cast<int>(rigidBody->getBodyType());
+                    if (ImGui::Combo("RigidBody Type", &selectedType, bodyTypes, IM_ARRAYSIZE(bodyTypes)))
+                    {
+                        rigidBody->setBodyType(static_cast<RigidBody::BodyType>(selectedType));
+                    }
 
-                if (rigidBody->getBodyType() == RigidBody::BodyType::Dynamic)
+                    if (rigidBody->getBodyType() == RigidBody::BodyType::Dynamic)
+                    {
+                        ImGui::DragFloat("Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
+                    }
+                }
+  
+            }
+
+            if (hasCollectable) {
+                ImGui::SeparatorText("Collectable");
+                if (auto* collectable = _selectedObject->getComponent<Collectable>())
                 {
-                    ImGui::DragFloat("Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
+                    int selectedType = static_cast<int>(collectable->type);
+                    const char* collectableTypes[] = { "Cyan", "Magenta", "Yellow" };
+                    if (ImGui::Combo("Collectable Type", &selectedType, collectableTypes, IM_ARRAYSIZE(collectableTypes)))
+                    {
+                        collectable->type = static_cast<Collectable::Type>(selectedType);
+                        Handle<engine::Material> colorMat = assets.getDefaultMaterial();
+                        if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+                        {
+                            switch (selectedType)
+                            {
+                            case 0: // Cyan
+                                colorMat = assets.getMaterialHandle("cyanMat");
+                                break;
+                            case 1: // Magenta
+                                colorMat = assets.getMaterialHandle("magentaMat");
+                                break;
+                            case 2: // Yellow
+                                colorMat = assets.getMaterialHandle("yellowMat");
+                                break;
+                            default:
+                                break;
+                            }
+                            
+                            collectable->defaultMat = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
+                            meshRenderer->material = colorMat.valid() ? colorMat : assets.getDefaultMaterial();
+                        }
+                    }
                 }
             }
-            
+
+            if (hasAnimatedVelocity)
+            {
+                
+
+                ImGui::SeparatorText("Animated Velocity");
+                auto* animatedVelocity = _selectedObject->getComponent<AnimatedVelocity>();
+                ImGui::Checkbox("Enabled", &animatedVelocity->enabled);
+                ImGui::Checkbox("Use Local Space", &animatedVelocity->useLocalSpace);
+
+                int waveMode = static_cast<int>(animatedVelocity->waveMode);
+                const char* waveModes[] = { "Constant", "Sine", "Triangle" };
+                if (ImGui::Combo("Wave Mode", &waveMode, waveModes, IM_ARRAYSIZE(waveModes)))
+                {
+                    animatedVelocity->waveMode = static_cast<AnimatedVelocity::WaveMode>(waveMode);
+                }
+
+                ImGui::DragFloat("Frequency (Hz)", &animatedVelocity->frequency, 0.05f, 0.0f, 20.0f);
+                ImGui::DragFloat("Phase", &animatedVelocity->phase, 0.05f, -6.283185f, 6.283185f);
+                ImGui::DragFloat("Time Scale", &animatedVelocity->timeScale, 0.05f, -10.0f, 10.0f);
+                ImGui::DragFloat3("Linear Base", &animatedVelocity->linearBase.x, 0.05f);
+                ImGui::DragFloat3("Linear Amplitude", &animatedVelocity->linearAmplitude.x, 0.05f);
+                ImGui::DragFloat3("Angular Base", &animatedVelocity->angularBase.x, 0.5f);
+                ImGui::DragFloat3("Angular Amplitude", &animatedVelocity->angularAmplitude.x, 0.5f);
+            }
+       
         }
         else
         {
@@ -292,7 +332,8 @@ namespace engine
                 // mesh & material
                 if (auto* meshRenderer = object->getComponent<MeshRenderer>())
                 {                    
-                    file << "  Mesh: " << (meshRenderer->mesh.valid() ? std::to_string(meshRenderer->mesh.index) : std::string("invalid")) << "\n";
+                    const std::string meshName = assets.getMeshName(meshRenderer->mesh);
+                    file << "  Mesh: " << (!meshName.empty() ? meshName : std::string("invalid")) << "\n";
                     const std::string materialName = assets.getMaterialName(meshRenderer->material);
                     file << "  Material: " << (!materialName.empty() ? materialName : std::string("invalid")) << "\n";
                     if (auto* material = assets.getMaterial(meshRenderer->material))
@@ -315,6 +356,21 @@ namespace engine
                 if (auto* collectable = object->getComponent<Collectable>())
                 {
                     file << "  Collectable: type=" << static_cast<int>(collectable->type) << "\n";
+                }
+                if (auto* animatedVelocity = object->getComponent<AnimatedVelocity>())
+                {
+                    file << "  AnimatedVelocity: "
+                         << "enabled=" << (animatedVelocity->enabled ? 1 : 0)
+                         << " useLocalSpace=" << (animatedVelocity->useLocalSpace ? 1 : 0)
+                         << " waveMode=" << static_cast<int>(animatedVelocity->waveMode)
+                         << " frequency=" << animatedVelocity->frequency
+                         << " phase=" << animatedVelocity->phase
+                         << " timeScale=" << animatedVelocity->timeScale
+                         << " linearBase=" << animatedVelocity->linearBase.x << "," << animatedVelocity->linearBase.y << "," << animatedVelocity->linearBase.z
+                         << " linearAmplitude=" << animatedVelocity->linearAmplitude.x << "," << animatedVelocity->linearAmplitude.y << "," << animatedVelocity->linearAmplitude.z
+                         << " angularBase=" << animatedVelocity->angularBase.x << "," << animatedVelocity->angularBase.y << "," << animatedVelocity->angularBase.z
+                         << " angularAmplitude=" << animatedVelocity->angularAmplitude.x << "," << animatedVelocity->angularAmplitude.y << "," << animatedVelocity->angularAmplitude.z
+                         << "\n";
                 }
                 file << "\n";
                 if (!file.good())
@@ -400,6 +456,18 @@ namespace engine
 
                 bool isCollectable = false;
                 int collectableType = 0;
+
+                bool hasAnimatedVelocity = false;
+                bool animatedVelocityEnabled = true;
+                bool animatedVelocityUseLocalSpace = false;
+                AnimatedVelocity::WaveMode animatedVelocityWaveMode = AnimatedVelocity::WaveMode::Sine;
+                float animatedVelocityFrequency = 1.0f;
+                float animatedVelocityPhase = 0.0f;
+                float animatedVelocityTimeScale = 1.0f;
+                glm::vec3 animatedVelocityLinearBase{0.0f};
+                glm::vec3 animatedVelocityLinearAmplitude{0.0f};
+                glm::vec3 animatedVelocityAngularBase{0.0f};
+                glm::vec3 animatedVelocityAngularAmplitude{0.0f};
             };
 
             auto flushObject = [&](const LoadedObject& data)
@@ -469,6 +537,21 @@ namespace engine
                         }
                     }
                 }
+
+                if (data.hasAnimatedVelocity)
+                {
+                    auto& animatedVelocity = object.addComponent<AnimatedVelocity>();
+                    animatedVelocity.enabled = data.animatedVelocityEnabled;
+                    animatedVelocity.useLocalSpace = data.animatedVelocityUseLocalSpace;
+                    animatedVelocity.waveMode = data.animatedVelocityWaveMode;
+                    animatedVelocity.frequency = data.animatedVelocityFrequency;
+                    animatedVelocity.phase = data.animatedVelocityPhase;
+                    animatedVelocity.timeScale = data.animatedVelocityTimeScale;
+                    animatedVelocity.linearBase = data.animatedVelocityLinearBase;
+                    animatedVelocity.linearAmplitude = data.animatedVelocityLinearAmplitude;
+                    animatedVelocity.angularBase = data.animatedVelocityAngularBase;
+                    animatedVelocity.angularAmplitude = data.animatedVelocityAngularAmplitude;
+                }
             };
 
             std::unique_ptr<LoadedObject> currentObject;
@@ -509,9 +592,22 @@ namespace engine
                     const std::string value = line.substr(8);
                     if (value != "invalid")
                     {
-                        currentObject->mesh.index = static_cast<std::size_t>(std::stoull(value));
-                        if (assets.getMesh(currentObject->mesh))
+                        Handle<Mesh> meshHandle = assets.getMeshHandle(value);
+                        if (!meshHandle.valid())
                         {
+                            try
+                            {
+                                meshHandle.index = static_cast<std::size_t>(std::stoull(value));
+                            }
+                            catch (const std::exception&)
+                            {
+                                meshHandle = {};
+                            }
+                        }
+
+                        if (assets.getMesh(meshHandle))
+                        {
+                            currentObject->mesh = meshHandle;
                             currentObject->hasMesh = true;
                         }
                     }
@@ -588,7 +684,8 @@ namespace engine
                     currentObject->hasRigidBody = true;
                     currentObject->rigidBodyType = static_cast<RigidBody::BodyType>(bodyType);
                     currentObject->rigidBodyMass = mass;
-                } else if (line.rfind("  Collectable: ", 0) == 0)
+                }
+                else if (line.rfind("  Collectable: ", 0) == 0)
                 {
                     const std::string value = line.substr(15);
                     const std::size_t typePrefix = value.find("type=");
@@ -605,6 +702,102 @@ namespace engine
                         }
                     }
                     currentObject->isCollectable = true;
+                }
+                else if (line.rfind("  AnimatedVelocity: ", 0) == 0)
+                {
+                    const std::string value = line.substr(20);
+
+                    auto readToken = [&value](const std::string& key) -> std::string
+                    {
+                        const std::string prefix = key + "=";
+                        const std::size_t begin = value.find(prefix);
+                        if (begin == std::string::npos)
+                        {
+                            return "";
+                        }
+
+                        const std::size_t tokenStart = begin + prefix.size();
+                        const std::size_t tokenEnd = value.find(' ', tokenStart);
+                        return value.substr(tokenStart, tokenEnd == std::string::npos ? std::string::npos : tokenEnd - tokenStart);
+                    };
+
+                    auto parseBoolToken = [&readToken](const std::string& key, bool defaultValue) -> bool
+                    {
+                        const std::string token = readToken(key);
+                        if (token.empty())
+                        {
+                            return defaultValue;
+                        }
+                        return token == "1" || token == "true";
+                    };
+
+                    auto parseFloatToken = [&readToken](const std::string& key, float defaultValue) -> float
+                    {
+                        const std::string token = readToken(key);
+                        if (token.empty())
+                        {
+                            return defaultValue;
+                        }
+
+                        try
+                        {
+                            return std::stof(token);
+                        }
+                        catch (const std::exception&)
+                        {
+                            return defaultValue;
+                        }
+                    };
+
+                    auto parseIntToken = [&readToken](const std::string& key, int defaultValue) -> int
+                    {
+                        const std::string token = readToken(key);
+                        if (token.empty())
+                        {
+                            return defaultValue;
+                        }
+
+                        try
+                        {
+                            return std::stoi(token);
+                        }
+                        catch (const std::exception&)
+                        {
+                            return defaultValue;
+                        }
+                    };
+
+                    auto parseVec3Token = [&readToken](const std::string& key, const glm::vec3& defaultValue) -> glm::vec3
+                    {
+                        const std::string token = readToken(key);
+                        if (token.empty())
+                        {
+                            return defaultValue;
+                        }
+
+                        std::stringstream stream(token);
+                        float x = 0.0f;
+                        float y = 0.0f;
+                        float z = 0.0f;
+                        char comma = ',';
+                        if (!(stream >> x >> comma >> y >> comma >> z))
+                        {
+                            return defaultValue;
+                        }
+                        return glm::vec3(x, y, z);
+                    };
+
+                    currentObject->hasAnimatedVelocity = true;
+                    currentObject->animatedVelocityEnabled = parseBoolToken("enabled", true);
+                    currentObject->animatedVelocityUseLocalSpace = parseBoolToken("useLocalSpace", false);
+                    currentObject->animatedVelocityWaveMode = static_cast<AnimatedVelocity::WaveMode>(parseIntToken("waveMode", static_cast<int>(AnimatedVelocity::WaveMode::Sine)));
+                    currentObject->animatedVelocityFrequency = parseFloatToken("frequency", 1.0f);
+                    currentObject->animatedVelocityPhase = parseFloatToken("phase", 0.0f);
+                    currentObject->animatedVelocityTimeScale = parseFloatToken("timeScale", 1.0f);
+                    currentObject->animatedVelocityLinearBase = parseVec3Token("linearBase", glm::vec3(0.0f));
+                    currentObject->animatedVelocityLinearAmplitude = parseVec3Token("linearAmplitude", glm::vec3(0.0f));
+                    currentObject->animatedVelocityAngularBase = parseVec3Token("angularBase", glm::vec3(0.0f));
+                    currentObject->animatedVelocityAngularAmplitude = parseVec3Token("angularAmplitude", glm::vec3(0.0f));
                 }
             }
 

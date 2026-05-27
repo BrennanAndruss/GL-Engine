@@ -25,6 +25,9 @@ namespace engine
 		float mass = 1.0f;
 		BodyType bodyType = BodyType::Static;
 
+		// Surface friction applied to the body when created
+		float friction = 0.8f;
+
 		void start() override;
 		void update(float deltaTime) override;
 		void setBodyType(BodyType type);
@@ -32,6 +35,7 @@ namespace engine
 		
 		void setLinearVelocity(glm::vec3 velocity);
 		glm::vec3 getLinearVelocity() const;
+		glm::vec3 getLastFrameDisplacementWorld() const { return _lastFrameDisplacementWorld; }
 		btRigidBody* getBody() const { return _body; }
 		void disablePhysics();
 
@@ -43,5 +47,7 @@ namespace engine
 		btRigidBody* _body = nullptr;
 		bool _bodyDirty = true;
 		bool _physicsDisabled = false;
+		glm::vec3 _lastWorldPosition = glm::vec3(0.0f);
+		glm::vec3 _lastFrameDisplacementWorld = glm::vec3(0.0f);
 	};
 }

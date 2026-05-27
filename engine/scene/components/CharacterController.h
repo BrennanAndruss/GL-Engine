@@ -29,8 +29,12 @@ namespace engine
 		void fitToMesh(const engine::Mesh& mesh);
 		void start() override;
 		void update(float deltaTime) override;
+		void postPhysicsUpdate(float deltaTime) override;
 
 		void move(glm::vec3 delta);
+		void moveWorldOffset(const glm::vec3& delta);
+		glm::vec3 getCurrentSyncedWorldPosition() const { return _currentSyncedWorldPosition; }
+		glm::vec3 getPreviousSyncedWorldPosition() const { return _previousSyncedWorldPosition; }
 		bool isOnGround() const;
 		bool canJump() const;
 		void jump(glm::vec3 direction = glm::vec3(0.0f, 1.0f, 0.0f));
@@ -43,5 +47,8 @@ namespace engine
 
 		glm::vec3 _walkDirection = glm::vec3(0.0f);
 		bool _justTeleported = false;
+		glm::vec3 _currentSyncedWorldPosition = glm::vec3(0.0f);
+		glm::vec3 _previousSyncedWorldPosition = glm::vec3(0.0f);
+		glm::vec3 _postPhysicsSyncedWorldPosition = glm::vec3(0.0f);
 	};
 }

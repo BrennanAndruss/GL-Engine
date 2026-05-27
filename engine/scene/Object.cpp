@@ -1,6 +1,7 @@
 #include "scene/Object.h"
 
 #include "resources/AssetManager.h"
+#include "scene/components/Components.h"
 
 namespace engine
 {
@@ -20,6 +21,25 @@ namespace engine
 		for (auto& component : _components)
 		{
 			component->update(deltaTime);
+		}
+	}
+
+	void Object::postPhysicsUpdate(float deltaTime)
+	{
+		for (auto& component : _components)
+		{
+			if (dynamic_cast<CharacterController*>(component.get()))
+			{
+				component->postPhysicsUpdate(deltaTime);
+			}
+		}
+
+		for (auto& component : _components)
+		{
+			if (!dynamic_cast<CharacterController*>(component.get()))
+			{
+				component->postPhysicsUpdate(deltaTime);
+			}
 		}
 	}
 

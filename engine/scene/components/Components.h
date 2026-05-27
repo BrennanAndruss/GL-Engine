@@ -8,3 +8,4 @@
 #include "scene/components/HeightmapCollider.h"
 #include "scene/components/Light.h"
 #include "scene/components/Camera.h"
+#include "scene/components/AnimatedVelocity.h"
