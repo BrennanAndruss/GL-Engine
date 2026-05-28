@@ -72,6 +72,13 @@ void MyGame::init(engine::AssetManager& assets,
     "shaders/terrain.frag"
 	);	
 
+	// grass shader
+	Handle<engine::Shader> grassShader = assets.loadShader(
+	"grassShader",
+	"shaders/grass.vert",
+	"shaders/grass.frag"
+	);
+
 
 	//loading textures
 	std::cout << "Loading textures...\n";
@@ -108,9 +115,13 @@ void MyGame::init(engine::AssetManager& assets,
 	// Splatmap Texture
 	Handle<engine::Texture> terrainSplat0 =
     assets.loadTexture("terrainSplat0", "textures/splatmaps/splatmap0.png", true); 
+
 	Handle<engine::Texture> terrainGrass =
 		assets.loadTexture("terrainGrass", "textures/terrain/grass.png", true);
 		std::cout << "terrainGrass handle index: " << terrainGrass.index << "\n";
+
+	// Using Terrain Grass Texture for Grass Instances <Can change later on> 
+	Handle<engine::Texture> grassBladeTex = terrainGrass; 
 
 	Handle<engine::Texture> terrainSand =
 		assets.loadTexture("terrainSand", "textures/terrain/sand.png", true);
@@ -480,20 +491,63 @@ void MyGame::init(engine::AssetManager& assets,
 
 	// pointLightCenter = &scene.createObject("PointLightCenter");
 	// pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
-
+	// ---- Terrain Object ----
 	{
 		auto& terrain = scene.createObject("Floor");
 
 		auto& collider = terrain.addComponent<engine::HeightmapCollider>();
 		collider.heightmap = heightmap;
 		collider.planeLen = planeLen;
-
 		// TERRAIN MATERIAL
 		auto& meshRenderer = terrain.addComponent<engine::MeshRenderer>();
 		meshRenderer.mesh = terrainMesh;
 		meshRenderer.material = terrainMat;
 	}
+	// ---- Grass Object ----
+	{
+		auto& grassObj = scene.createObject("GrassField");
 
+		grassRenderer = &grassObj.addComponent<engine::GrassRenderer>();
+		grassRenderer->shader = grassShader;
+		grassRenderer->texture = grassBladeTex;
+		grassRenderer->heightmap = heightmap;
+		grassRenderer->terrainPlaneLen = planeLen;
+		// Keeping track of player position --> Chunking State Variables 
+		grassRenderer->centerPosition = cube->transform.getPosition();
+		grassRenderer->spawnRadius = 400.0f;
+		grassRenderer->usePatchStreaming = true;
+		// Grass Patches
+		grassRenderer->patchSize = 25.0f;
+		grassRenderer->patchRadius = 2;
+		grassRenderer->bladesPerPatch = 2500;
+		grassRenderer->reloadDistance = 25.0f;
+		// Grass Mesh Data
+		grassRenderer->bladeCount = 100000;
+		grassRenderer->minHeight = 0.3f;
+		grassRenderer->maxHeight = 0.8f;
+		grassRenderer->minWidth = 0.05f;
+		grassRenderer->maxWidth = 0.1f;
+		grassRenderer->maxBend = 0.84f;
+
+		// Wind Simulation Variables
+		grassRenderer->windDirection = glm::normalize(glm::vec2(1.0f, 0.3f));
+		grassRenderer->windStrength = 0.95f;
+		grassRenderer->windSpeed = 1.2f;
+
+		// Splatmapping Filtering 
+		grassRenderer->splatmap = terrainSplat0;
+		grassRenderer->useSplatmapPlacement = true;
+		grassRenderer->minGrassSplatWeight = 0.35f;
+		grassRenderer->maxPlacementAttemptsMultiplier = 3;
+		grassRenderer->setSplatTextureCpu(assets.getTexture(terrainSplat0));
+
+		// Clumping Noise
+		grassRenderer->useDensityNoise = true;
+		grassRenderer->densityNoiseScale = 0.025f; // higher value small noisy clumps
+		grassRenderer->densityNoiseStrength = 0.95f;
+
+	}
+	// ---- Water Plane Object ----
 	{
 		auto& tempWaterPlane = scene.createObject("TempWaterPlane");
 		tempWaterPlane.transform.setPosition(glm::vec3(0.0f, 8.0f, 0.0f));
@@ -582,6 +636,11 @@ void MyGame::update(float deltaTime)
 			}
 			
 		}
+	}
+	if (cube && grassRenderer)
+	{
+		const glm::vec3 playerPos = cube->transform.getPosition();
+		grassRenderer->updateStreaming(playerPos);
 	}
 
 	if (engine::Input::isKeyDown(GLFW_KEY_C)) _collectedCyan += 0.002f;

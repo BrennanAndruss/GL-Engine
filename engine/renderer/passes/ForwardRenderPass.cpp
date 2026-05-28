@@ -17,6 +17,7 @@
 #include "scene/Scene.h"
 #include "scene/components/Animator.h"
 #include "scene/components/MeshRenderer.h"
+#include "scene/components/GrassRenderer.h"
 
 namespace engine
 {
@@ -131,6 +132,10 @@ namespace engine
 				// std::cout << "Culled " << object->name << "\n";
 				return;
 			}
+		}
+		if (auto* grass = object->getComponent<GrassRenderer>())
+		{
+			grass->draw(assets, frustum, Time::time());
 		}
 
 		// Recurse into children
