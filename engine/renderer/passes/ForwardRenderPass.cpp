@@ -203,8 +203,8 @@ namespace engine
 			shader->setFloat("u_waveHeight", 0.35f);
 			shader->setFloat("u_refractionStrength", 0.01f);
 			shader->setFloat("u_depthScale", 0.50f);
-			shader->setVec3("u_shallowColor", glm::vec3(0.4f, 0.914f, 0.98f));
-			shader->setVec3("u_deepColor", glm::vec3(0.0627f, 0.2196f, 0.91f));
+			shader->setVec3("u_shallowColor", glm::vec3(0.3f, 0.66f, 0.9f));
+			shader->setVec3("u_deepColor", glm::vec3(0.24f, 0.48f, 0.81f));
 			shader->setFloat("u_terrainPlaneLen", mat->terrainPlaneLen);
 			shader->setFloat("u_terrainHeightScale", mat->terrainHeightScale);
 

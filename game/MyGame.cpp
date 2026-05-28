@@ -302,6 +302,14 @@ void MyGame::init(engine::AssetManager& assets,
 	float planeLen = 500.0f;
 	Handle<engine::Mesh> terrainMesh = assets.createHeightmapMesh("terrain", terrainHeightmap, planeRes, planeLen);
 
+	//planeRes = 1;
+	//planeLen = 3000.0f;
+	//Handle<engine::Mesh> floorMesh = assets.createPlaneMesh("floor", planeRes, planeLen);
+
+	int waterPlaneRes = 256;
+	float waterPlaneLen = 1000.0f;
+	Handle<engine::Mesh> waterMesh = assets.createPlaneMesh("water", waterPlaneRes, waterPlaneLen);
+
 	std::cout << "Loading materials...\n";
 	Handle<engine::Material> defaultMat = assets.getDefaultMaterial();
 	auto* mat = assets.getMaterial(defaultMat);
@@ -479,7 +487,7 @@ void MyGame::init(engine::AssetManager& assets,
 	// pointLightCenter->transform.setPosition(glm::vec3(0.0f, 3.5f, -5.0f));
 	// ---- Terrain Object ----
 	{
-		auto& terrain = scene.createObject("Floor");
+		auto& terrain = scene.createObject("Terrain");
 
 		auto& collider = terrain.addComponent<engine::HeightmapCollider>();
 		collider.heightmap = heightmap;
@@ -489,6 +497,14 @@ void MyGame::init(engine::AssetManager& assets,
 		meshRenderer.mesh = terrainMesh;
 		meshRenderer.material = terrainMat;
 	}
+
+	//{
+	//	auto& floor = scene.createObject("Floor");
+
+	//	auto& mr = floor.addComponent<engine::MeshRenderer>();
+	//	mr.mesh = floorMesh;
+	//}
+
 	// ---- Grass Object ----
 	{
 		auto& grassObj = scene.createObject("GrassField");
@@ -536,11 +552,12 @@ void MyGame::init(engine::AssetManager& assets,
 	// ---- Water Plane Object ----
 	{
 		auto& tempWaterPlane = scene.createObject("TempWaterPlane");
-		tempWaterPlane.transform.setPosition(glm::vec3(0.0f, 8.0f, 0.0f));
-		tempWaterPlane.transform.setScale(glm::vec3(5000.0f, 1.0f, 5000.0f));
+		tempWaterPlane.transform.setPosition(glm::vec3(0.0f, 8.5f, 0.0f));
+		// tempWaterPlane.transform.setScale(glm::vec3(5000.0f, 1.0f, 5000.0f));
 
 		auto& mr = tempWaterPlane.addComponent<engine::MeshRenderer>();
-		mr.mesh = assets.loadMesh("waterPlane", "models/cube.obj");
+		mr.mesh = waterMesh;
+		// mr.mesh = assets.loadMesh("waterPlane", "models/cube.obj");
 		
 		Handle<engine::Material> waterMat = assets.loadMaterial("waterMat");
 		auto* matPtr = assets.getMaterial(waterMat);
