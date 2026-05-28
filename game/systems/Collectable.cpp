@@ -92,7 +92,7 @@ void Collectable::onCollected()
 	// Trigger game effects
 	if (auto* game = MyGame::getActiveGame())
 	{
-		game->onCollectableCollected();
+		game->onCollectableCollected(static_cast<int>(type));
 	}
 
 	// to-do: hide collectable

@@ -184,6 +184,92 @@ void MyGame::init(engine::AssetManager& assets,
 
 	cubeMesh = assets.loadMesh("cube", "models/cube.obj");
 	platformMesh = assets.loadMeshAssimp("square-platform", "models/square-platform.fbx");
+
+	// Load tree models from assets/models/trees
+	Handle<engine::Mesh> tree_1;
+	Handle<engine::Mesh> tree_2;
+	std::vector<Handle<engine::Mesh>> tree_3Meshes;
+	try {
+		Handle<engine::Texture> tree1_texture = assets.loadTexture("tree1_diffuse", "textures/trees/tree-maple-D.jpeg", true);
+		tree_1 = assets.loadMeshAssimp("tree1", "models/trees/tree-maple-low-poly-Anim.fbx");
+		if (auto* mat = assets.getMaterial(assets.loadMaterial("tree1Mat")))
+		{
+			mat->shader = assets.getDefaultShader();
+			mat->ambient = glm::vec3(0.2f);
+			mat->diffuse = glm::vec3(0.8f);
+			mat->specular = glm::vec3(0.5f);
+			mat->shininess = 16.0f;
+			mat->difTex = tree1_texture;
+			mat->specTex = defaultGrayTex;
+		}
+		else
+		{
+			std::cerr << "Failed to get material for tree1\n";
+		}
+		
+
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to load tree_1, falling back to cube: " << e.what() << "\n";
+		tree_1 = cubeMesh;
+		
+	}
+
+	// tree 2
+	try {
+		Handle<engine::Texture> tree2_texture = assets.loadTexture("tree2_diffuse", "textures/trees/PP_Texture_256.png", true);
+		tree_2 = assets.loadMeshAssimp("tree2", "models/trees/PP_Tree_winding_01.fbx");
+		if (auto* mat = assets.getMaterial(assets.loadMaterial("tree2Mat")))
+		{
+			mat->shader = assets.getDefaultShader();
+			mat->ambient = glm::vec3(0.2f);
+			mat->diffuse = glm::vec3(0.8f);
+			mat->specular = glm::vec3(0.5f);
+			mat->shininess = 16.0f;
+			mat->difTex = tree2_texture;
+			mat->specTex = defaultGrayTex;
+		}
+		else
+		{
+			std::cerr << "Failed to get material for tree2\n";
+		}
+		
+
+	} catch (const std::exception& e) {
+		std::cerr << "Failed to load tree_2, falling back to cube: " << e.what() << "\n";
+		tree_2 = cubeMesh;
+		
+	}
+
+	// tree 3
+	try
+	{
+		Handle<engine::Texture> tree3_texture = assets.loadTexture("tree3_diffuse", "textures/trees/Evergreen_Geometry_0801193826_texture.png", true);
+		tree_3Meshes = assets.loadModelMeshesAssimp("tree3", "models/trees/Evergreen_Geometry_0801193826_texture.fbx");
+		for (std::size_t i = 0; i < tree_3Meshes.size(); ++i)
+		{
+			if (auto* mat = assets.getMaterial(assets.loadMaterial("tree3Mat" + std::to_string(i))))
+			{
+				mat->shader = assets.getDefaultShader();
+				mat->ambient = glm::vec3(0.2f);
+				mat->diffuse = glm::vec3(0.8f);
+				mat->specular = glm::vec3(0.5f);
+				mat->shininess = 16.0f;
+				mat->difTex = tree3_texture;
+				mat->specTex = defaultGrayTex;
+			}
+			else
+			{
+				std::cerr << "Failed to get material for tree3 mesh " << i << "\n";
+			}
+		}
+
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Failed to load tree_3, falling back to cube: " << e.what() << "\n";
+		tree_3Meshes.clear();
+	}
+	// character mesh and animations
 	Handle<engine::Mesh> sprintMesh;
 	Handle<engine::Skeleton> sprintSkeleton;
 	Handle<engine::AnimationClip> idleClip;
@@ -491,8 +577,8 @@ void MyGame::update(float deltaTime)
 		_colorRestorePass->cyan = std::min(_collectedCyan, 1.0f);
 		_colorRestorePass->magenta = std::min(_collectedMagenta, 1.0f);
 		_colorRestorePass->yellow = std::min(_collectedYellow, 1.0f);
-		const float restoredAmount = (_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f;
-		_colorRestorePass->key = std::max(0.0f, std::min(1.0f, 1.0f - restoredAmount));
+		//const float restoredAmount = (_collectedCyan + _collectedMagenta + _collectedYellow) / 3.0f;
+		//_colorRestorePass->key = std::max(0.0f, std::min(1.0f, 1.0f - restoredAmount));
 	}
 }
 
