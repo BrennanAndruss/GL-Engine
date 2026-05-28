@@ -37,5 +37,7 @@ namespace engine
 			const AssetManager& assets, const Frustum& frustum,
 			const Camera* camera, bool waterOnly = false,
 			const Framebuffer* sceneCopy = nullptr);
+		void drawGrass(Object* object, const Scene& scene,
+			const AssetManager& assets, const Frustum& frustum);
 	};
 }
