@@ -178,7 +178,6 @@ namespace engine
 				irradianceMap->bindToUnit(shader->getUniform("irradianceMap"), 10);
 				shader->setInt("useIrradianceMap", 1);
 				shader->setFloat("irradianceStrength", 1.2f);
-				shader->setFloat("irradianceStrength", 1.2f);
 			}
 		}
 		else
