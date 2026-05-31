@@ -6,6 +6,7 @@
 #include "renderer/FullscreenQuad.h"
 #include "renderer/resources/Shader.h"
 #include "renderer/resources/Texture.h"
+#include "renderer/resources/Cubemap.h"
 #include "resources/AssetManager.h"
 #include "scene/Scene.h"
 
@@ -79,6 +80,20 @@ namespace engine
 
 		shader->setInt("numLights", static_cast<int>(scene.getLights().size()));
 		shader->setInt("debugView", debugView);
+
+		if (scene.hasIrradianceMap())
+		{
+			auto* irradianceMap = assets.getCubemap(scene.getIrradianceMap());
+			assert(irradianceMap && "No irradiance map found.");
+
+			irradianceMap->bindToUnit(shader->getUniform("irradianceMap"), 10);
+			shader->setInt("useIrradianceMap", 1);
+			shader->setFloat("irradianceStrength", 1.2f);
+		}
+		else
+		{
+			shader->setInt("useIrradianceMap", 0);
+		}
 
 		FullscreenQuad::getInstance().draw();
 
