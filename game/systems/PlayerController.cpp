@@ -161,7 +161,11 @@ void PlayerController::update(float deltaTime)
 	
 
 	// Mouse look and click
-	glm::vec2 mouseDelta = engine::Input::getMouseDelta();
+	glm::vec2 mouseDelta(0.0f);
+	if (engine::Input::isMouseTrapped())
+	{
+    	mouseDelta = engine::Input::getMouseDelta();
+	}
 	if (invertMouseMove) mouseDelta.y *= -1.0f;
 
 	//if (engine::Input::isMouseDown(GLFW_MOUSE_BUTTON_LEFT))

@@ -20,5 +20,6 @@ namespace engine
 		virtual void update(float deltaTime) = 0;
 		virtual void setEditorMode(bool editorActive, Scene& scene) {}
 		virtual void setEditorSelectionLock(bool locked, Scene& scene) {}
+		virtual void drawUI() {}
 	};
 }
