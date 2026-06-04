@@ -63,35 +63,31 @@ namespace engine
         while (!_window.shouldClose())
         {
             Time::update();
+
             Input::update();
             _window.pollEvents();
-            
-			if (_game)
-			{
-				_game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
-			}
 
-            const bool editorEnabledThisFrame = _editorActive;
-            if (editorEnabledThisFrame)
+            if (_game)
             {
-                _editor.beginFrame();
-            }
+                _game->setEditorSelectionLock(_editorActive && _editor.hasSelectedObject(), _scene);
+            }   
 
-            // Update gameplay logic
+            _editor.beginFrame();
+
             game->update(Time::deltaTime());
             _scene.update(Time::deltaTime(), _assets);
-
-            // Render
             _renderer.render(_scene, _assets);
 
-            if (editorEnabledThisFrame)
+            game->drawUI();
+
+            if (_editorActive)
             {
                 _editor.draw(_scene, _assets, _config);
-                _editor.endFrame();
             }
-            
+
+            _editor.endFrame();
             _window.swapBuffers();
-        }
+        }   
     }
 
     void Application::setClearColor(float r, float g, float b, float a)

@@ -10,6 +10,9 @@
 #include "scene/Scene.h"
 #include "scene/components/Audio.h"
 #include "scene/Object.h"
+//#include <imgui.h>
+#include "ui/GameUI.h"
+#include <glad/glad.h>
 
 #include "passes/ColorRestorationPass.h"
 #include "systems/FreeCameraController.h"
@@ -38,7 +41,15 @@ public:
 	void setEditorSelectionLock(bool locked, engine::Scene& scene) override;
 	void onCollectableCollected();
 	void onCollectableCollected(int type);
+	void drawUI() override;
 	bool terrainSkyLightingEnabled = true;
+	bool _startRequested = false;
+	bool _endScreenShown = false;
+	bool allGemsCollected() const;
+	void continueGame();
+	void restartGame();
+	void resetGameProgress();
+	
 
 private:
 	engine::Object* gem = nullptr;
@@ -54,6 +65,8 @@ private:
 
 	PlayerController* gameplayController = nullptr;
 	FreeCameraController* editorController = nullptr;
+	GameUI _gameUI;
+	GameUIState _gameUIState = GameUIState::Start;
 
 	bool editorModeActive = false;
 	bool editorCameraLocked = false;
@@ -64,8 +77,10 @@ private:
 	// Set this to the file you want to loop until the game closes.
 	std::string backgroundMusicPath = "assets/sounds/audio-WIP.mp3";
 	float _collectedCyan = 0.0f, _collectedMagenta = 0.0f, _collectedYellow = 0.0f;
+	int _cyanGemCount = 0, _magentaGemCount = 0, _yellowGemCount = 0;
 	float _teleportCooldown = 0.0f;
 	static MyGame* _activeGame;
 
 	void refreshEditorCameraState(engine::Scene& scene);
+	void startGame();
 };
