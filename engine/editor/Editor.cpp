@@ -69,6 +69,27 @@ namespace engine
             }
             meshRenderer.material = assets.getDefaultMaterial();
         }
+
+        static Object* findPlayerObject(Scene& scene)
+        {
+            for (auto& object : scene.getObjects())
+            {
+                if (object && object->name == "Player")
+                {
+                    return object.get();
+                }
+            }
+
+            for (auto& object : scene.getObjects())
+            {
+                if (object && object->getComponent<CharacterController>())
+                {
+                    return object.get();
+                }
+            }
+
+            return nullptr;
+        }
     }
 
     static float getFPS()
@@ -383,6 +404,31 @@ namespace engine
         ImGui::Text("FPS: %.1f", fpsDisplay);
         ImGui::Text("Frame Time: %.2f ms", (fpsDisplay > 0.0f) ? (1000.0f / fpsDisplay) : 0.0f);
 
+        ImGui::Separator();
+        if (ImGui::Button("Teleport Player To Editor Camera"))
+        {
+            if (scene.getMainCamera())
+            {
+                const glm::vec3 targetPos = scene.getMainCamera()->owner->transform.getPosition();
+                if (auto* player = findPlayerObject(scene))
+                {
+                    if (auto* characterController = player->getComponent<CharacterController>())
+                    {
+                        characterController->teleport(targetPos);
+                    }
+                    else
+                    {
+                        player->transform.setPosition(targetPos);
+                    }
+
+                    if (auto* animatedVelocity = player->getComponent<AnimatedVelocity>())
+                    {
+                        animatedVelocity->savedPosition = player->transform.getPosition();
+                    }
+                }
+            }
+        }
+
         bool skel = engine::DebugRenderPass::getShowSkeletons();
         if (ImGui::Checkbox("Show Skeletons", &skel))
         {
@@ -457,7 +503,8 @@ namespace engine
                 }
                 if (auto* collider = object->getComponent<BoxCollider>())
                 {
-                    file << "  BoxCollider: size=" << collider->size.x << "," << collider->size.y << "," << collider->size.z
+                    file << "  BoxCollider: center=" << collider->center.x << "," << collider->center.y << "," << collider->center.z
+                        << " size=" << collider->size.x << "," << collider->size.y << "," << collider->size.z
                          << " isTrigger=" << collider->isTrigger << "\n";
                 }
                 if (auto* rigidBody = object->getComponent<RigidBody>())
@@ -558,6 +605,7 @@ namespace engine
                 Handle<Material> material;
 
                 bool hasBoxCollider = false;
+                glm::vec3 boxColliderCenter{0.0f};
                 glm::vec3 boxColliderSize{1.0f};
                 bool boxColliderIsTrigger = false;
 
@@ -627,6 +675,7 @@ namespace engine
                 if (data.hasBoxCollider)
                 {
                     auto& collider = object.addComponent<BoxCollider>();
+                    collider.center = data.boxColliderCenter;
                     collider.size = data.boxColliderSize;
                     collider.isTrigger = data.boxColliderIsTrigger;
                     collider.rebuild();
@@ -774,6 +823,7 @@ namespace engine
                 else if (line.rfind("  BoxCollider: ", 0) == 0)
                 {
                     const std::string value = line.substr(15);
+                    const std::size_t centerPrefix = value.find("center=");
                     const std::size_t sizePrefix = value.find("size=");
                     const std::size_t triggerPrefix = value.find(" isTrigger=");
                     if (sizePrefix == std::string::npos)
@@ -781,15 +831,27 @@ namespace engine
                         continue;
                     }
 
+                    if (centerPrefix != std::string::npos)
+                    {
+                        const std::string centerValue = value.substr(centerPrefix + 7, sizePrefix - (centerPrefix + 7));
+                        std::stringstream centerStream(centerValue);
+                        float x = 0.0f;
+                        float y = 0.0f;
+                        float z = 0.0f;
+                        char comma = ',';
+                        centerStream >> x >> comma >> y >> comma >> z;
+                        currentObject->boxColliderCenter = glm::vec3(x, y, z);
+                    }
+
                     const std::string sizeValue = value.substr(sizePrefix + 5, triggerPrefix == std::string::npos
                         ? std::string::npos
                         : triggerPrefix - (sizePrefix + 5));
-                    std::stringstream stream(sizeValue);
+                    std::stringstream sizeStream(sizeValue);
                     float x = 0.0f;
                     float y = 0.0f;
                     float z = 0.0f;
                     char comma = ',';
-                    stream >> x >> comma >> y >> comma >> z;
+                    sizeStream >> x >> comma >> y >> comma >> z;
                     currentObject->hasBoxCollider = true;
                     currentObject->boxColliderSize = glm::vec3(x, y, z);
 

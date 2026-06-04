@@ -411,7 +411,7 @@ void MyGame::init(engine::AssetManager& assets,
 	try
 	{
 		// cactus is obj
-		cactusMesh = assets.loadMesh("cactus", "models/plants/Cattus_LowPoly.obj");
+		cactusMesh = assets.loadMesh("cactus", "models/plants/cactus_1.obj");
 		Handle<engine::Texture> cactusTexture = assets.loadTexture("cactus_diffuse", "textures/plants/cactus_Albedo.png", true);
 		if (auto* mat = assets.getMaterial(assets.loadMaterial("cactusMat")))
 		{
