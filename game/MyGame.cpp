@@ -20,11 +20,17 @@
 #include <imgui.h>
 #include <stdio.h>
 
+
 MyGame* MyGame::_activeGame = nullptr;
 
 MyGame* MyGame::getActiveGame()
 {
 	return _activeGame;
+}
+
+void MyGame::setBackgroundMusicPath(const std::string& path)
+{
+	backgroundMusicPath = "assets/sounds/audio-WIP.mp3";
 }
 
 void MyGame::onCollectableCollected()
@@ -165,9 +171,11 @@ void MyGame::drawUI()
 void MyGame::init(engine::AssetManager& assets, 
 				  engine::Renderer& renderer, 
 				  engine::Scene& scene,
+				  engine::AudioEngine& audio,
 				  const engine::AppConfig& config)
 {
 	_activeGame = this;
+	_audio = &audio;
 
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
@@ -216,7 +224,7 @@ void MyGame::init(engine::AssetManager& assets,
     assets.loadTexture("terrainSplat0", "textures/splatmaps/splatmap0.png", true); 
 
 	Handle<engine::Texture> terrainGrass =
-		assets.loadTexture("terrainGrass", "textures/terrain/grass.png", true);
+		assets.loadTexture("terrainGrass", "textures/terrain/stylized_grass.png", true);
 
 	// Using Terrain Grass Texture for Grass Instances <Can change later on> 
 	Handle<engine::Texture> grassBladeTex = terrainGrass; 
@@ -225,7 +233,7 @@ void MyGame::init(engine::AssetManager& assets,
 		assets.loadTexture("terrainSand", "textures/terrain/sand.png", true);
 
 	Handle<engine::Texture> terrainRock =
-		assets.loadTexture("terrainRock", "textures/terrain/rock.png", true);
+		assets.loadTexture("terrainRock", "textures/terrain/stylized_stone.png", true);
 
 	Handle<engine::Texture> terrainSnow =
 		assets.loadTexture("terrainSnow", "textures/terrain/snow.png", true); 
@@ -249,7 +257,10 @@ void MyGame::init(engine::AssetManager& assets,
 	});
 	scene.setIrradianceMap(irradianceCubemap);
 
-	//load in game UI
+	if (_audio)
+	{
+		_audio->playMusic(backgroundMusicPath, true);
+	}	//load in game UI
 	_gameUI.loadAssets(assets);
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
@@ -533,7 +544,7 @@ void MyGame::init(engine::AssetManager& assets,
 	mat = assets.getMaterial(terrainMat);
 
 	mat->shader = renderer.getTerrainShader();
-	mat->isTerrain = true;
+	mat->renderMode = engine::RenderMode::Terrain;
 
 	mat->splat0 = terrainSplat0;
 
@@ -683,6 +694,7 @@ void MyGame::init(engine::AssetManager& assets,
 		
 		Handle<engine::Material> waterMat = assets.loadMaterial("waterMat");
 		auto* matPtr = assets.getMaterial(waterMat);
+		matPtr->renderMode = engine::RenderMode::Water;
 		matPtr->shader = waterShader;
 		matPtr->ambient = glm::vec3(0.15f, 0.25f, 0.35f);
 		matPtr->diffuse = glm::vec3(0.45f, 0.70f, 0.90f);

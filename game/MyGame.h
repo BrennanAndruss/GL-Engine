@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "core/Game.h"
@@ -7,6 +8,7 @@
 #include "resources/AssetManager.h"
 #include "renderer/Renderer.h"
 #include "scene/Scene.h"
+#include "scene/components/Audio.h"
 #include "scene/Object.h"
 //#include <imgui.h>
 #include "ui/GameUI.h"
@@ -27,10 +29,12 @@ public:
 	~MyGame() = default;
 
 	static MyGame* getActiveGame();
+	void setBackgroundMusicPath(const std::string& path);
 
 	void init(engine::AssetManager& assets, 
 			  engine::Renderer& renderer, 
 			  engine::Scene& scene, 
+			  engine::AudioEngine& audio,
 			  const engine::AppConfig& config) override;
 	void update(float deltaTime) override;
 	void setEditorMode(bool editorActive, engine::Scene& scene) override;
@@ -69,6 +73,9 @@ private:
 	std::vector<engine::Object*> objects;
 
 	ColorRestorationPass* _colorRestorePass = nullptr;
+	engine::AudioEngine* _audio = nullptr;
+	// Set this to the file you want to loop until the game closes.
+	std::string backgroundMusicPath = "assets/sounds/audio-WIP.mp3";
 	float _collectedCyan = 0.0f, _collectedMagenta = 0.0f, _collectedYellow = 0.0f;
 	int _cyanGemCount = 0, _magentaGemCount = 0, _yellowGemCount = 0;
 	float _teleportCooldown = 0.0f;
