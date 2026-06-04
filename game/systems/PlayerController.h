@@ -19,8 +19,8 @@ class PlayerController : public engine::Component
 public:
 	float baseMoveSpeed = 0.1f;
 	float moveSpeed = 0.1f;
-	float walkSpeedFactor = 0.33f;
-	float walkPlaybackSpeed = 1.0f;
+	float walkSpeedFactor = 0.8f;
+	float walkPlaybackSpeed = 2.5f;
 	float sprintPlaybackSpeed = 3.0f;
 	float speedBoostMultiplier = 2.0f;
 	float speedBoostDuration = 15.0f;
