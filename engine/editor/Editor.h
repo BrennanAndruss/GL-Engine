@@ -45,5 +45,6 @@ namespace engine
         float _toolColor[4] = { 0.20f, 0.55f, 0.90f, 1.0f };
 		Object* _selectedObject = nullptr;
         std::string currentSceneName = "scene_objects";
+        bool _sceneNameUnlocked = false;
     };
 }

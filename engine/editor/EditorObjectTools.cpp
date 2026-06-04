@@ -439,6 +439,8 @@ namespace engine
                 const auto bounds = mesh->getBBox();
                 collider.center = 0.5f * (bounds.max + bounds.min);
                 collider.size = 0.5f * (bounds.max - bounds.min);
+                collider.size.x *= 0.5f; 
+                collider.size.z *= 0.5f; 
             }
             else
             {
@@ -478,6 +480,8 @@ namespace engine
                 const auto bounds = mesh->getBBox();
                 collider.center = 0.5f * (bounds.max + bounds.min);
                 collider.size = 0.5f * (bounds.max - bounds.min);
+                collider.size.x *= 0.5f; 
+                collider.size.z *= 0.5f; 
             }
             else
             {
@@ -522,6 +526,8 @@ namespace engine
                 const auto bounds = mesh->getBBox();
                 collider.center = 0.5f * (bounds.max + bounds.min);
                 collider.size = 0.5f * (bounds.max - bounds.min);
+                collider.size.x *= 0.5f; 
+                collider.size.z *= 0.5f; 
             }
             else
             {

@@ -162,9 +162,16 @@ namespace engine
             readObjectsFromFile(getSceneFilePath(config, currentSceneName), scene, assets);
         }
 
+        ImGui::BeginDisabled(!_sceneNameUnlocked);
         if (ImGui::InputText("Scene Name", &currentSceneName))
         {
             // Scene name updated, but we won't load until the user clicks "Load Scene"
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button(_sceneNameUnlocked ? "Lock" : "Unlock"))
+        {
+            _sceneNameUnlocked = !_sceneNameUnlocked;
         }
 
 
