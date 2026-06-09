@@ -155,10 +155,7 @@ namespace engine
 		_objects.emplace_back(std::make_unique<Object>(name));
 		Object* object = _objects.back().get();
 		object->setScene(this);
-		if (_started)
-		{
-			object->start();
-		}
+	
 		return *object;
 	}
 

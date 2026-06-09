@@ -27,9 +27,19 @@
 
 namespace engine
 {
+
+    std::string Editor::currentSceneName;
+
+    void Editor::setCurrentSceneName(const std::string& name)
+    {
+        currentSceneName = name;
+    }
+
     namespace
     {
-        std::string getSceneFilePath(const engine::AppConfig& config, const std::string& sceneName = "scene_objects")
+        
+
+        std::string getSceneFilePath(const engine::AppConfig& config, const std::string& sceneName)
         {
             return config.assetsDir + "scenes/" + sceneName + ".txt";
         }
@@ -128,6 +138,9 @@ namespace engine
         ImGui_ImplOpenGL3_Init("#version 150");
 
         _initialized = true;
+        _capturedInitialSceneState = false;
+
+        
     }
 
     void Editor::shutdown()
@@ -160,14 +173,22 @@ namespace engine
     {
         if (!_initialized)
         {
+            
             return;
         }
 
         if (!_capturedInitialSceneState)
         {
+            
+
             _initialObjectCount = scene.getObjects().size();
+
+            std::cout << "Loading scene from: " << getSceneFilePath(config, currentSceneName) << "\n";
+            readObjectsFromFile(getSceneFilePath(config, currentSceneName), scene, assets);
+
             _capturedInitialSceneState = true;
         }
+
 
         updateEditorSelectionFromMouse(scene, _initialObjectCount, _selectedObject);
         ImGui::Begin("Editor");
@@ -632,6 +653,25 @@ namespace engine
 
             auto flushObject = [&](const LoadedObject& data)
             {
+                if (data.name.empty())
+                {
+                    std::cerr << "Skipping object with empty name\n";
+                    return;
+                }
+
+                if (data.name.find('\0') != std::string::npos)
+                {
+                    std::cerr << "Skipping corrupted object name\n";
+                    return;
+                }
+
+                std::cout << "Flushing object: " << data.name << std::endl;
+                if (!data.hasMesh && !data.hasMaterial && !data.hasBoxCollider && !data.isCollectable)
+                {
+                    std::cout << "Skipping object: " << data.name << std::endl;
+                    return;
+                }
+
                 Object& object = scene.createObject(data.name);
                 object.transform.setPosition(data.position);
                 object.transform.setEulerAngles(data.rotation);
@@ -672,6 +712,7 @@ namespace engine
                         meshRenderer.material = defaultMaterial;
                     }
                 }
+                
 
                 if (data.hasBoxCollider)
                 {

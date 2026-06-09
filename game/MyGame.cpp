@@ -19,6 +19,7 @@
 #include "ui/GameUI.h"
 #include <imgui.h>
 #include <stdio.h>
+#include "editor/Editor.h"
 
 
 MyGame* MyGame::_activeGame = nullptr;
@@ -905,6 +906,11 @@ void MyGame::init(engine::AssetManager& assets,
 
 	engine::Input::setMouseTrapped(false);
 
+	engine::Editor::setCurrentSceneName(config.defaultScene);
+
+	
+	
+
 	std::cout << "Game initialized!\n";
 }
 
@@ -1044,4 +1050,6 @@ void MyGame::refreshEditorCameraState(engine::Scene& scene)
         if (!engine::Input::isMouseTrapped())
             engine::Input::setMouseTrapped(true);
     }
+
+	
 }
