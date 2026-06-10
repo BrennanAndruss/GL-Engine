@@ -776,7 +776,18 @@ namespace engine
 
             auto& meshRenderer = star.addComponent<MeshRenderer>();
             meshRenderer.mesh = assets.getMeshHandle("gem");
-            meshRenderer.material = assets.getDefaultMaterial();
+                        Handle<engine::Material> cyanMat = assets.getMaterialHandle("cyanGemMat");
+            if (cyanMat.valid())
+            {
+                meshRenderer.material = cyanMat;
+            }
+            else
+            {
+                meshRenderer.material = assets.getDefaultMaterial();
+            }
+            
+            
+
 
             auto& collider = star.addComponent<BoxCollider>();
             if (auto* mesh = assets.getMesh(meshRenderer.mesh))
@@ -796,13 +807,10 @@ namespace engine
 
             auto& collectable = star.addComponent<Collectable>();
             collectable.type = Collectable::Type::Cyan;
-            Handle<engine::Material> cyanMat = assets.getMaterialHandle("cyanMat");
-            if (cyanMat.valid())
-            {
-                meshRenderer.material = cyanMat;
-            }
             collectable.defaultMat = meshRenderer.material;
             collectable.collectedMat = assets.getDefaultMaterial();
+
+            collectable.start();
 
             //add slight floating animation to make it more visually distinct
             auto& animatedVelocity = star.addComponent<AnimatedVelocity>();

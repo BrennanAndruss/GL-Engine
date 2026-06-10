@@ -83,6 +83,8 @@ void Collectable::start()
 		meshRenderer->writeStencil = true;
 	}
 
+	std::cout << "Collectable start: " << owner->name << std::endl;
+
 	tryRegisterCallback();
 }
 

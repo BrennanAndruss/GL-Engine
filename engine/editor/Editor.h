@@ -40,7 +40,7 @@ namespace engine
     private:
         bool _initialized = false;
         bool _capturedInitialSceneState = false;
-        std::size_t _initialObjectCount = 0;
+        static std::size_t _initialObjectCount;
         bool _toolActive = true;
         float _toolColor[4] = { 0.20f, 0.55f, 0.90f, 1.0f };
 		Object* _selectedObject = nullptr;

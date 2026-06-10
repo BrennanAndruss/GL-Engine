@@ -29,6 +29,7 @@ namespace engine
 {
 
     std::string Editor::currentSceneName;
+    size_t engine::Editor::_initialObjectCount = 0;
 
     void Editor::setCurrentSceneName(const std::string& name)
     {
@@ -179,13 +180,6 @@ namespace engine
 
         if (!_capturedInitialSceneState)
         {
-            
-
-            _initialObjectCount = scene.getObjects().size();
-
-            std::cout << "Loading scene from: " << getSceneFilePath(config, currentSceneName) << "\n";
-            readObjectsFromFile(getSceneFilePath(config, currentSceneName), scene, assets);
-
             _capturedInitialSceneState = true;
         }
 
@@ -230,6 +224,12 @@ namespace engine
         ImGui::Begin("Transform");
         ImGui::SeparatorText("Transform");
         if (_selectedObject) {
+            // check to see if mesh render has drawstencil
+            if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())
+            {
+                //std::cout << "MeshRenderer stencil: " << meshRenderer->writeStencil << std::endl;
+                
+            }
 
           
 
@@ -332,6 +332,17 @@ namespace engine
                 if (ImGui::Button("Add Collectable"))
                 {
                     _selectedObject->addComponent<Collectable>();
+                    auto* collectable = _selectedObject->getComponent<Collectable>();
+                    collectable->type = Collectable::Type::Cyan;
+                    collectable->defaultMat = assets.getMaterialHandle("cyanGemMat");
+                    if (auto* meshRenderer = _selectedObject->getComponent<MeshRenderer>())                    {
+                        meshRenderer->mesh = assets.getMeshHandle("gem");
+                        meshRenderer->material = collectable->defaultMat;
+                        meshRenderer->writeStencil = true;
+                    }
+                
+
+
                 }
             }
             if (!hasAnimatedVelocity) {
@@ -405,13 +416,20 @@ namespace engine
                             switch (selectedType)
                             {
                             case 0: // Cyan
-                                colorMat = assets.getMaterialHandle("cyanMat");
+                                colorMat = assets.getMaterialHandle("cyanGemMat");
+                                meshRenderer->mesh = assets.getMeshHandle("gem");
+                                meshRenderer->material = assets.getMaterialHandle("cyanGemMat");
                                 break;
-                            case 1: // Magenta
-                                colorMat = assets.getMaterialHandle("magentaMat");
+                            case 1:
+                                colorMat = assets.getMaterialHandle("magentaGemMat");
+                                meshRenderer->mesh = assets.getMeshHandle("gem");
+                                meshRenderer->material = assets.getMaterialHandle("magentaGemMat");
                                 break;
-                            case 2: // Yellow
-                                colorMat = assets.getMaterialHandle("yellowMat");
+                            case 2:
+                            colorMat = assets.getMaterialHandle("yellowGemMat");
+                                meshRenderer->mesh = assets.getMeshHandle("gem");
+                                meshRenderer->material = assets.getMaterialHandle("yellowGemMat");
+                                
                                 break;
                             case 3: // speedBoost
                                 colorMat = assets.getMaterialHandle("redMat");
@@ -519,6 +537,34 @@ namespace engine
         {
             engine::DebugRenderPass::setShowColliders(col);
         }
+
+        ImGui::SeparatorText("Post Processing");
+
+        /* post processing stuff goes here, need access to variables in PostProcessPass 
+        ImGui::Text("Color Grading");
+
+        engine::
+
+        ImGui::SliderFloat("Exposure", &postProcessPass.volume.colorGrading.exposure, -5.0f, 5.0f);
+        ImGui::SliderFloat("Contrast", &postProcessPass.volume.colorGrading.contrast, 0.0f, 3.0f);
+        ImGui::SliderFloat("Saturation", &postProcessPass.volume.colorGrading.saturation, 0.0f, 3.0f);
+
+        ImGui::SliderFloat3("Lift", &postProcessPass.volume.colorGrading.lift.x, -1.0f, 1.0f);
+        ImGui::SliderFloat3("Gamma", &postProcessPass.volume.colorGrading.gamma.x, 0.0f, 2.0f);
+        ImGui::SliderFloat3("Gain", &postProcessPass.volume.colorGrading.gain.x, 0.0f, 2.0f);
+
+        ImGui::Text("Tonemapping");
+
+        const char* tonemapModes[] = { "Linear", "Reinhard", "ACES" };
+
+        int mode = static_cast<int>(postProcessPass.volume.tonemap.mode);
+        if (ImGui::Combo("Mode", &mode, tonemapModes, IM_ARRAYSIZE(tonemapModes)))
+        {
+            postProcessPass.volume.tonemap.mode =
+                static_cast<engine::TonemapSettings::Mode>(mode);
+        }
+                */
+
         ImGui::End();
     }
 
@@ -649,6 +695,8 @@ namespace engine
 
     bool Editor::readObjectsFromFile(const std::string& filename, Scene& scene, AssetManager& assets)
     {
+        _initialObjectCount = scene.getObjects().size();
+
         try
         {
             std::ifstream file(filename);
@@ -740,11 +788,11 @@ namespace engine
                     switch (collectableType)
                     {
                     case 0:
-                        return assets.getMaterialHandle("cyanMat");
+                        return assets.getMaterialHandle("cyanGemMat");
                     case 1:
-                        return assets.getMaterialHandle("magentaMat");
+                        return assets.getMaterialHandle("magentaGemMat");
                     case 2:
-                        return assets.getMaterialHandle("yellowMat");
+                        return assets.getMaterialHandle("yellowGemMat");
                     case 3: 
                         return assets.getMaterialHandle("redMat");
                     case 4: 
@@ -818,7 +866,9 @@ namespace engine
                             collectable.defaultMat = collectableMaterial;
                         }
                     }
+                    collectable.start();
                 }
+              
 
                 if (data.hasAnimatedVelocity)
                 {
@@ -1111,6 +1161,7 @@ namespace engine
             std::cerr << "Exception reading objects from file: " << ex.what() << std::endl;
             return false;
         }
+        
     }
 }
 

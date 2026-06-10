@@ -80,7 +80,7 @@ namespace engine
 
 			if (visualTransform)
 			{
-				float localOffsetY = (-height * 0.5f / scale) - bbox.min.y;
+				float localOffsetY = (-height * 0.5f / scale) - bbox.min.y + 0.18f;
 				visualTransform->setPosition(glm::vec3(0.0f, localOffsetY - colliderOffset.y, 0.0f));
 			}
 		}

@@ -55,6 +55,10 @@ public:
 	
 
 private:
+	engine::Scene* _scene = nullptr;
+	engine::AssetManager* _assets = nullptr;
+	engine::AppConfig _config;
+
 	engine::Object* gem = nullptr;
 	engine::Object* player = nullptr;
 	engine::Object* gameplayCameraObject = nullptr;

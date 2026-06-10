@@ -82,6 +82,15 @@ void MyGame::startGame()
 
     // Explicitly flush any warp delta GLFW fires when cursor mode changes
     engine::Input::flushMouseDelta();   // see below
+
+	engine::Editor::setCurrentSceneName(_config.defaultScene);
+
+	engine::Editor::readObjectsFromFile(
+		_config.assetsDir + "scenes/" + _config.defaultScene + ".txt",
+		*_scene,
+		*_assets);
+	
+	
 }
 
 void MyGame::continueGame()
@@ -173,6 +182,10 @@ void MyGame::init(engine::AssetManager& assets,
 	_activeGame = this;
 	_audio = &audio;
 
+	_scene = &scene;
+	_assets = &assets;
+	_config = config;
+
 	// Initialize resources
 	std::cout << "Loading shaders...\n";
 	Handle<engine::Shader> colorRestoreShader = assets.loadShader(
@@ -262,7 +275,6 @@ void MyGame::init(engine::AssetManager& assets,
 	_gameUI.loadAssets(assets);
 
 	Handle<engine::Texture> defaultGrayTex = assets.createSolidTexture("defaultGrayTex", { 128, 128, 128, 255 });
-	Handle<engine::Texture> gemDiffuseTex = assets.loadTexture("gemDiffuseTex", "textures/cyan_gem_texture.png", true);
 	Handle<engine::Texture> charBaseTex = assets.loadTexture("charBaseTex", "textures/char_Base_color.png", true);
 
 	// Procedural noise texture used by the water shader for stylized distortion/foam breakup.
@@ -303,7 +315,51 @@ void MyGame::init(engine::AssetManager& assets,
 	try
 	{
 		gemMesh = assets.loadMeshAssimp("gem", "models/gem_model.fbx");
-		// std::cout << "Loaded Assimp mesh: models/gem_model.fbx\n";
+
+		Handle<engine::Texture> cyanGemTex =
+			assets.loadTexture("cyanGemTex", "textures/cyan_gem_texture.png", true);
+
+		Handle<engine::Texture> magentaGemTex =
+			assets.loadTexture("magentaGemTex", "textures/magenta_gem_texture.png", true);
+
+		Handle<engine::Texture> yellowGemTex =
+			assets.loadTexture("yellowGemTex", "textures/yellow_gem_texture.png", true);
+				
+		Handle<engine::Material> cyanGemMat = assets.loadMaterial("cyanGemMat");
+		if (auto* mat = assets.getMaterial(cyanGemMat))
+		{
+			mat->shader = assets.getDefaultShader();
+			mat->ambient = glm::vec3(0.2f);
+			mat->diffuse = glm::vec3(0.8f);
+			mat->specular = glm::vec3(1.0f);
+			mat->shininess = 64.0f;
+			mat->difTex = cyanGemTex;
+			mat->specTex = cyanGemTex;
+		}
+
+		Handle<engine::Material> magentaGemMat = assets.loadMaterial("magentaGemMat");
+		if (auto* mat = assets.getMaterial(magentaGemMat))
+		{
+			mat->shader = assets.getDefaultShader();
+			mat->ambient = glm::vec3(0.2f);
+			mat->diffuse = glm::vec3(0.8f);
+			mat->specular = glm::vec3(1.0f);
+			mat->shininess = 64.0f;
+			mat->difTex = magentaGemTex;
+			mat->specTex = magentaGemTex;
+		}
+
+		Handle<engine::Material> yellowGemMat = assets.loadMaterial("yellowGemMat");
+		if (auto* mat = assets.getMaterial(yellowGemMat))
+		{
+			mat->shader = assets.getDefaultShader();
+			mat->ambient = glm::vec3(0.2f);
+			mat->diffuse = glm::vec3(0.8f);
+			mat->specular = glm::vec3(1.0f);
+			mat->shininess = 64.0f;
+			mat->difTex = yellowGemTex;
+			mat->specTex = yellowGemTex;
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -663,17 +719,6 @@ void MyGame::init(engine::AssetManager& assets,
 	mat->shininess = 64.0f;
 	mat->difTex = defaultGrayTex;
 	mat->specTex = defaultGrayTex;
-
-	Handle<engine::Material> skinnedGemMat = assets.loadMaterial("skinnedGemMat");
-	mat = assets.getMaterial(skinnedGemMat);
-	mat->shader = renderer.getSkinnedShader();
-	mat->ambient = glm::vec3(0.2f);
-	mat->diffuse = glm::vec3(0.8f);
-	mat->specular = glm::vec3(1.0f);
-	mat->shininess = 64.0f;
-	mat->difTex = gemDiffuseTex;
-	mat->specTex = gemDiffuseTex;
-	
 
 	Handle<engine::Material> charTex = assets.loadMaterial("charBaseTex");
 	mat = assets.getMaterial(charTex);
