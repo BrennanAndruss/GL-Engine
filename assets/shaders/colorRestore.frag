@@ -28,7 +28,6 @@ uniform float pulseBoost;
 uniform float cyan;
 uniform float magenta;
 uniform float yellow;
-uniform float key;
 
 // Simple high-frequency hash
 float hash3(vec3 p) {
@@ -107,8 +106,12 @@ void main()
 	vec3 restored = vec3(1.0 - activeC, 1.0 - activeM, 1.0 - activeY);
 
 	// Determine overall saturation mix factor
+	// Subtract a portion of the key value from the mix factor to maintain contours
+	float key = 1.0 - max(scene.r, max(scene.g, scene.b));
 	float maxChannelValue = max(currentCyan, max(currentMagenta, currentYellow));
-	vec3 finalComposite = mix(grayscale, restored, maxChannelValue);
+	float structuralMix = clamp(maxChannelValue - (key * 0.4), 0.0, 1.0);
+
+	vec3 finalComposite = mix(grayscale, restored, structuralMix);
 
 	// Overlay accumulated rim glow
 	finalComposite += rimColor;

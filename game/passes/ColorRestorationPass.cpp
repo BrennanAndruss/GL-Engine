@@ -72,7 +72,6 @@ void ColorRestorationPass::execute(const engine::Scene& scene,
 	shader->setFloat("cyan", cyan);
 	shader->setFloat("magenta", magenta);
 	shader->setFloat("yellow", yellow);
-	shader->setFloat("key", key);
 
 	// Bind scene color
 	GLuint inputTex = ctx.getBuffer(engine::BufferNames::SceneColor);

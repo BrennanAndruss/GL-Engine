@@ -33,7 +33,7 @@ public:
 	static constexpr int MAX_PULSES = 4;
 
 	// Color restoration variables
-	float cyan = 0.0f, magenta = 0.0f, yellow = 0.0f, key = 0.0f;
+	float cyan = 0.0f, magenta = 0.0f, yellow = 0.0f;
 
 private:
 	Handle<engine::Shader> _shader;
