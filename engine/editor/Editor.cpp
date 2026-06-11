@@ -442,7 +442,7 @@ namespace engine
                                 }
                                 break;
                             case 4: // JumpBoost
-                                colorMat = assets.getMaterialHandle("jumpBoostMat");
+                                colorMat = assets.getMaterialHandle("blueMat");
                                 {
                                     Handle<engine::Mesh> jumpBoostMesh = assets.getMeshHandle("JumpBoost");
                                     if (jumpBoostMesh.valid())

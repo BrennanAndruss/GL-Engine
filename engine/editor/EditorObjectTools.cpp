@@ -22,6 +22,7 @@
 
 namespace
 {
+
     bool isTrackedEditorObject(const std::vector<std::unique_ptr<engine::Object>>& objects,
         const engine::Object* object,
         std::size_t initialObjectCount)
@@ -837,11 +838,13 @@ namespace engine
             auto& collider = speedBoost.addComponent<BoxCollider>();
             collider.size = glm::vec3(1.0f);
             collider.isTrigger = true;
+            collider.rebuild();
 
             auto& collectable = speedBoost.addComponent<Collectable>();
             collectable.type = Collectable::Type::speedBoost;
             collectable.defaultMat = meshRenderer.material;
             collectable.collectedMat = assets.getDefaultMaterial();
+            collectable.start();
 
             selectedObject = &speedBoost;
         }
@@ -864,11 +867,12 @@ namespace engine
             auto& collider = jumpBoost.addComponent<BoxCollider>();
             collider.size = glm::vec3(1.0f);
             collider.isTrigger = true;
-
+            collider.rebuild();
             auto& collectable = jumpBoost.addComponent<Collectable>();
             collectable.type = Collectable::Type::JumpBoost;
             collectable.defaultMat = meshRenderer.material;
             collectable.collectedMat = assets.getDefaultMaterial();
+            collectable.start();
 
             selectedObject = &jumpBoost;
         }

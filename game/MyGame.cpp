@@ -21,6 +21,12 @@
 #include <stdio.h>
 #include "editor/Editor.h"
 
+namespace
+{
+    PowerUpPopupState g_powerUpPopupsInstance;
+}
+
+#define _powerUpPopups g_powerUpPopupsInstance
 
 MyGame* MyGame::_activeGame = nullptr;
 
@@ -36,16 +42,17 @@ void MyGame::setBackgroundMusicPath(const std::string& path)
 
 void MyGame::onPowerUpCollected(Collectable::Type type, float duration)
 {
-    _powerUpPopup.active = true;
-    _powerUpPopup.remainingTime = duration;
-
     if (type == Collectable::Type::speedBoost)
     {
-        _powerUpPopup.label = "Speed boost";
+        _powerUpPopups.speedBoost.active = true;
+        _powerUpPopups.speedBoost.label = "Speed boost";
+        _powerUpPopups.speedBoost.remainingTime = duration;
     }
     else if (type == Collectable::Type::JumpBoost)
     {
-        _powerUpPopup.label = "Jump boost";
+        _powerUpPopups.jumpBoost.active = true;
+        _powerUpPopups.jumpBoost.label = "Jump boost";
+        _powerUpPopups.jumpBoost.remainingTime = duration;
     }
 }
 
@@ -180,9 +187,8 @@ void MyGame::resetPlayerToStart()
 
 void MyGame::resetGameProgress()
 {
-	_powerUpPopup.active = false;
-	_powerUpPopup.remainingTime = 0.0f;
-	_powerUpPopup.label = "";
+	_powerUpPopups.speedBoost = PowerUpPopup{};
+	_powerUpPopups.jumpBoost = PowerUpPopup{};
 	
     _cyanGemCount = 0;
     _magentaGemCount = 0;
@@ -211,8 +217,7 @@ void MyGame::drawUI()
     _cyanGemCount,
     _magentaGemCount,
     _yellowGemCount,
-    _powerUpPopup
-	);
+    _powerUpPopups);
 
     if (_gameUIState == GameUIState::Start && action == GameUIAction::Start)
     {
@@ -752,6 +757,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> redMat = assets.loadMaterial("redMat");
 	mat = assets.getMaterial(redMat);
+	mat->shader = assets.getDefaultShader();
 	mat->ambient  = glm::vec3(0.25f, 0.10f, 0.02f);
 	mat->diffuse  = glm::vec3(1.00f, 0.45f, 0.05f);
 	mat->specular = glm::vec3(0.90f, 0.65f, 0.30f);
@@ -761,6 +767,7 @@ void MyGame::init(engine::AssetManager& assets,
 
 	Handle<engine::Material> blueMat = assets.loadMaterial("blueMat");
 	mat = assets.getMaterial(blueMat);
+	mat->shader = assets.getDefaultShader();
 	mat->ambient  = glm::vec3(0.03f, 0.06f, 0.20f);
 	mat->diffuse  = glm::vec3(0.10f, 0.35f, 1.00f);
 	mat->specular = glm::vec3(0.70f, 0.85f, 1.00f);
@@ -1027,14 +1034,27 @@ void MyGame::update(float deltaTime)
         startGame();
     }
 
-	if (_powerUpPopup.active)
+	if (_powerUpPopups.speedBoost.active)
 	{
-    	_powerUpPopup.remainingTime -= deltaTime;
+    	_powerUpPopups.speedBoost.remainingTime -= deltaTime;
 
-    	if (_powerUpPopup.remainingTime <= 0.0f)
+    	if (_powerUpPopups.speedBoost.remainingTime <= 0.0f)
     	{
-        	_powerUpPopup.remainingTime = 0.0f;
-        	_powerUpPopup.active = false;
+        	_powerUpPopups.speedBoost.remainingTime = 0.0f;
+        	_powerUpPopups.speedBoost.active = false;
+        	_powerUpPopups.speedBoost.label = "";
+    	}
+	}
+
+	if (_powerUpPopups.jumpBoost.active)
+	{
+    	_powerUpPopups.jumpBoost.remainingTime -= deltaTime;
+
+    	if (_powerUpPopups.jumpBoost.remainingTime <= 0.0f)
+    	{
+       		_powerUpPopups.jumpBoost.remainingTime = 0.0f;
+        	_powerUpPopups.jumpBoost.active = false;
+        	_powerUpPopups.jumpBoost.label = "";
     	}
 	}
 
