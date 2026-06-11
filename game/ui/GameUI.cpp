@@ -30,7 +30,7 @@ GameUIAction GameUI::draw(
     int cyanGemCount,
     int magentaGemCount,
     int yellowGemCount,
-    const PowerUpPopup& powerUpPopup
+    const PowerUpPopupState& powerUpPopups
 )
 
 {
@@ -40,7 +40,10 @@ GameUIAction GameUI::draw(
         return drawStartScreen();
 
     case GameUIState::Playing:
-    drawPowerUpPopup(powerUpPopup);
+    drawPowerUpPopups(powerUpPopups);
+    drawHUD(cyanGemCount, magentaGemCount, yellowGemCount);
+    return GameUIAction::None;
+
     drawHUD(cyanGemCount, magentaGemCount, yellowGemCount);
     return GameUIAction::None;
 
@@ -471,7 +474,24 @@ GameUIAction GameUI::drawEndScreen()
     return action;
 }
 
-void GameUI::drawPowerUpPopup(const PowerUpPopup& popup)
+void GameUI::drawPowerUpPopups(const PowerUpPopupState& popups)
+{
+    int index = 0;
+
+    if (popups.speedBoost.active && popups.speedBoost.remainingTime > 0.0f)
+    {
+        drawPowerUpPopup(popups.speedBoost, index);
+        index++;
+    }
+
+    if (popups.jumpBoost.active && popups.jumpBoost.remainingTime > 0.0f)
+    {
+        drawPowerUpPopup(popups.jumpBoost, index);
+        index++;
+    }
+}
+
+void GameUI::drawPowerUpPopup(const PowerUpPopup& popup, int index)
 {
     if (!popup.active || popup.remainingTime <= 0.0f)
     {
@@ -482,10 +502,15 @@ void GameUI::drawPowerUpPopup(const PowerUpPopup& popup)
 
     const float width = 420.0f;
     const float height = 70.0f;
+    const float spacing = 10.0f;
 
     ImGui::SetNextWindowPos(
-        ImVec2((io.DisplaySize.x - width) * 0.5f, 30.0f)
+        ImVec2(
+            (io.DisplaySize.x - width) * 0.5f,
+            30.0f + index * (height + spacing)
+        )
     );
+
     ImGui::SetNextWindowSize(ImVec2(width, height));
 
     ImGuiWindowFlags flags =
@@ -496,10 +521,12 @@ void GameUI::drawPowerUpPopup(const PowerUpPopup& popup)
         ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoCollapse;
 
+    std::string windowName = std::string("PowerUpPopup_") + popup.label;
+
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.80f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
 
-    ImGui::Begin("PowerUpPopup", nullptr, flags);
+    ImGui::Begin(windowName.c_str(), nullptr, flags);
 
     ImGui::SetWindowFontScale(1.4f);
 

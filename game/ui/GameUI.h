@@ -30,6 +30,12 @@ struct PowerUpPopup
     float remainingTime = 0.0f;
 };
 
+struct PowerUpPopupState
+{
+    PowerUpPopup speedBoost;
+    PowerUpPopup jumpBoost;
+};
+
 class GameUI
 {
 public:
@@ -40,14 +46,15 @@ public:
     int cyanGemCount,
     int magentaGemCount,
     int yellowGemCount,
-    const PowerUpPopup& powerUpPopup
+    const PowerUpPopupState& powerUpPopups
     );
 
     const int maxGems = 2;
 
 private:
     void drawHUD(int cyanGemCount, int magentaGemCount, int yellowGemCount);
-    void drawPowerUpPopup(const PowerUpPopup& popup);
+    void drawPowerUpPopups(const PowerUpPopupState& popups);
+    void drawPowerUpPopup(const PowerUpPopup& popup, int index);
     GameUIAction drawStartScreen();
     GameUIAction drawEndScreen();
 
