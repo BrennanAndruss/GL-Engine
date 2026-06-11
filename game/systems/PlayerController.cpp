@@ -251,21 +251,7 @@ void PlayerController::update(float deltaTime)
 		}
 	}
 
-	const bool landedThisFrame = groundedNow && !_wasGroundedLastFrame && hasJumped;
-
-	if (landedThisFrame && _audio && _assets)
-	{
-		if (auto* clip = _assets->getAudioClip(landingSoundClip))
-		{
-			_audio->playOneShot(*clip);
-		}
-	}
-
-	if (groundedNow)
-	{
-		hasJumped = false;
-	}
-	else if (_groundedGraceTimer <= 0.0f)
+	if (!groundedNow && _groundedGraceTimer <= 0.0f)
 	{
 		_groundCarrier = nullptr;
 		_lastGroundCarrierWorldPosition = glm::vec3(0.0f);
@@ -332,8 +318,6 @@ void PlayerController::update(float deltaTime)
 		}
 	}
 
-	_wasGroundedLastFrame = groundedNow;
-	
 	// Normalize input and transform to camera space
 	glm::vec3 walkDir = glm::vec3(0.0f);
 	if (input != glm::vec3(0.0f))
@@ -419,6 +403,21 @@ void PlayerController::postPhysicsUpdate(float deltaTime)
 	const glm::vec3 finalPlayerWorldPosition = _characterController->getCurrentSyncedWorldPosition();
 	const glm::vec3 playerDelta = finalPlayerWorldPosition - previousPlayerWorldPosition;
 
+	const bool groundedNow = _characterController->isOnGround();
+	const bool landedThisFrame = groundedNow && !_wasGroundedLastFrame && hasJumped;
+	if (landedThisFrame && _audio && _assets)
+	{
+		if (auto* clip = _assets->getAudioClip(landingSoundClip))
+		{
+			_audio->playPreloadedOneShot(*clip);
+		}
+	}
+
+	_wasGroundedLastFrame = groundedNow;
+	if (groundedNow)
+	{
+		hasJumped = false;
+	}
 
 
 	// Orbit the camera after the player transform has been finalized for this frame.

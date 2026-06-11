@@ -29,6 +29,24 @@ MyGame* MyGame::getActiveGame()
 	return _activeGame;
 }
 
+namespace
+{
+	Handle<engine::AudioClip> loadOptionalAudioClip(engine::AssetManager& assets,
+		const std::string& name,
+		const std::string& path)
+	{
+		try
+		{
+			return assets.loadAudioClip(name, path);
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Optional audio clip not loaded: " << e.what() << "\n";
+			return {};
+		}
+	}
+}
+
 void MyGame::onPowerUpCollected(Collectable::Type type, float duration)
 {
     _powerUpPopup.active = true;
@@ -68,9 +86,19 @@ void MyGame::onCollectableCollected(Collectable::Type type, glm::vec3 worldPos)
 	else if (type == Collectable::Type::Yellow)
 		_yellowGemCount++;
 
-	// Add color pulse event
-	if (_activePulses.size() >= ColorRestorationPass::MAX_PULSES) return;
-	_activePulses.emplace_back(PulseData{ worldPos, 0.0f, type });
+	if (_audio && _assets && gemCollectSoundClip.valid())
+	{
+		if (auto* clip = _assets->getAudioClip(gemCollectSoundClip))
+		{
+			_audio->playOneShot(*clip);
+		}
+	}
+
+	// Add color pulse event when there is room; audio should still play if this visual queue is full.
+	if (_activePulses.size() < ColorRestorationPass::MAX_PULSES)
+	{
+		_activePulses.emplace_back(PulseData{ worldPos, 0.0f, type });
+	}
 }
 
 void MyGame::startGame()
@@ -402,8 +430,8 @@ void MyGame::init(engine::AssetManager& assets,
 	runSoundClip = assets.loadAudioClip("playerWalkSound", "sounds/walkaudio.mp3");
 	runFastSoundClip = assets.loadAudioClip("playerRunSound", "sounds/runaudio.mp3");
 	jumpSoundClip = assets.loadAudioClip("playerJumpSound", "sounds/jumpaudio.mp3");
-	// TODO: add a landing SFX file here, then uncomment the load below.
 	landingSoundClip = assets.loadAudioClip("playerLandSound", "sounds/landaudio.mp3");
+	gemCollectSoundClip = loadOptionalAudioClip(assets, "gemCollectSound", "sounds/gemcollect.mp3");
 
 	if (_audio)
 	{
@@ -980,6 +1008,14 @@ void MyGame::init(engine::AssetManager& assets,
 		playerController.runFastSoundClip = runFastSoundClip;
 		playerController.jumpSoundClip = jumpSoundClip;
 		playerController.landingSoundClip = landingSoundClip;
+
+		if (_audio)
+		{
+			if (auto* clip = assets.getAudioClip(landingSoundClip))
+			{
+				_audio->preloadOneShot(*clip);
+			}
+		}
 	}
 
 	// pointLightCenter = &scene.createObject("PointLightCenter");

@@ -95,6 +95,7 @@ private:
 	Handle<engine::AudioClip> runFastSoundClip;
 	Handle<engine::AudioClip> jumpSoundClip;
 	Handle<engine::AudioClip> landingSoundClip;
+	Handle<engine::AudioClip> gemCollectSoundClip;
 	
 	float _teleportCooldown = 0.0f;
 	static MyGame* _activeGame;

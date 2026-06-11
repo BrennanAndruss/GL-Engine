@@ -1,5 +1,8 @@
 #include "scene/components/Audio.h"
 #include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "resources/AudioClip.h"
@@ -12,6 +15,7 @@ namespace engine
         ma_engine engine{};
         ma_sound music{};
         ma_sound loopingEffect{};
+        std::unordered_map<std::string, std::unique_ptr<ma_sound>> preloadedOneShots;
         bool initialized = false;
         bool musicLoaded = false;
         bool loopingEffectLoaded = false;
@@ -58,6 +62,11 @@ namespace engine
 
         stopMusic();
         stopLoopingEffect();
+        for (auto& entry : _impl->preloadedOneShots)
+        {
+            ma_sound_uninit(entry.second.get());
+        }
+        _impl->preloadedOneShots.clear();
         ma_engine_uninit(&_impl->engine);
         _impl->initialized = false;
     }
@@ -192,6 +201,60 @@ namespace engine
     bool AudioEngine::playOneShot(const AudioClip& clip)
     {
         return playOneShot(clip.filePath);
+    }
+
+    bool AudioEngine::preloadOneShot(const std::string& filePath)
+    {
+        if (!_impl || !_impl->initialized)
+        {
+            return false;
+        }
+
+        if (_impl->preloadedOneShots.find(filePath) != _impl->preloadedOneShots.end())
+        {
+            return true;
+        }
+
+        auto sound = std::make_unique<ma_sound>();
+        const ma_uint32 flags = MA_SOUND_FLAG_DECODE;
+        const ma_result result = ma_sound_init_from_file(&_impl->engine, filePath.c_str(), flags, nullptr, nullptr, sound.get());
+        if (result != MA_SUCCESS)
+        {
+            std::cerr << "AudioEngine: failed to preload one-shot '" << filePath << "' (" << result << ")" << std::endl;
+            return false;
+        }
+
+        _impl->preloadedOneShots[filePath] = std::move(sound);
+        return true;
+    }
+
+    bool AudioEngine::preloadOneShot(const AudioClip& clip)
+    {
+        return preloadOneShot(clip.filePath);
+    }
+
+    bool AudioEngine::playPreloadedOneShot(const std::string& filePath)
+    {
+        if (!_impl || !_impl->initialized)
+        {
+            return false;
+        }
+
+        auto it = _impl->preloadedOneShots.find(filePath);
+        if (it == _impl->preloadedOneShots.end())
+        {
+            return playOneShot(filePath);
+        }
+
+        ma_sound* sound = it->second.get();
+        ma_sound_stop(sound);
+        ma_sound_seek_to_pcm_frame(sound, 0);
+        return ma_sound_start(sound) == MA_SUCCESS;
+    }
+
+    bool AudioEngine::playPreloadedOneShot(const AudioClip& clip)
+    {
+        return playPreloadedOneShot(clip.filePath);
     }
 
     void AudioEngine::updateListener(const glm::vec3& camPos, const glm::vec3& camFront, const glm::vec3& camUp)

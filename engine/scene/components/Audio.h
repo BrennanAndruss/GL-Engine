@@ -33,6 +33,10 @@ namespace engine
 
         bool playOneShot(const std::string& filePath);
         bool playOneShot(const AudioClip& clip);
+        bool preloadOneShot(const std::string& filePath);
+        bool preloadOneShot(const AudioClip& clip);
+        bool playPreloadedOneShot(const std::string& filePath);
+        bool playPreloadedOneShot(const AudioClip& clip);
         void updateListener(const glm::vec3& camPos, const glm::vec3& camFront, const glm::vec3& camUp);
 
         bool isInitialized() const { return _impl != nullptr; }
