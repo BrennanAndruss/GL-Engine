@@ -252,20 +252,6 @@ namespace engine
 		{
 			drawObjectCulled(index, object, scene, assets, lightFrustum);
 		}
-
-		// Draw instanced grass
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_CULL_FACE);
-		for (const auto& object : scene.getObjects())
-		{
-			if (auto* grass = object->getComponent<GrassRenderer>())
-			{
-				grass->drawShadow(assets, lightFrustum,
-					_shadowUBO.cascadeLightSpaces[index]);
-			}
-		}
-
-		glEnable(GL_CULL_FACE);
 	}
 
 	void ShadowPass::drawObjectCulled(int index, Object* object, const Scene& scene,
@@ -333,11 +319,7 @@ namespace engine
 				std::min(boneMatrices.size(), MAX_SHADER_BONES));
 			shader->setInt("isSkinned", 1);
 			shader->setInt("numBones", numBones);
-			for (int i = 0; i < numBones; ++i)
-			{
-				shader->setMat4("bones[" + std::to_string(i) + "]",
-					boneMatrices[i]);
-			}
+			shader->setMat4Array("bones[0]", boneMatrices.data(), numBones);
 		}
 
 		mesh->draw();

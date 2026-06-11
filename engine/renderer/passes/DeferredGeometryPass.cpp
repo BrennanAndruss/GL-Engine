@@ -189,14 +189,7 @@ namespace engine
 
 			shader->setInt("isSkinned", 1);
 			shader->setInt("numBones", numBones);
-
-			for (int i = 0; i < numBones; ++i)
-			{
-				shader->setMat4(
-					"bones[" + std::to_string(i) + "]",
-					boneMatrices[static_cast<std::size_t>(i)]
-				);
-			}
+			shader->setMat4Array("bones[0]", boneMatrices.data(), numBones);
 		}
 
 		mesh->draw();
