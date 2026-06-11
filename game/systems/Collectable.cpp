@@ -52,6 +52,10 @@ void Collectable::tryRegisterCallback()
 
 	physics->registerCallback(collisionObject, [this](btCollisionObject* other)
 		{
+			if (isCollected)
+			{
+    			return;
+			}
 			// The callback is attached to the collectable, so only accept the player object.
 			auto* otherOwner = other ? static_cast<engine::Object*>(other->getUserPointer()) : nullptr;
 			if (!otherOwner || !otherOwner->getComponent<PlayerController>())
@@ -92,20 +96,50 @@ void Collectable::tryRegisterCallback()
 
 void Collectable::start()
 {
-	if (auto* meshRenderer = owner ? owner->getComponent<engine::MeshRenderer>() : nullptr)
-	{
-		meshRenderer->writeStencil = true;
-	}
+    originalScale = owner->transform.getScale();
 
-	std::cout << "Collectable start: " << owner->name << std::endl;
+    if (auto* meshRenderer = owner ? owner->getComponent<engine::MeshRenderer>() : nullptr)
+    {
+        meshRenderer->writeStencil = true;
+        originalMesh = meshRenderer->mesh;
+    }
 
-	tryRegisterCallback();
+    std::cout << "Collectable start: " << owner->name << std::endl;
+
+    tryRegisterCallback();
 }
 
 void Collectable::update(float deltaTime)
 {
-	(void)deltaTime;
-	tryRegisterCallback();
+    tryRegisterCallback();
+
+    if (!isCollected)
+    {
+        return;
+    }
+
+    if (type != Type::speedBoost && type != Type::JumpBoost)
+    {
+        return;
+    }
+
+    respawnTimer -= deltaTime;
+
+    if (respawnTimer <= 0.0f)
+	{
+    	respawnTimer = 0.0f;
+    	isCollected = false;
+
+    	if (owner)
+    	{
+        	owner->transform.setScale(originalScale);
+
+        	if (auto* meshRenderer = owner->getComponent<engine::MeshRenderer>())
+        	{
+           		meshRenderer->mesh = originalMesh;
+        	}
+    	}
+	}
 }
 
 void Collectable::onCollected()
@@ -117,7 +151,22 @@ void Collectable::onCollected()
 
     isCollected = true;
 
-    // Trigger color restoration only for color collectables
+    if (type == Type::speedBoost || type == Type::JumpBoost)
+    {
+        respawnDuration = 15.0f;
+        respawnTimer = respawnDuration;
+
+        if (owner)
+		{
+    		if (auto* meshRenderer = owner->getComponent<engine::MeshRenderer>())
+    		{
+        		meshRenderer->mesh = Handle<engine::Mesh>();
+    		}
+		}
+
+        return;
+    }
+
     if (auto* game = MyGame::getActiveGame())
     {
         if (type == Type::Cyan || type == Type::Magenta || type == Type::Yellow)

@@ -75,7 +75,7 @@ private:
 	FreeCameraController* editorController = nullptr;
 	GameUI _gameUI;
 	GameUIState _gameUIState = GameUIState::Start;
-	PowerUpPopup _powerUpPopup;
+	PowerUpPopup _powerUpPopups;
 
 	bool editorModeActive = false;
 	bool editorCameraLocked = false;
